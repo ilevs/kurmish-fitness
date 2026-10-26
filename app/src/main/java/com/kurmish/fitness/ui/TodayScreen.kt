@@ -85,8 +85,10 @@ private fun PlanItemCard(item: PlanItem, recorded: List<ExerciseEntry>, ticked: 
             Checkbox(checked = done, onCheckedChange = { onTick() }, enabled = recorded.isEmpty())
             Column(modifier = Modifier.align(Alignment.CenterVertically)) {
                 Text(text = item.title, style = MaterialTheme.typography.titleSmall)
-                item.sets.forEach { Text(text = it.label, style = MaterialTheme.typography.bodyLarge) }
+                // В упражнении сначала подходы, в разминке и заминке сначала шаги, подходы идут за ними.
+                if (item.part == PlanPart.Work) SetLines(item)
                 item.notes.forEach { Text(text = it, style = MaterialTheme.typography.bodySmall) }
+                if (item.part != PlanPart.Work) SetLines(item)
                 if (recorded.isNotEmpty()) {
                     Text(
                         text = stringResource(R.string.today_done, recorded.joinToString { it.label() }),
@@ -97,4 +99,9 @@ private fun PlanItemCard(item: PlanItem, recorded: List<ExerciseEntry>, ticked: 
             }
         }
     }
+}
+
+@Composable
+private fun SetLines(item: PlanItem) {
+    item.sets.forEach { Text(text = it.label, style = MaterialTheme.typography.bodyLarge) }
 }
