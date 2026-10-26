@@ -76,18 +76,18 @@ fun TrainerApp(
             Tab.Journal -> JournalScreen(
                 data = data,
                 today = viewModel.today(),
-                syncStatus = syncStatus,
                 onSave = viewModel::saveWorkout,
                 onDelete = viewModel::deleteWorkout,
-                onTelegramConnect = viewModel::connectTelegram,
-                onTelegramDisconnect = viewModel::disconnectTelegram,
-                onSync = viewModel::requestSync,
                 modifier = content,
             )
             Tab.Profile -> ProfileScreen(
                 data = data,
                 today = viewModel.today(),
+                syncStatus = syncStatus,
                 onProfileChange = viewModel::updateProfile,
+                onTelegramConnect = viewModel::connectTelegram,
+                onTelegramDisconnect = viewModel::disconnectTelegram,
+                onSync = viewModel::requestSync,
                 modifier = content,
             )
         }

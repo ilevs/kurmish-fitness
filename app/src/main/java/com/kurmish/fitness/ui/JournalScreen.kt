@@ -36,17 +36,13 @@ import com.kurmish.fitness.core.SessionDraft
 import com.kurmish.fitness.core.WorkoutSession
 import kotlin.math.roundToInt
 
-/** Дневник тренировок, новые сверху, и синхронизация с Telegram над ними. Нажатие на запись открывает редактор. */
+/** Дневник тренировок, новые сверху. Нажатие на запись открывает редактор. */
 @Composable
 internal fun JournalScreen(
     data: AppData,
     today: Long,
-    syncStatus: SyncStatus,
     onSave: (WorkoutSession) -> Unit,
     onDelete: (Long) -> Unit,
-    onTelegramConnect: (String) -> Unit,
-    onTelegramDisconnect: () -> Unit,
-    onSync: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val sessions = remember(data) {
@@ -63,15 +59,6 @@ internal fun JournalScreen(
         contentPadding = PaddingValues(ScreenPadding),
         verticalArrangement = Arrangement.spacedBy(Gap),
     ) {
-        item(key = "telegram") {
-            TelegramCard(
-                data = data,
-                status = syncStatus,
-                onConnect = onTelegramConnect,
-                onDisconnect = onTelegramDisconnect,
-                onSync = onSync,
-            )
-        }
         item(key = "add") { AddButton(empty = sessions.isEmpty(), onClick = { editing = SessionDraft.new(today) }) }
         items(sessions, key = { it.id }) { session ->
             SessionCard(
