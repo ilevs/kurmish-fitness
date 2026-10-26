@@ -32,9 +32,18 @@ import kotlin.math.roundToInt
 
 private val DateFormat = DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.forLanguageTag("ru-RU"))
 
-/** Дневник тренировок, новые сверху. */
+/** Дневник тренировок, новые сверху, и синхронизация с Telegram над ними. */
 @Composable
-internal fun JournalScreen(data: AppData, today: Long, onDelete: (Long) -> Unit, modifier: Modifier = Modifier) {
+internal fun JournalScreen(
+    data: AppData,
+    today: Long,
+    syncStatus: SyncStatus,
+    onDelete: (Long) -> Unit,
+    onTelegramConnect: (String) -> Unit,
+    onTelegramDisconnect: () -> Unit,
+    onSync: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val sessions = remember(data) {
         data.sessions.sortedWith(compareByDescending<WorkoutSession> { it.epochDay }.thenByDescending { it.id })
     }
@@ -43,16 +52,24 @@ internal fun JournalScreen(data: AppData, today: Long, onDelete: (Long) -> Unit,
             session.id to LoadCalculator.session(session) { data.currentMax(it, today) }
         }
     }
-    if (sessions.isEmpty()) {
-        Text(text = stringResource(R.string.journal_empty), modifier = modifier.padding(ScreenPadding))
-    } else {
-        LazyColumn(
-            modifier = modifier.fillMaxSize(),
-            contentPadding = PaddingValues(ScreenPadding),
-            verticalArrangement = Arrangement.spacedBy(Gap),
-        ) {
-            items(sessions, key = { it.id }) { session -> SessionCard(session, loads[session.id], onDelete) }
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        contentPadding = PaddingValues(ScreenPadding),
+        verticalArrangement = Arrangement.spacedBy(Gap),
+    ) {
+        item(key = "telegram") {
+            TelegramCard(
+                data = data,
+                status = syncStatus,
+                onConnect = onTelegramConnect,
+                onDisconnect = onTelegramDisconnect,
+                onSync = onSync,
+            )
         }
+        if (sessions.isEmpty()) {
+            item(key = "empty") { Text(text = stringResource(R.string.journal_empty)) }
+        }
+        items(sessions, key = { it.id }) { session -> SessionCard(session, loads[session.id], onDelete) }
     }
 }
 

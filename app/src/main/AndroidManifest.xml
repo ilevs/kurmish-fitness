@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Микрофон для встроенного офлайн-распознавания речи. Сеть приложению не нужна. -->
+    <!-- Микрофон для встроенного офлайн-распознавания речи. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <!-- Сеть нужна только для синхронизации Дневника с ботом Telegram; без неё приложение работает полностью. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <!-- Видимость движков синтеза речи на Android 11+. -->
     <queries>

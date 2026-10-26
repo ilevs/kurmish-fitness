@@ -39,6 +39,7 @@ fun TrainerApp(
     )
 ) {
     val data by viewModel.data.collectAsState()
+    val syncStatus by viewModel.syncStatus.collectAsState()
     var tab by rememberSaveable { mutableStateOf(Tab.Today) }
     val speaker = rememberSpeaker()
     Scaffold(
@@ -74,7 +75,11 @@ fun TrainerApp(
             Tab.Journal -> JournalScreen(
                 data = data,
                 today = viewModel.today(),
+                syncStatus = syncStatus,
                 onDelete = viewModel::deleteWorkout,
+                onTelegramConnect = viewModel::connectTelegram,
+                onTelegramDisconnect = viewModel::disconnectTelegram,
+                onSync = viewModel::requestSync,
                 modifier = content,
             )
             Tab.Profile -> ProfileScreen(
