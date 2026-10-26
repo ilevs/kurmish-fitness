@@ -14,7 +14,8 @@
   <string name="diet_settings_intro">Фаза питания меняет калории, советы и план тренировок. Процент жира можно не вводить: тогда он оценивается по росту и возрасту.</string>
   <string name="diet_phase">Фаза</string>
   <string name="diet_sex">Пол</string>
-  <string name="diet_activity">Активность</string>
+  <string name="diet_lifestyle">Активность вне зала</string>
+  <string name="diet_activity_auto">%1$s. С тренировками из профиля уровень активности: %2$s (%3$s).</string>
   <string name="diet_deficit">Дефицит калорий, %</string>
   <string name="diet_fat">Процент жира</string>
   <string name="diet_height">Рост, см</string>

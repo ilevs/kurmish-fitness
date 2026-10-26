@@ -27,7 +27,7 @@
       "bodyFatPercent": 18.0,
       "heightCm": null,
       "age": null,
-      "activity": "Moderate",
+      "lifestyle": "Desk",
       "deficitPercent": 15,
       "calorieCorrectionPercent": 0,
       "correctedEpochDay": null,

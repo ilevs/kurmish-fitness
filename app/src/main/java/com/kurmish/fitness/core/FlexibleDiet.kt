@@ -15,7 +15,6 @@ object FlexibleDiet {
     private const val MIN_FAT = 30
     private const val REFEED_MAX_FAT = 50
     private const val PERCENT = 100.0
-    private const val MIN_TRAINING_DAYS = 2
     private const val CATEGORY_ONE = 1
     private const val CATEGORY_TWO = 2
     private const val CATEGORY_THREE = 3
@@ -71,13 +70,13 @@ object FlexibleDiet {
         val context = DietContext(
             settings = settings,
             category = category(settings.sex, fat.first),
-            intense = settings.activity >= Activity.Moderate && data.profile.daysPerWeek >= MIN_TRAINING_DAYS,
+            intense = data.profile.activityLevel() >= Activity.Moderate,
             leanKg = weight * (1 - fat.first / PERCENT),
             start = settings.phaseStartEpochDay ?: today,
             today = today,
         )
-        val maintenance = maintenanceKcal(settings, weight)
-        val base = maintenanceMacros(settings, context.leanKg, maintenance)
+        val maintenance = maintenanceKcal(data.profile, weight)
+        val base = maintenanceMacros(data.profile.activityLevel(), context.leanKg, maintenance)
         val deficit = settings.phase == DietPhase.Deficit
         val target = if (deficit) deficitMacros(settings, base) else base
         val refeed = if (deficit) Refeeds.next(context) else null
@@ -115,9 +114,9 @@ object FlexibleDiet {
     }
 
     /** Поддерживающие калории при весе [weightKg]. */
-    fun maintenanceKcal(settings: DietSettings, weightKg: Double): Int {
-        val (low, high) = kcalPerLb.getValue(settings.activity)
-        val perLb = if (settings.sex == Sex.Female) low else high
+    fun maintenanceKcal(profile: Profile, weightKg: Double): Int {
+        val (low, high) = kcalPerLb.getValue(profile.activityLevel())
+        val perLb = if (profile.diet.sex == Sex.Female) low else high
         return (weightKg * LB_PER_KG * perLb).toInt()
     }
 
@@ -141,15 +140,15 @@ object FlexibleDiet {
         return entered?.let { it to false } ?: estimate?.let { it to true }
     }
 
-    private fun maintenanceMacros(settings: DietSettings, leanKg: Double, kcal: Int): Macros {
+    private fun maintenanceMacros(activity: Activity, leanKg: Double, kcal: Int): Macros {
         val leanLb = leanKg * LB_PER_KG
-        val proteinPerLb = if (settings.activity >= Activity.Moderate) {
+        val proteinPerLb = if (activity >= Activity.Moderate) {
             PROTEIN_PER_LEAN_LB_STRENGTH
         } else {
             PROTEIN_PER_LEAN_LB_LOW
         }
         val protein = (leanLb * proteinPerLb).toInt()
-        val carbs = MIN_CARBS_OFF_DEFICIT + (leanLb * carbsPerLeanLb.getValue(settings.activity)).toInt()
+        val carbs = MIN_CARBS_OFF_DEFICIT + (leanLb * carbsPerLeanLb.getValue(activity)).toInt()
         return split(kcal, protein, carbs, MIN_CARBS_OFF_DEFICIT)
     }
 
