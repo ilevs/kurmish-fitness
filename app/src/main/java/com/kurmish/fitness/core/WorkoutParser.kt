@@ -106,13 +106,13 @@ object WorkoutParser {
         return chain to index
     }
 
-    private fun roleOf(unitWord: String): Role = when (unitWord) {
+    internal fun roleOf(unitWord: String): Role = when (unitWord) {
         in kgWords -> Role.Weight
         in repWords -> Role.Reps
         else -> Role.Sets
     }
 
-    private fun interpret(chain: Chain, bodyweight: Boolean): SetGroup? {
+    internal fun interpret(chain: Chain, bodyweight: Boolean): SetGroup? {
         val slots = chain.slots
         val assigned = slots.mapNotNull { it.role }.toSet()
         val order = positionalOrder(slots.size, chain.ops.firstOrNull(), slots.first().value, bodyweight) - assigned
@@ -153,13 +153,13 @@ object WorkoutParser {
         else -> 0
     }
 
-    private fun String.isNumber(): Boolean = first().isDigit()
+    internal fun String.isNumber(): Boolean = first().isDigit()
 
-    private enum class Role { Weight, Reps, Sets }
+    internal enum class Role { Weight, Reps, Sets }
 
-    private class Slot(val value: Double, var role: Role?)
+    internal class Slot(val value: Double, var role: Role?)
 
-    private class Chain {
+    internal class Chain {
         val slots = mutableListOf<Slot>()
         val ops = mutableListOf<String>()
         private var expectsNumber = true
@@ -195,7 +195,7 @@ object WorkoutParser {
         }
     }
 
-    private class Block(val exercise: Exercise?, val customName: String?) {
+    internal class Block(val exercise: Exercise?, val customName: String?) {
         val groups = mutableListOf<SetGroup>()
 
         /** «…, 3 подхода» после веса и повторов уточняет число подходов предыдущей строки. */
