@@ -64,6 +64,13 @@ internal object MaxRatios {
         Exercise.LegCurl to listOf(Exercise.Deadlift to 0.25, Exercise.Squat to 0.3),
         Exercise.StandingCalfRaise to listOf(Exercise.Squat to 0.8),
         Exercise.SeatedCalfRaise to listOf(Exercise.Squat to 0.4),
+        Exercise.PauseSquat to listOf(Exercise.Squat to 0.9),
+        Exercise.BoxSquat to listOf(Exercise.Squat to 0.9),
+        Exercise.PauseBench to listOf(Exercise.Bench to 0.93),
+        Exercise.BoardPress to listOf(Exercise.Bench to 1.05),
+        Exercise.DeficitDeadlift to listOf(Exercise.Deadlift to 0.9),
+        Exercise.BlockPull to listOf(Exercise.Deadlift to 1.05),
+        Exercise.PauseDeadlift to listOf(Exercise.Deadlift to 0.85),
     )
 
     /** Стартовый ПМ базовых движений новичка в долях собственного веса. */

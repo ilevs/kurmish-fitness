@@ -397,6 +397,55 @@ enum class Exercise(
         level = 2,
         synonyms = listOf("брусья в гравитроне", "отжимания на брусьях в гравитроне", "гравитрон брусья"),
     ),
+    PauseSquat(
+        "Присед с паузой",
+        bodyweight = false,
+        movement = Movement.Squat,
+        level = 5,
+        synonyms = listOf("присед с паузой", "приседания с паузой"),
+    ),
+    BoxSquat(
+        "Присед на ящик",
+        bodyweight = false,
+        movement = Movement.Squat,
+        level = 4,
+        synonyms = listOf("присед на ящик", "приседания на ящик", "присед на бокс"),
+    ),
+    PauseBench(
+        "Жим лёжа с паузой",
+        bodyweight = false,
+        movement = Movement.HorizontalPush,
+        level = 4,
+        synonyms = listOf("жим лежа с паузой", "жим с паузой"),
+    ),
+    BoardPress(
+        "Жим на брусок",
+        bodyweight = false,
+        movement = Movement.HorizontalPush,
+        level = 4,
+        synonyms = listOf("жим на брусок", "жим с бруском", "жим на доски"),
+    ),
+    DeficitDeadlift(
+        "Становая с дефицита",
+        bodyweight = false,
+        movement = Movement.Hinge,
+        level = 5,
+        synonyms = listOf("становая с дефицита", "тяга с дефицита"),
+    ),
+    BlockPull(
+        "Тяга с плинтов",
+        bodyweight = false,
+        movement = Movement.Hinge,
+        level = 4,
+        synonyms = listOf("тяга с плинтов", "тяга с блоков", "тяга от колен"),
+    ),
+    PauseDeadlift(
+        "Становая с паузой",
+        bodyweight = false,
+        movement = Movement.Hinge,
+        level = 5,
+        synonyms = listOf("становая с паузой", "тяга с паузой"),
+    ),
     ;
 
     /**
@@ -443,7 +492,8 @@ enum class Exercise(
         private val barbells = setOf(
             Squat, Bench, Deadlift, OverheadPress, MidGripBench, CloseGripBench,
             FrenchPress, BicepsCurl, StiffLegDeadlift, BentOverRow, FrontSquat, GoodMorning,
-            InclineBench, PushPress, PowerClean,
+            InclineBench, PushPress, PowerClean, PauseSquat, BoxSquat, PauseBench, BoardPress,
+            DeficitDeadlift, BlockPull, PauseDeadlift,
         )
 
         private val dumbbells = setOf(DumbbellPress, DumbbellRow, LateralRaise, DumbbellShoulderPress, ReverseFly)

@@ -43,6 +43,7 @@ object Coach {
             diet?.trainingNotes?.let(::addAll)
             if (program == null) cycle?.let { add("Цикл методики под твой профиль: ${it.id}. ${it.note}") }
             addAll(maxLines(data, today))
+            addAll(Plateau.lines(data, today))
             if (program == null) correctionLine(last, profile, cycle, diet?.phase == DietPhase.Deficit)?.let(::add)
             addAll(if (program == null) techniqueLines(cycle?.strengthMode != false) else programTechniqueLines())
         }

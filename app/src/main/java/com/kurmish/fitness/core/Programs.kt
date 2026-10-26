@@ -326,7 +326,7 @@ object Programs {
     )
 
     /** Все встроенные программы. */
-    val all: List<TrainingProgram> = listOf(maximum, hypertrophy)
+    val all: List<TrainingProgram> = listOf(maximum, hypertrophy, IntegralProgram.program)
 
     /** Прежние названия упражнений программ → новые: выбор на цикл в профиле переносится на новое название. */
     val renamed: Map<String, String> = mapOf(
