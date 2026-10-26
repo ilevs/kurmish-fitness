@@ -49,6 +49,7 @@ enum class Goal(val title: String) {
  * @property manualMaxes ПМ, введённые вручную, в кг.
  * @property programId выбранная программа из [Programs]; null — без программы.
  * @property programStartEpochDay с какого дня записи дневника считаются тренировками программы.
+ * @property diet питание: фаза, процент жира, активность, рефиды.
  */
 @Serializable
 data class Profile(
@@ -62,6 +63,7 @@ data class Profile(
     val manualMaxes: Map<Exercise, Double> = emptyMap(),
     val programId: String? = null,
     val programStartEpochDay: Long? = null,
+    val diet: DietSettings = DietSettings(),
 ) {
     /** Значения по умолчанию. */
     companion object {

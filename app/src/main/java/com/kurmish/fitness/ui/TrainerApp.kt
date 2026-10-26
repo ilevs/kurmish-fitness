@@ -67,6 +67,7 @@ fun TrainerApp(
                 data = data,
                 today = viewModel.today(),
                 onSpeak = speaker::speak,
+                dietActions = viewModel.dietActions(),
                 modifier = content
             )
             Tab.Log -> LogScreen(
@@ -98,3 +99,10 @@ fun TrainerApp(
         }
     }
 }
+
+private fun TrainerViewModel.dietActions() = DietActions(
+    onLogWeight = ::logWeight,
+    onRefeedDone = ::markRefeed,
+    onApplyCorrection = ::applyCalorieCorrection,
+    onPhaseChange = ::changeDietPhase,
+)

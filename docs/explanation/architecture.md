@@ -23,6 +23,7 @@ ui (Compose)  →  TrainerViewModel  →  core (чистый Kotlin)
                                         ├─ Programs        программы по микроциклам
                                         ├─ CycleCatalog    база циклов и подбор
                                         ├─ Coach           совет на сегодня
+                                        ├─ FlexibleDiet    фаза питания, калории, рефиды
                                         ├─ CloudBackup     бэкап на Яндекс Диск (WebDAV)
                                         └─ JournalStore    JSON-файл на устройстве
 ```

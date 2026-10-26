@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="diet_title">Питание: %1$s</string>
+  <string name="diet_target">На день: %1$s</string>
+  <string name="diet_refeed_target">В день рефида: %1$s</string>
+  <string name="diet_body">Жир %1$s %%%2$s · сухая масса %3$s · категория %4$d</string>
+  <string name="diet_body_estimated"> (оценка)</string>
+  <string name="diet_refeed_done">Рефид сделан</string>
+  <string name="diet_apply">Применить</string>
+  <string name="diet_back_to_deficit">Вернуться к сбросу жира</string>
+  <string name="diet_weight">Вес сегодня, кг</string>
+  <string name="diet_weight_save">Записать вес</string>
+  <string name="diet_settings">Питание</string>
+  <string name="diet_settings_intro">Фаза питания меняет калории, советы и план тренировок. Процент жира можно не вводить: тогда он оценивается по росту и возрасту.</string>
+  <string name="diet_phase">Фаза</string>
+  <string name="diet_sex">Пол</string>
+  <string name="diet_activity">Активность</string>
+  <string name="diet_deficit">Дефицит калорий, %</string>
+  <string name="diet_fat">Процент жира</string>
+  <string name="diet_height">Рост, см</string>
+  <string name="diet_age">Возраст</string>
+  <string name="diet_correction">Поправка калорий по весу: %1$s %%</string>
+</resources>

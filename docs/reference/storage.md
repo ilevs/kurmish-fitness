@@ -19,7 +19,20 @@
     "natural": true,
     "manualMaxes": { "Bench": 110.0 },
     "programId": "maximum",
-    "programStartEpochDay": 20387
+    "programStartEpochDay": 20387,
+    "diet": {
+      "phase": "Deficit",
+      "phaseStartEpochDay": 20380,
+      "sex": "Male",
+      "bodyFatPercent": 18.0,
+      "heightCm": null,
+      "age": null,
+      "activity": "Moderate",
+      "deficitPercent": 15,
+      "calorieCorrectionPercent": 0,
+      "correctedEpochDay": null,
+      "refeedDays": [20387]
+    }
   },
   "sessions": [
     {
@@ -31,11 +44,12 @@
       ],
       "feeling": "Hard"
     }
-  ]
+  ],
+  "weights": [ { "epochDay": 20387, "kg": 81.6 } ]
 }
 ```
 
-`epochDay` и `programStartEpochDay` — число дней с 1 января 1970. `programId` — `maximum`, `hypertrophy` или `null`. Незнакомые поля при чтении пропускаются, поэтому старые версии файла читаются новыми версиями приложения.
+`epochDay`, `programStartEpochDay`, `phaseStartEpochDay` и `refeedDays` — числа дней с 1 января 1970. `diet.phase` — `Off`, `Deficit`, `Break` или `Maintenance`; правила питания — в [справочнике](flexible-diet.md). `programId` — `maximum`, `hypertrophy` или `null`. Незнакомые поля при чтении пропускаются, поэтому старые версии файла читаются новыми версиями приложения.
 
 ## Бэкап на Яндекс Диске
 

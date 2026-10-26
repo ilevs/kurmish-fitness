@@ -24,7 +24,9 @@ object Planner {
             programPlan(program, progress.next) { lift -> data.currentMax(lift, today) }
         }
         val work = body.items
-        return if (work.isEmpty()) body else body.copy(items = listOf(warmUp(work.first())) + work + coolDown())
+        val planned = if (work.isEmpty()) body else body.copy(items = listOf(warmUp(work.first())) + work + coolDown())
+        val dietNote = FlexibleDiet.day(data, today)?.let(DietAdvice::planNote) ?: return planned
+        return planned.copy(note = listOfNotNull(planned.note, dietNote).joinToString(" "))
     }
 
     private fun programPlan(program: TrainingProgram, next: ProgramSession?, maxOf: (Exercise) -> Double?): DayPlan =

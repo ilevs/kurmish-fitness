@@ -98,10 +98,8 @@ internal fun ProfileScreen(
             value = profile.correctionPercent,
             onValueChange = { onProfileChange(profile.copy(correctionPercent = it ?: 0.0)) },
         )
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Gap)) {
-            Switch(checked = profile.natural, onCheckedChange = { onProfileChange(profile.copy(natural = it)) })
-            Text(stringResource(R.string.profile_natural))
-        }
+        NaturalSwitch(profile = profile, onProfileChange = onProfileChange)
+        DietSettingsCard(profile = profile, today = today, onProfileChange = onProfileChange)
         MaxFields(data = data, today = today, onProfileChange = onProfileChange)
         ProgramCard(data = data, today = today, onProfileChange = onProfileChange)
         CyclesCard(profile)
@@ -112,6 +110,14 @@ internal fun ProfileScreen(
             onRestore = onRestore,
             onDisconnect = onBackupDisconnect,
         )
+    }
+}
+
+@Composable
+private fun NaturalSwitch(profile: Profile, onProfileChange: (Profile) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Gap)) {
+        Switch(checked = profile.natural, onCheckedChange = { onProfileChange(profile.copy(natural = it)) })
+        Text(stringResource(R.string.profile_natural))
     }
 }
 
@@ -185,7 +191,7 @@ private fun CyclesCard(profile: Profile) {
 }
 
 @Composable
-private fun <T> ChoiceRow(title: String, options: List<Pair<T, String>>, selected: T, onSelect: (T) -> Unit) {
+internal fun <T> ChoiceRow(title: String, options: List<Pair<T, String>>, selected: T, onSelect: (T) -> Unit) {
     Column {
         Text(text = title, style = MaterialTheme.typography.titleSmall)
         Row(
@@ -200,8 +206,8 @@ private fun <T> ChoiceRow(title: String, options: List<Pair<T, String>>, selecte
 }
 
 @Composable
-private fun NumberField(label: String, value: Double?, onValueChange: (Double?) -> Unit, placeholder: String? = null) {
-    var text by rememberSaveable { mutableStateOf(value?.toString().orEmpty()) }
+internal fun NumberField(label: String, value: Double?, onValueChange: (Double?) -> Unit, placeholder: String? = null) {
+    var text by rememberSaveable { mutableStateOf(value?.plain().orEmpty()) }
     OutlinedTextField(
         value = text,
         onValueChange = { input ->
@@ -216,3 +222,5 @@ private fun NumberField(label: String, value: Double?, onValueChange: (Double?) 
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
     )
 }
+
+private fun Double.plain(): String = if (this % 1.0 == 0.0) toLong().toString() else toString()
