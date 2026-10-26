@@ -72,10 +72,12 @@
     <string name="profile_rank">Уровень</string>
     <string name="profile_goal">Задача</string>
     <string name="profile_max">ПМ: %1$s, кг</string>
-    <string name="profile_cycles">Подходящие циклы</string>
-    <string name="profile_cycle_fits">подходит</string>
+    <string name="profile_cycles">Циклы методики под твой профиль</string>
+    <string name="profile_cycles_hint">Справочно: эти циклы в приложении не расписаны. Тренировки на «Сегодня» берутся из программы выше.</string>
     <string name="profile_program">Программа</string>
     <string name="profile_program_none">Без программы</string>
+    <string name="profile_program_none_summary">Общие тренировки А и Б по очереди, подходы и проценты по задаче из профиля</string>
+    <string name="profile_program_mismatch">Не совпадает с профилем: %1$s</string>
     <string name="profile_program_progress">Сделано тренировок: %1$d из %2$d</string>
     <string name="profile_program_restart">Начать программу заново с сегодня</string>
     <string name="journal_load">Тоннаж %1$s · КПШ %2$d · средний вес %3$s · ~%4$d мин</string>

@@ -40,6 +40,7 @@ data class ProgramSession(val day: String, val microcycle: Int, val items: List<
  * @property title название.
  * @property note для чего программа и что важно знать.
  * @property daysPerWeek тренировок в микроцикле.
+ * @property goal на что программа работает.
  * @property sessions тренировки по порядку выполнения.
  */
 data class TrainingProgram(
@@ -47,11 +48,42 @@ data class TrainingProgram(
     val title: String,
     val note: String,
     val daysPerWeek: Int,
+    val goal: Goal,
     val sessions: List<ProgramSession>,
 ) {
     /** Сколько микроциклов в программе. */
     val microcycles: Int
         get() = sessions.maxOf { it.microcycle }
+
+    /** «4 тренировки в неделю · 5 недель · цель: сила». */
+    val summary: String
+        get() = "${trainings(daysPerWeek)} в неделю · ${plural(microcycles, "неделя", "недели", "недель")} · " +
+            "цель: ${goal.title.lowercase()}"
+
+    /** Чем программа расходится с профилем; пустой список, если совпадает. */
+    fun mismatches(profile: Profile): List<String> = listOfNotNull(
+        "в профиле ${trainings(profile.daysPerWeek)} в неделю".takeIf { profile.daysPerWeek != daysPerWeek },
+        "в профиле цель «${profile.goal.title.lowercase()}»".takeIf { profile.goal != goal },
+    )
+
+    private fun trainings(count: Int): String = plural(count, "тренировка", "тренировки", "тренировок")
+}
+
+private const val DECIMAL = 10
+private const val HUNDRED = 100
+private val teens = 11..14
+private val fewEndings = 2..4
+
+/** «1 неделя», «3 недели», «5 недель». */
+internal fun plural(count: Int, one: String, few: String, many: String): String {
+    val last = count % DECIMAL
+    val word = when {
+        count % HUNDRED in teens -> many
+        last == 1 -> one
+        last in fewEndings -> few
+        else -> many
+    }
+    return "$count $word"
 }
 
 /**
@@ -94,10 +126,11 @@ object Programs {
     /** Объёмная программа на 4 дня и 5 микроциклов: базовое движение 10 подходов от 50 до 90 % ПМ. */
     val maximum = TrainingProgram(
         id = "maximum",
-        title = "Программа «Максимум», часть 1",
-        note = "4 тренировки в неделю, 5 микроциклов. Базовое движение дня — 10 подходов, вес растёт " +
+        title = "Максимум",
+        note = "Базовое движение дня — 10 подходов, вес растёт " +
             "с 50 до 90 % ПМ, повторы снижаются с 10 до 2. Пятый микроцикл — подводка: мало объёма в подсобке.",
         daysPerWeek = 4,
+        goal = Goal.Strength,
         sessions = build(
             days = listOf(
                 Day(
@@ -167,11 +200,12 @@ object Programs {
     /** Силово-гипертрофийный блок на 4 дня и 4 микроцикла: базовые движения 4×6 → 3×3 с ростом веса. */
     val hypertrophy = TrainingProgram(
         id = "hypertrophy",
-        title = "Гипертрофия, 4 недели",
-        note = "4 тренировки в неделю, 4 микроцикла. В базовых движениях подходы с разным весом, " +
+        title = "Гипертрофия",
+        note = "В базовых движениях подходы с разным весом, " +
             "от 4×6 до 3×3, вес растёт к последней неделе. Проценты считаются от ПМ в том же варианте упражнения. " +
             "В подсобке вес подбирай так, чтобы схема выполнялась чисто.",
         daysPerWeek = 4,
+        goal = Goal.Mass,
         sessions = build(
             days = listOf(
                 Day(
