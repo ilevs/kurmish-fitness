@@ -39,8 +39,10 @@ object Strength {
         round(maxKg * percent / PERCENT, barbell)
 
     /** Вес на [reps] повторов с запасом [RESERVE] повторов до отказа (формула Эпли наоборот). */
-    fun forReps(maxKg: Double, reps: Int, barbell: Boolean = true): Double =
-        round(maxKg / (1 + (reps + RESERVE) / EPLEY_DIVISOR), barbell)
+    fun forReps(maxKg: Double, reps: Int, barbell: Boolean = true): Double = round(loadForReps(maxKg, reps), barbell)
+
+    /** То же, что [forReps], но без округления под снаряд. */
+    fun loadForReps(maxKg: Double, reps: Int): Double = maxKg / (1 + (reps + RESERVE) / EPLEY_DIVISOR)
 
     /** Процент от ПМ, который составляет вес. */
     fun percentOfMax(weightKg: Double, maxKg: Double): Int = (weightKg / maxKg * PERCENT).roundToInt()

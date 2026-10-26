@@ -79,16 +79,22 @@ object Planner {
             sets == null || reps == null -> emptyList()
             item.kg != null -> listOf(PlannedSets(sets, reps, item.kg))
             guess != null -> listOf(PlannedSets(sets, reps, guess.first))
+            exercise != null && max?.bodyweightKg != null ->
+                BodyweightLoad.byPercents(exercise, item.percents, sets, reps, max)
             else -> byPercents(item, sets, reps, max, exercise?.barbell != false)
         }
-        val percents = item.percents.takeIf { it.isNotEmpty() }?.joinToString(", ") { "$it %" }
-        val notes = listOfNotNull(
-            if (match == null) item.scheme else match.groupValues[SCHEME_REST].ifBlank { null },
-            percents?.let { WeightAdvice.percentNote(it, max) },
-            guess?.second,
-        )
-        return PlanItem(PlanPart.Work, item.name, exercise, planned, notes)
+        val rest = if (match == null) item.scheme else match.groupValues[SCHEME_REST].ifBlank { null }
+        return PlanItem(PlanPart.Work, item.name, exercise, planned, notes(item, rest, exercise, max, guess?.second))
     }
+
+    private fun notes(item: ProgramItem, rest: String?, exercise: Exercise?, max: WorkingMax?, guess: String?) =
+        listOfNotNull(rest, guess) + item.percents.takeIf { it.isNotEmpty() }?.let { percents ->
+            val note = WeightAdvice.percentNote(percents.joinToString(", ") { "$it %" }, max, exercise)
+            val hint = max?.takeIf { it.bodyweightKg != null }?.let { found ->
+                exercise?.let { BodyweightLoad.hint(it, found) }
+            }
+            listOfNotNull(note, hint)
+        }.orEmpty()
 
     private fun byPercents(
         item: ProgramItem,
