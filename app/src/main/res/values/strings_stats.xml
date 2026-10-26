@@ -5,7 +5,7 @@
   <string name="stats_summary">Последние 4 недели</string>
   <string name="stats_sessions">тренировок</string>
   <string name="stats_per_week">в неделю</string>
-  <string name="stats_tonnage">тоннаж</string>
+  <string name="stats_tonnage">общий тоннаж</string>
   <string name="stats_last_today">Последняя тренировка сегодня.</string>
   <string name="stats_last_days">Последняя тренировка: %1$d дн. назад.</string>
   <string name="stats_max_title">Динамика ПМ</string>
