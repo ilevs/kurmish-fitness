@@ -37,7 +37,7 @@ internal fun ReplacementPicker(item: PlanItem, onPick: (Exercise) -> Unit, onDis
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {},
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.picker_cancel)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.editor_cancel)) } },
         title = { Text(stringResource(R.string.picker_title, item.title)) },
         text = {
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
