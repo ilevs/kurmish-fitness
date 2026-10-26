@@ -17,6 +17,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -30,6 +31,7 @@ import androidx.compose.ui.res.stringResource
 import com.kurmish.fitness.R
 import com.kurmish.fitness.core.AppData
 import com.kurmish.fitness.core.Coach
+import com.kurmish.fitness.core.Exercise
 import com.kurmish.fitness.core.ExerciseEntry
 import com.kurmish.fitness.core.PlanItem
 import com.kurmish.fitness.core.PlanPart
@@ -37,11 +39,18 @@ import com.kurmish.fitness.core.Planner
 
 /** Тренировка на сегодня чек-листом: разминка, упражнения с весом и подходами, заминка; ниже советы. */
 @Composable
-internal fun TodayScreen(data: AppData, today: Long, onSpeak: (String) -> Unit, modifier: Modifier = Modifier) {
+internal fun TodayScreen(
+    data: AppData,
+    today: Long,
+    onSpeak: (String) -> Unit,
+    onChoose: (slot: String, exercise: Exercise?) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val advice = remember(data, today) { Coach.advise(data, today) }
     val plan = remember(data, today) { Planner.today(data, today) }
     val entries = remember(data, today) { data.sessions.filter { it.epochDay == today }.flatMap { it.entries } }
     var ticked by rememberSaveable(today) { mutableStateOf(emptyList<Int>()) }
+    var choosing by remember { mutableStateOf<PlanItem?>(null) }
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -63,6 +72,18 @@ internal fun TodayScreen(data: AppData, today: Long, onSpeak: (String) -> Unit, 
                 recorded = item.recordedIn(entries),
                 ticked = index in ticked,
                 onTick = { ticked = if (index in ticked) ticked - index else ticked + index },
+                onReplace = { choosing = item },
+                onRestore = { onChoose(item.slot, null) },
+            )
+        }
+        choosing?.let { item ->
+            ReplacementPicker(
+                item = item,
+                onPick = { exercise ->
+                    onChoose(item.slot, exercise)
+                    choosing = null
+                },
+                onDismiss = { choosing = null },
             )
         }
         if (advice.points.isNotEmpty()) {
@@ -73,7 +94,14 @@ internal fun TodayScreen(data: AppData, today: Long, onSpeak: (String) -> Unit, 
 }
 
 @Composable
-private fun PlanItemCard(item: PlanItem, recorded: List<ExerciseEntry>, ticked: Boolean, onTick: () -> Unit) {
+private fun PlanItemCard(
+    item: PlanItem,
+    recorded: List<ExerciseEntry>,
+    ticked: Boolean,
+    onTick: () -> Unit,
+    onReplace: () -> Unit,
+    onRestore: () -> Unit,
+) {
     val done = recorded.isNotEmpty() || ticked
     val colors = if (item.part == PlanPart.Work) {
         CardDefaults.cardColors()
@@ -85,8 +113,24 @@ private fun PlanItemCard(item: PlanItem, recorded: List<ExerciseEntry>, ticked: 
             Checkbox(checked = done, onCheckedChange = { onTick() }, enabled = recorded.isEmpty())
             Column(modifier = Modifier.align(Alignment.CenterVertically)) {
                 Text(text = item.title, style = MaterialTheme.typography.titleSmall)
-                item.sets.forEach { Text(text = it.label, style = MaterialTheme.typography.bodyLarge) }
+                // В упражнении сначала подходы, в разминке и заминке сначала шаги, подходы идут за ними.
+                if (item.part == PlanPart.Work) SetLines(item)
                 item.notes.forEach { Text(text = it, style = MaterialTheme.typography.bodySmall) }
+                if (item.part != PlanPart.Work) SetLines(item)
+                if (item.replaced) {
+                    Text(
+                        text = stringResource(R.string.today_instead, item.slot),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+                if (item.part == PlanPart.Work) {
+                    Row {
+                        TextButton(onClick = onReplace) { Text(stringResource(R.string.today_replace)) }
+                        if (item.replaced) {
+                            TextButton(onClick = onRestore) { Text(stringResource(R.string.today_restore)) }
+                        }
+                    }
+                }
                 if (recorded.isNotEmpty()) {
                     Text(
                         text = stringResource(R.string.today_done, recorded.joinToString { it.label() }),
@@ -97,4 +141,9 @@ private fun PlanItemCard(item: PlanItem, recorded: List<ExerciseEntry>, ticked: 
             }
         }
     }
+}
+
+@Composable
+private fun SetLines(item: PlanItem) {
+    item.sets.forEach { Text(text = it.label, style = MaterialTheme.typography.bodyLarge) }
 }

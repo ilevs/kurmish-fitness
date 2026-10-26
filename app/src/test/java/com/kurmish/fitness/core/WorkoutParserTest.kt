@@ -71,9 +71,9 @@ class WorkoutParserTest {
 
     @Test
     fun unknownExerciseKeepsItsName() {
-        val parsed = WorkoutParser.parse("жим 100 на 5. махи 10 на 15")
+        val parsed = WorkoutParser.parse("жим 100 на 5. шраги 10 на 15")
         assertEquals(2, parsed.entries.size)
-        assertEquals("Махи", parsed.entries[1].displayName)
+        assertEquals("Шраги", parsed.entries[1].displayName)
     }
 
     @Test

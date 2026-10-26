@@ -21,13 +21,18 @@ object Planner {
             BasicTemplate.plan(data, today, before.size)
         } else {
             val progress = Programs.progress(program, data.profile.programStartEpochDay ?: today, before)
-            programPlan(program, progress.next) { lift -> data.currentMax(lift, today) }
+            programPlan(program, progress.next, data.profile.pool) { lift -> data.currentMax(lift, today) }
         }
         val work = body.items
         return if (work.isEmpty()) body else body.copy(items = listOf(warmUp(work.first())) + work + coolDown())
     }
 
-    private fun programPlan(program: TrainingProgram, next: ProgramSession?, maxOf: (Exercise) -> Double?): DayPlan =
+    private fun programPlan(
+        program: TrainingProgram,
+        next: ProgramSession?,
+        pool: Map<String, Exercise>,
+        maxOf: (Exercise) -> Double?,
+    ): DayPlan =
         if (next == null) {
             DayPlan(
                 title = "Программа «${program.title}» пройдена",
@@ -37,10 +42,17 @@ object Planner {
         } else {
             DayPlan(
                 title = "${next.day}, микроцикл ${next.microcycle} из ${program.microcycles}",
-                items = next.items.map { item -> fromProgram(item, item.maxOf?.let(maxOf)) },
+                items = next.items.map { item -> withChoice(item, pool[item.name], maxOf) },
                 note = "Программа «${program.title}».",
             )
         }
+
+    /** Пункт программы; если атлет выбрал на цикл другое упражнение [chosen], веса считаются от его ПМ. */
+    private fun withChoice(item: ProgramItem, chosen: Exercise?, maxOf: (Exercise) -> Double?): PlanItem {
+        if (chosen == null) return fromProgram(item, item.maxOf?.let(maxOf))
+        val used = item.copy(name = chosen.title, maxOf = chosen.takeIf { item.maxOf != null })
+        return fromProgram(used, used.maxOf?.let(maxOf)).copy(exercise = chosen, slot = item.name)
+    }
 
     /** Пункт программы с весами от ПМ [max]; без ПМ веса остаются процентами в пояснении. */
     internal fun fromProgram(item: ProgramItem, max: Double?): PlanItem {
@@ -75,7 +87,8 @@ object Planner {
             "Суставная разминка: от мелких суставов к крупным",
             "Круг без веса по 8–10 повторов: приседания, отжимания, гиперэкстензия, скручивания",
             "Растяжка и мобильность под первое упражнение",
-            "Подводящие подходы к первому упражнению:".takeIf { special.isNotEmpty() },
+            weight?.let { "Подводящие подходы к первому рабочему весу: ${first.title}, ${it.kg()}" }
+                ?.takeIf { special.isNotEmpty() },
         )
         return PlanItem(
             part = PlanPart.WarmUp,
