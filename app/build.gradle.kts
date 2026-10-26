@@ -15,8 +15,10 @@ android {
         applicationId = "com.kurmish.fitness"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
-        versionName = "0.3.0"
+        versionCode = 4
+        versionName = "0.4.0"
+        // Распознавание речи Vosk: нативные библиотеки только для телефонов, без эмуляторов x86.
+        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
     }
 
     signingConfigs {
@@ -78,6 +80,10 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.kotlinx.serialization.json)
+    // Офлайн-распознавание речи. vosk-android объявляет JNA без транзитивных зависимостей, поэтому JNA (aar с
+    // нативной частью для Android) подключена явно.
+    implementation(libs.vosk.android)
+    implementation(variantOf(libs.jna) { artifactType("aar") })
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)

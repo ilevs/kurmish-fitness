@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Видимость движков синтеза и распознавания речи на Android 11+. Сеть приложению не нужна. -->
+    <!-- Микрофон для встроенного офлайн-распознавания речи. Сеть приложению не нужна. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <!-- Видимость движков синтеза речи на Android 11+. -->
     <queries>
         <intent>
             <action android:name="android.intent.action.TTS_SERVICE" />
-        </intent>
-        <intent>
-            <action android:name="android.speech.action.RECOGNIZE_SPEECH" />
         </intent>
     </queries>
 

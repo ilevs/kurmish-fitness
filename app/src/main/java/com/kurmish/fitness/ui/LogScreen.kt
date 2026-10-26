@@ -1,5 +1,9 @@
 package com.kurmish.fitness.ui
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,14 +28,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import com.kurmish.fitness.R
 import com.kurmish.fitness.core.Feeling
 import com.kurmish.fitness.core.ParsedWorkout
 import com.kurmish.fitness.core.WorkoutParser
-import com.kurmish.fitness.ui.voice.rememberSpeechInput
+import com.kurmish.fitness.ui.voice.OfflineSpeech
+import com.kurmish.fitness.ui.voice.VoiceState
+import com.kurmish.fitness.ui.voice.rememberOfflineSpeech
 
 private val InputMinHeight = 160.dp
 
@@ -41,10 +49,10 @@ internal fun LogScreen(onSave: (String, ParsedWorkout) -> Unit, modifier: Modifi
     var text by rememberSaveable { mutableStateOf("") }
     var status by rememberSaveable { mutableStateOf("") }
     val parsed = remember(text) { WorkoutParser.parse(text) }
-    val voiceMissing = stringResource(R.string.log_voice_missing)
     val saved = stringResource(R.string.log_saved)
-    val listen = rememberSpeechInput(prompt = stringResource(R.string.log_voice_prompt)) { spoken ->
+    val speech = rememberOfflineSpeech { spoken ->
         text = listOf(text.trim(), spoken).filter { it.isNotEmpty() }.joinToString(", ")
+        status = ""
     }
     Column(
         modifier = modifier
@@ -65,11 +73,7 @@ internal fun LogScreen(onSave: (String, ParsedWorkout) -> Unit, modifier: Modifi
             placeholder = { Text(stringResource(R.string.log_hint)) },
         )
         Row {
-            FilledTonalButton(onClick = { if (!listen()) status = voiceMissing }) {
-                Icon(painterResource(R.drawable.ic_mic), contentDescription = null)
-                Spacer(Modifier.width(Gap))
-                Text(stringResource(R.string.log_voice))
-            }
+            VoiceButton(speech, onMessage = { status = it })
             Spacer(Modifier.width(Gap))
             Button(
                 enabled = parsed.entries.isNotEmpty(),
@@ -80,9 +84,44 @@ internal fun LogScreen(onSave: (String, ParsedWorkout) -> Unit, modifier: Modifi
                 },
             ) { Text(stringResource(R.string.log_save)) }
         }
+        voiceStatus(speech.state)?.let { Text(text = it, color = MaterialTheme.colorScheme.secondary) }
         if (status.isNotEmpty()) Text(text = status, color = MaterialTheme.colorScheme.primary)
         ParsedPreview(parsed)
     }
+}
+
+/** «Сказать» включает микрофон, «Стоп» выключает. Разрешение на микрофон спрашивается при первом нажатии. */
+@Composable
+private fun VoiceButton(speech: OfflineSpeech, onMessage: (String) -> Unit) {
+    val context = LocalContext.current
+    val denied = stringResource(R.string.log_voice_denied)
+    val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) speech.start() else onMessage(denied)
+    }
+    val active = speech.state is VoiceState.Listening || speech.state == VoiceState.Preparing
+    FilledTonalButton(
+        onClick = {
+            val allowed = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
+                PackageManager.PERMISSION_GRANTED
+            when {
+                active -> speech.stop()
+                allowed -> speech.start()
+                else -> permission.launch(Manifest.permission.RECORD_AUDIO)
+            }
+        },
+    ) {
+        Icon(painterResource(R.drawable.ic_mic), contentDescription = null)
+        Spacer(Modifier.width(Gap))
+        Text(stringResource(if (active) R.string.log_voice_stop else R.string.log_voice))
+    }
+}
+
+@Composable
+private fun voiceStatus(state: VoiceState): String? = when (state) {
+    VoiceState.Idle -> null
+    VoiceState.Preparing -> stringResource(R.string.log_voice_preparing)
+    VoiceState.Failed -> stringResource(R.string.log_voice_failed)
+    is VoiceState.Listening -> state.partial.ifEmpty { stringResource(R.string.log_voice_listening) }
 }
 
 @Composable
