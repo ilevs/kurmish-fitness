@@ -105,7 +105,7 @@ class PlannerTest {
         assertEquals(57.5, item.sets.first().weightKg)
         assertTrue(item.notes.any { "«Становая тяга»" in it })
         assertEquals(WorkingMax(84.0, Exercise.Deadlift), AppData(profile).workingMax(Exercise.StiffLegDeadlift, 0))
-        assertNull(AppData(profile).workingMax(Exercise.LegPress, 0))
+        assertNull(AppData(profile).workingMax(Exercise.ExternalRotation, 0))
     }
 
     @Test
@@ -129,5 +129,35 @@ class PlannerTest {
         val planned = Planner.fromProgram(item, Exercise.FrontSquat, WorkingMax(100.0))
         // 100 / (1 + 12/30) ≈ 71,4 → 72,5 кг: 10 повторов с запасом 2.
         assertEquals(listOf(PlannedSets(3, "10", 72.5)), planned.sets)
+    }
+
+    @Test
+    fun withoutAnyMaxWeightsStartFromBodyweight() {
+        val profile = Profile(programId = "hypertrophy", programStartEpochDay = 0, bodyweightKg = 90.0)
+        val data = AppData(profile)
+        // Присед новичка ≈ 0,8 × 90 = 72 кг.
+        assertEquals(WorkingMax(72.0, fromBodyweight = true), data.workingMax(Exercise.Squat, 0))
+        val plan = Planner.today(data, today = 0)
+        val squat = plan.items.first { it.exercise == Exercise.Squat }
+        assertTrue(squat.sets.all { it.weightKg != null })
+        assertTrue(squat.notes.any { "собственному весу" in it })
+        // Разгибания ≈ 0,35 × 72 = 25,2; на 12 повторов с запасом 2: 25,2 / (1 + 14/30) ≈ 17,2 → 17,5 кг.
+        val extensions = plan.items.first { it.exercise == Exercise.LegExtension }
+        assertEquals(17.5, extensions.sets.single().weightKg)
+        assertEquals(Exercise.SeatedCalfRaise, plan.items.first { it.title == "Икры сидя" }.exercise)
+        val calves = plan.items.first { it.title == "Икры стоя в тренажёре" }
+        assertEquals(Exercise.StandingCalfRaise, calves.exercise)
+        assertTrue(calves.sets.single().weightKg != null)
+    }
+
+    @Test
+    fun replacementWithMaxRepsGetsWeightAndDumbbellNote() {
+        val profile = Profile(programId = "hypertrophy", programStartEpochDay = 0, manualMaxes = maxes)
+            .choose("Приседания с закреплёнными ногами", Exercise.DumbbellPress)
+        val item = Planner.today(AppData(profile), today = 0).items.first { it.exercise == Exercise.DumbbellPress }
+        // Жим гантелей ≈ 0,3 × 80 = 24 кг; на 10 повторов с запасом 2: 24 / 1,4 ≈ 17,1 → 17,5 кг.
+        assertEquals(PlannedSets(4, "мах", 17.5), item.sets.single())
+        assertTrue(item.notes.last().endsWith("Вес одной гантели"))
+        assertEquals(Exercise.Pullover, WorkoutParser.parse("пуловер 20 на 12").entries.single().exercise)
     }
 }

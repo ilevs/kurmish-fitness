@@ -5,16 +5,22 @@ package com.kurmish.fitness.core
  *
  * @property kg вес.
  * @property from упражнение, через ПМ которого оценён этот; null — свой ПМ упражнения.
+ * @property fromBodyweight ПМ оценён по собственному весу, потому что других данных нет.
  */
-data class WorkingMax(val kg: Double, val from: Exercise? = null)
+data class WorkingMax(val kg: Double, val from: Exercise? = null, val fromBodyweight: Boolean = false) {
+    /** Оценка, а не свой ПМ упражнения. */
+    val estimated: Boolean
+        get() = from != null || fromBodyweight
+}
 
 /**
  * Примерные соотношения силы между упражнениями.
  *
  * Пока у упражнения нет своего ПМ (ни в профиле, ни по Дневнику), он оценивается по ПМ близкого
- * упражнения. Коэффициенты взяты с запасом в лёгкую сторону: первая тренировка покажет точнее,
- * а после записи в Дневник вес посчитается уже по своему ПМ. Тренажёры и гантели сюда не входят:
- * вес в них слишком зависит от снаряда.
+ * упражнения. Если ПМ нет ни у одного близкого упражнения, стартовый ПМ базовых движений считается
+ * от собственного веса как у новичка. Коэффициенты взяты с запасом в лёгкую сторону: первая
+ * тренировка покажет точнее, а после записи в Дневник вес посчитается уже по своему ПМ. Для гантелей
+ * коэффициент даёт вес одной гантели, для тренажёров — примерный вес, который придётся подстроить.
  */
 internal object MaxRatios {
     /** Упражнение → по каким ПМ его можно оценить, в порядке предпочтения. */
@@ -34,22 +40,62 @@ internal object MaxRatios {
         Exercise.PowerClean to listOf(Exercise.Bench to 0.75, Exercise.Deadlift to 0.45),
         Exercise.BicepsCurl to listOf(Exercise.Bench to 0.35),
         Exercise.FrenchPress to listOf(Exercise.CloseGripBench to 0.35, Exercise.Bench to 0.3),
+        Exercise.DumbbellPress to listOf(Exercise.Bench to 0.3),
+        Exercise.MachineChestPress to listOf(Exercise.Bench to 0.8),
+        Exercise.DumbbellShoulderPress to listOf(Exercise.OverheadPress to 0.35, Exercise.Bench to 0.2),
+        Exercise.LateralRaise to listOf(Exercise.Bench to 0.1),
+        Exercise.DumbbellRow to listOf(Exercise.Bench to 0.35, Exercise.Deadlift to 0.2),
+        Exercise.SeatedCableRow to listOf(Exercise.Bench to 0.7, Exercise.Deadlift to 0.4),
+        Exercise.LatPulldown to listOf(Exercise.Bench to 0.7),
+        Exercise.Pullover to listOf(Exercise.Bench to 0.25),
+        Exercise.FacePull to listOf(Exercise.Bench to 0.25),
+        Exercise.ReverseFly to listOf(Exercise.Bench to 0.08),
+        Exercise.LegPress to listOf(Exercise.Squat to 1.5),
+        Exercise.HackSquat to listOf(Exercise.Squat to 0.8),
+        Exercise.GobletSquat to listOf(Exercise.Squat to 0.3),
+        Exercise.LegExtension to listOf(Exercise.Squat to 0.35),
+        Exercise.LegCurl to listOf(Exercise.Deadlift to 0.25, Exercise.Squat to 0.3),
+        Exercise.StandingCalfRaise to listOf(Exercise.Squat to 0.8),
+        Exercise.SeatedCalfRaise to listOf(Exercise.Squat to 0.4),
     )
 
-    /** ПМ [exercise] по ПМ близких упражнений [ownMax]; null, если оценить не по чему. */
-    fun estimate(exercise: Exercise, ownMax: (Exercise) -> Double?): WorkingMax? =
+    /** Стартовый ПМ базовых движений новичка в долях собственного веса. */
+    private val novice: Map<Exercise, Double> = mapOf(
+        Exercise.Squat to 0.8,
+        Exercise.Bench to 0.6,
+        Exercise.Deadlift to 1.0,
+        Exercise.OverheadPress to 0.4,
+    )
+
+    /**
+     * ПМ [exercise] по ПМ близких упражнений [ownMax], а без них по собственному весу [bodyweightKg].
+     *
+     * @return оценка; null, если оценить не по чему.
+     */
+    fun estimate(exercise: Exercise, ownMax: (Exercise) -> Double?, bodyweightKg: Double? = null): WorkingMax? {
+        val start = { lift: Exercise -> bodyweightKg?.let { weight -> novice[lift]?.times(weight) } }
+        return byRatio(exercise, ownMax)
+            ?: (start(exercise)?.let { WorkingMax(it) } ?: byRatio(exercise, start))?.copy(fromBodyweight = true)
+    }
+
+    private fun byRatio(exercise: Exercise, maxOf: (Exercise) -> Double?): WorkingMax? =
         ratios[exercise].orEmpty().firstNotNullOfOrNull { (basis, share) ->
-            ownMax(basis)?.let { WorkingMax(it * share, basis) }
+            maxOf(basis)?.let { WorkingMax(it * share, basis) }
         }
 }
 
 /** Вес и пояснение к нему, когда своего ПМ под рукой нет. */
 internal object WeightAdvice {
+    private const val MAX_REPS = "мах"
+
+    /** На сколько повторов подбирать вес, когда программа просит максимум повторов с отягощением. */
+    private const val UNTIL_FAILURE_REPS = 10
+
     /** Пояснение к весам в процентах [percents] от ПМ [max]. */
     fun percentNote(percents: String, max: WorkingMax?): String = when {
         max == null -> "$percents от ПМ: введи ПМ в профиле"
-        max.from == null -> "$percents от ПМ"
-        else -> "$percents от ПМ ≈ ${max.kg.kg()}: ${estimated(max.from)}"
+        !max.estimated -> "$percents от ПМ"
+        else -> "$percents от ПМ ≈ ${max.kg.kg()}: ${source(max)}"
     }
 
     /**
@@ -59,18 +105,22 @@ internal object WeightAdvice {
      * @return вес и пояснение; null, если упражнение со своим весом или подобрать не по чему.
      */
     fun byReps(exercise: Exercise, reps: String, max: WorkingMax?, last: SetGroup?): Pair<Double, String>? {
-        val count = reps.substringBefore('-').toIntOrNull()
+        val count = if (reps == MAX_REPS) UNTIL_FAILURE_REPS else reps.substringBefore('-').toIntOrNull()
         val reserve = "с запасом ${Strength.RESERVE} повтора"
-        return when {
+        val guess = when {
             exercise.bodyweight || count == null -> null
-            max != null && max.from == null -> Strength.forReps(max.kg, count) to "Вес от ПМ ${max.kg.kg()} $reserve"
+            max != null && !max.estimated ->
+                Strength.forReps(max.kg, count, exercise.barbell) to "Вес от ПМ ${max.kg.kg()} $reserve"
             last?.weightKg != null ->
                 last.weightKg to "Вес из последней записи в Дневнике: ${last.reps} × ${last.weightKg.kg()}"
-            max?.from != null -> Strength.forReps(max.kg, count) to "Вес $reserve, ${estimated(max.from)}"
+            max != null -> Strength.forReps(max.kg, count, exercise.barbell) to "Вес $reserve, ${source(max)}"
             else -> null
         }
+        return guess?.let { (kg, note) -> kg to if (exercise.dumbbell) "$note. Вес одной гантели" else note }
     }
 
-    private fun estimated(from: Exercise): String =
-        "ПМ оценён по упражнению «${from.title}», после записи в Дневник вес уточнится"
+    private fun source(max: WorkingMax): String = when {
+        max.fromBodyweight -> "ПМ оценён по собственному весу как у новичка"
+        else -> "ПМ оценён по упражнению «${max.from?.title}»"
+    } + ", после записи в Дневник вес уточнится"
 }
