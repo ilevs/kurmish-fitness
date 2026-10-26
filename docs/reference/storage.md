@@ -49,7 +49,7 @@
 }
 ```
 
-`epochDay`, `programStartEpochDay`, `phaseStartEpochDay` и `refeedDays` — числа дней с 1 января 1970. `diet.phase` — `Off`, `Deficit`, `Break` или `Maintenance`; правила питания — в [справочнике](flexible-diet.md). `programId` — `maximum`, `hypertrophy` или `null`. Незнакомые поля при чтении пропускаются, поэтому старые версии файла читаются новыми версиями приложения.
+`epochDay`, `programStartEpochDay`, `phaseStartEpochDay` и `refeedDays` — числа дней с 1 января 1970. `diet.phase` — `Off`, `Deficit`, `Break` или `Maintenance`; правила питания — в [справочнике](flexible-diet.md). `programId` — первый блок макроцикла: `maximum`, `hypertrophy`, идентификатор своего цикла (`my-1`, `my-2`…) или `null`; `nextProgramIds` — следующие блоки по порядку; `designs` — свои циклы: `id`, `title`, `note`, `goal`, `microcycles` и `days` с упражнениями (`name`, `maxOf`, `weeks` — на каждый микроцикл `scheme`, `percents`, `kg` или `null`). Незнакомые поля при чтении пропускаются, поэтому старые версии файла читаются новыми версиями приложения.
 
 ## Бэкап на Яндекс Диске
 

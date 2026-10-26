@@ -16,33 +16,33 @@ object Planner {
     /** План на день [today] (дни с 1970-01-01). */
     fun today(data: AppData, today: Long): DayPlan {
         val before = data.sessions.filter { it.epochDay < today }
-        val program = Programs.byId(data.profile.programId)
-        val body = if (program == null) {
-            BasicTemplate.plan(data, today, before.size)
-        } else {
-            val progress = Programs.progress(program, data.profile.programStartEpochDay ?: today, before)
-            programPlan(program, progress.next, data, today)
-        }
+        val position = Macrocycle.position(data.profile, before, today)
+        val body = position?.let { programPlan(it, data, today) } ?: BasicTemplate.plan(data, today, before.size)
         val work = body.items
         val planned = if (work.isEmpty()) body else body.copy(items = listOf(warmUp(work.first())) + work + coolDown())
         val dietNote = FlexibleDiet.day(data, today)?.let(DietAdvice::planNote) ?: return planned
         return planned.copy(note = listOfNotNull(planned.note, dietNote).joinToString(" "))
     }
 
-    private fun programPlan(program: TrainingProgram, next: ProgramSession?, data: AppData, today: Long): DayPlan =
-        if (next == null) {
+    private fun programPlan(position: MacroPosition, data: AppData, today: Long): DayPlan {
+        val program = position.program
+        val next = position.progress.next
+        val block = if (position.count > 1) ", блок ${position.index + 1} из ${position.count}" else ""
+        return if (next == null) {
             DayPlan(
                 title = "Программа «${program.title}» пройдена",
                 items = emptyList(),
-                note = "Дальше разгрузочная неделя с небольшим объёмом и весами, после неё проверь максимум.",
+                note = "Дальше разгрузочная неделя с небольшим объёмом и весами, после неё проверь максимум. " +
+                    "Следующий макроцикл составь во вкладке «Циклы».",
             )
         } else {
             DayPlan(
                 title = "${next.day}, микроцикл ${next.microcycle} из ${program.microcycles}",
                 items = next.items.map { item -> withChoice(item, data.profile.pool[item.name], data, today) },
-                note = "Программа «${program.title}».",
+                note = "Программа «${program.title}»$block.",
             )
         }
+    }
 
     /** Пункт программы; если атлет выбрал на цикл другое упражнение [chosen], веса считаются от его ПМ. */
     private fun withChoice(item: ProgramItem, chosen: Exercise?, data: AppData, today: Long): PlanItem {
@@ -73,10 +73,11 @@ object Planner {
         val match = item.scheme?.let { schemePattern.find(it) }
         val sets = match?.groupValues?.get(1)?.toInt()
         val reps = match?.groupValues?.get(2)
-        val guess = exercise?.takeIf { item.percents.isEmpty() && sets != null }
+        val guess = exercise?.takeIf { item.percents.isEmpty() && item.kg == null && sets != null }
             ?.let { WeightAdvice.byReps(it, reps.orEmpty(), max, last) }
         val planned = when {
             sets == null || reps == null -> emptyList()
+            item.kg != null -> listOf(PlannedSets(sets, reps, item.kg))
             guess != null -> listOf(PlannedSets(sets, reps, guess.first))
             else -> byPercents(item, sets, reps, max, exercise?.barbell != false)
         }
@@ -101,7 +102,8 @@ object Planner {
         else -> item.weights(max.kg, barbell).map { PlannedSets(1, reps, it) }
     }
 
-    private fun exerciseIn(name: String): Exercise? {
+    /** Упражнение из базы, которое узнаётся в названии [name]; null, если не узнаётся. */
+    internal fun exerciseIn(name: String): Exercise? {
         val tokens = name.lowercase().replace('ё', 'е').split(wordPattern).filter { it.isNotEmpty() }
         return tokens.indices.firstNotNullOfOrNull { ExerciseMatcher.matchAt(tokens, it)?.first }
     }

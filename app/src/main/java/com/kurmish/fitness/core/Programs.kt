@@ -7,8 +7,15 @@ package com.kurmish.fitness.core
  * @property scheme подходы × повторы, например «10×10» или «4×мах»; null, если схема не задана.
  * @property maxOf от ПМ какого движения считаются веса; null, если вес подбирается по самочувствию.
  * @property percents проценты от ПМ: один на все подходы или по одному на каждый подход.
+ * @property kg вес в килограммах, если он задан не процентами; так бывает в своих циклах.
  */
-data class ProgramItem(val name: String, val scheme: String?, val maxOf: Exercise?, val percents: List<Int>) {
+data class ProgramItem(
+    val name: String,
+    val scheme: String?,
+    val maxOf: Exercise?,
+    val percents: List<Int>,
+    val kg: Double? = null,
+) {
     /** Рабочие веса по ПМ, округлённые под блины; пустой список, если веса не задаются процентами. */
     fun weights(maxKg: Double, barbell: Boolean = true): List<Double> =
         percents.map { Strength.percentOf(maxKg, it, barbell) }
@@ -17,6 +24,7 @@ data class ProgramItem(val name: String, val scheme: String?, val maxOf: Exercis
     fun describe(maxKg: Double?): String {
         val base = listOfNotNull(name, scheme).joinToString(" ")
         return when {
+            kg != null -> "$base по ${kg.kg()}"
             percents.isEmpty() -> base
             maxKg == null -> "$base, ${percents.joinToString(", ") { "$it %" }} от ПМ"
             percents.size == 1 -> "$base по ${weights(maxKg).single().kg()} (${percents.single()} %)"

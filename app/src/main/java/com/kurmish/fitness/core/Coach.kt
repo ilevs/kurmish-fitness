@@ -37,7 +37,7 @@ object Coach {
         val profile = data.profile
         val cycle = CycleCatalog.best(profile)
         val last = data.sessions.maxByOrNull { it.epochDay }
-        val program = Programs.byId(profile.programId)
+        val program = profile.program(profile.programId)
         val diet = FlexibleDiet.day(data, today)
         val points = buildList {
             diet?.trainingNotes?.let(::addAll)

@@ -3,9 +3,39 @@
     <string name="app_name">Курмыш Фитнес</string>
 
     <string name="tab_cycles">Циклы</string>
-    <string name="cycles_schedule">Расписание программы</string>
+    <string name="cycles_schedule">Расписание блока «%1$s»</string>
     <string name="cycles_microcycle">Микроцикл %1$d из %2$d</string>
     <string name="cycles_next">%1$s — следующая</string>
+    <string name="cycles_macro">Макроцикл</string>
+    <string name="cycles_macro_empty">Пока пусто: в Дневнике общие тренировки А и Б по очереди, подходы и проценты по задаче из профиля. Добавь программу или свой цикл блоком.</string>
+    <string name="cycles_block">%1$d. %2$s</string>
+    <string name="cycles_block_up">Выше</string>
+    <string name="cycles_block_down">Ниже</string>
+    <string name="cycles_block_remove">Убрать</string>
+    <string name="cycles_programs">Программы и свои циклы</string>
+    <string name="cycles_programs_hint">Блоки идут друг за другом: когда тренировки блока записаны в Дневник, начинается следующий. Встроенную программу можно скопировать и править как свой цикл.</string>
+    <string name="cycles_add_block">В макроцикл</string>
+    <string name="cycles_edit">Править</string>
+    <string name="cycles_copy">Сделать свой</string>
+    <string name="cycles_new">Новый цикл с нуля</string>
+    <string name="design_title">Название цикла</string>
+    <string name="design_hint">Нагрузка показана для выбранного микроцикла. Нажми на упражнение, чтобы изменить его.</string>
+    <string name="design_microcycles">Микроциклов: %1$d</string>
+    <string name="design_week">Микроцикл %1$d</string>
+    <string name="design_day">День</string>
+    <string name="design_add_day">Добавить день</string>
+    <string name="design_remove_day">Удалить день</string>
+    <string name="design_absent">В этом микроцикле нет</string>
+    <string name="design_present">Есть в этом микроцикле</string>
+    <string name="design_everywhere">Так же во всех микроциклах</string>
+    <string name="design_unknown">Нет в базе: вес подбирай сам или задай в кг</string>
+    <string name="design_known">В базе: %1$s</string>
+    <string name="design_scheme">Подходы × повторы</string>
+    <string name="design_percents" formatted="false">% от ПМ</string>
+    <string name="design_kg">кг</string>
+    <string name="design_percents_hint">Один процент на все подходы или по одному на подход: 67, 70, 73</string>
+    <string name="design_kg_hint">Вес на все подходы</string>
+    <string name="design_delete_confirm">Удалить цикл «%1$s»? Он уберётся и из макроцикла.</string>
     <string name="tab_journal">Дневник</string>
     <string name="tab_profile">Профиль</string>
 
@@ -78,13 +108,10 @@
     <string name="profile_goal">Задача</string>
     <string name="profile_max">ПМ: %1$s, кг</string>
     <string name="profile_cycles">Циклы методики под твой профиль</string>
-    <string name="profile_cycles_hint">Справочно: эти циклы в приложении не расписаны. Тренировки на «Сегодня» берутся из программы выше.</string>
-    <string name="profile_program">Программа</string>
-    <string name="profile_program_none">Без программы</string>
-    <string name="profile_program_none_summary">Общие тренировки А и Б по очереди, подходы и проценты по задаче из профиля</string>
+    <string name="profile_cycles_hint">Справочно: эти циклы в приложении не расписаны. План в Дневнике строится по макроциклу выше.</string>
     <string name="profile_program_mismatch">Не совпадает с профилем: %1$s</string>
     <string name="profile_program_progress">Сделано тренировок: %1$d из %2$d</string>
-    <string name="profile_program_restart">Начать программу заново с сегодня</string>
+    <string name="profile_program_restart">Начать макроцикл заново с сегодня</string>
     <string name="journal_load">Тоннаж %1$s · КПШ %2$d · средний вес %3$s · ~%4$d мин</string>
     <string name="journal_intensity">Интенсивность %1$d %% от ПМ · нагрузка с коэффициентами %2$s</string>
 
