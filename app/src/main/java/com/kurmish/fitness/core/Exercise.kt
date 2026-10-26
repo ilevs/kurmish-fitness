@@ -125,7 +125,7 @@ enum class Exercise(
         bodyweight = true,
         movement = Movement.Core,
         level = 1,
-        synonyms = listOf("пресс", "скручивания"),
+        synonyms = listOf("пресс", "скручивания", "приседания с закрепленными ногами"),
     ),
     Hyperextension(
         "Гиперэкстензия",
@@ -361,6 +361,13 @@ enum class Exercise(
         movement = Movement.Core,
         level = 4,
         synonyms = listOf("подъем ног в висе", "подъемы ног", "подъем ног"),
+    ),
+    HackSquat(
+        "Гакк-присед",
+        bodyweight = false,
+        movement = Movement.Squat,
+        level = 1,
+        synonyms = listOf("приседания в гакк тренажере", "гакк присед", "гакк"),
     ),
     ;
 

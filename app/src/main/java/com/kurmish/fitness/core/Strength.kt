@@ -13,6 +13,9 @@ object Strength {
     /** Больше этого числа повторов оценка максимума слишком неточна. */
     const val MAX_REPS_FOR_ESTIMATE = 10
 
+    /** Сколько повторов оставлять в запасе, когда вес подбирается по числу повторов. */
+    const val RESERVE = 2
+
     private const val EPLEY_DIVISOR = 30.0
     private const val PERCENT = 100.0
 
@@ -29,6 +32,10 @@ object Strength {
 
     /** Вес на заданный процент от ПМ, округлённый под блины. */
     fun percentOf(maxKg: Double, percent: Int): Double = roundToPlates(maxKg * percent / PERCENT)
+
+    /** Вес на [reps] повторов с запасом [reserve] повторов до отказа (формула Эпли наоборот). */
+    fun forReps(maxKg: Double, reps: Int, reserve: Int = RESERVE): Double =
+        roundToPlates(maxKg / (1 + (reps + reserve) / EPLEY_DIVISOR))
 
     /** Процент от ПМ, который составляет вес. */
     fun percentOfMax(weightKg: Double, maxKg: Double): Int = (weightKg / maxKg * PERCENT).roundToInt()

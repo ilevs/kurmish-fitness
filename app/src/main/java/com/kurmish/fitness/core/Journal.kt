@@ -44,6 +44,26 @@ data class AppData(
     fun currentMax(exercise: Exercise, today: Long): Double? =
         profile.manualMaxes[exercise] ?: estimatedMaxes(today)[exercise]?.kg
 
+    /** ПМ для расчёта весов: свой, а если его нет, то оценка по ПМ близкого упражнения. */
+    fun workingMax(exercise: Exercise, today: Long): WorkingMax? {
+        val estimated = estimatedMaxes(today)
+        val own = { lift: Exercise -> profile.manualMaxes[lift] ?: estimated[lift]?.kg }
+        return own(exercise)?.let { WorkingMax(it) } ?: MaxRatios.estimate(exercise, own)
+    }
+
+    /** Самый тяжёлый подход [exercise] с весом в последней тренировке до [today] включительно. */
+    fun lastSet(exercise: Exercise, today: Long): SetGroup? = sessions
+        .filter { it.epochDay <= today }
+        .sortedWith(compareBy({ it.epochDay }, { it.id }))
+        .asReversed()
+        .firstNotNullOfOrNull { session ->
+            session.entries
+                .filter { it.exercise == exercise }
+                .flatMap { it.sets }
+                .filter { it.weightKg != null }
+                .maxByOrNull { it.weightKg ?: 0.0 }
+        }
+
     /** Значения по умолчанию. */
     companion object {
         /** За сколько дней дневник учитывается при оценке ПМ. */
