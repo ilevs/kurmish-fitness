@@ -1,10 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <lint>
-    <!-- JNA (нужна Vosk) содержит класс Native.AWT для настольной Java. На Android он не вызывается. -->
-    <issue id="InvalidPackage">
-        <ignore regexp="net\.java\.dev\.jna:jna.*java\.awt" />
-    </issue>
-    <!-- Приложение для телефонов: в APK только ARM-библиотеки распознавания речи, x86_64 для ChromeOS
-         добавил бы ещё около 10 МБ без пользы. -->
+    <!-- Приложение для телефонов: в APK только arm64-библиотеки распознавания речи, x86_64 для ChromeOS
+         добавил бы ещё около 30 МБ без пользы. -->
     <issue id="ChromeOsAbiSupport" severity="ignore" />
 </lint>

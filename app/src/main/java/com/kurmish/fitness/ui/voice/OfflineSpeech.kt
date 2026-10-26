@@ -1,6 +1,13 @@
 package com.kurmish.fitness.ui.voice
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
+import android.media.AudioFormat
+import android.media.AudioRecord
+import android.media.MediaRecorder
+import android.os.Handler
+import android.os.Looper
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -9,134 +16,194 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import org.vosk.LibVosk
-import org.vosk.LogLevel
-import org.vosk.Model
-import org.vosk.Recognizer
-import org.vosk.android.RecognitionListener
-import org.vosk.android.SpeechService
-import org.vosk.android.StorageService
+import androidx.core.content.ContextCompat
+import com.k2fsa.sherpa.onnx.OfflineRecognizer
+import com.k2fsa.sherpa.onnx.Vad
+import java.io.File
 import java.io.IOException
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 /** Что сейчас делает распознавание речи. */
 internal sealed interface VoiceState {
     /** Микрофон выключен. */
     data object Idle : VoiceState
 
-    /** Первый запуск: модель распаковывается из APK в память телефона. */
+    /** Первый запуск: модель скачивается, [percent] — сколько готово. */
+    data class Downloading(val percent: Int) : VoiceState
+
+    /** Модель загружается в память. */
     data object Preparing : VoiceState
 
-    /** Микрофон включён; [partial] — фраза, которая ещё произносится. */
-    data class Listening(val partial: String) : VoiceState
+    /** Микрофон включён. */
+    data object Listening : VoiceState
 
-    /** Распознавание не запустилось. */
-    data object Failed : VoiceState
+    /** Микрофон выключен, распознаётся последняя фраза. */
+    data object Finishing : VoiceState
+
+    /** Распознавание не запустилось, [reason] — почему. */
+    data class Failed(val reason: VoiceFailure) : VoiceState
+}
+
+/** Причина, по которой голосовой ввод не сработал. */
+internal enum class VoiceFailure {
+    /** Модель не скачалась: нет сети или сервер недоступен. */
+    Download,
+
+    /** Микрофон недоступен или занят. */
+    Microphone,
 }
 
 /**
- * Офлайн-распознавание русской речи встроенной моделью Vosk. Не нужны ни сеть, ни сервисы Google.
+ * Офлайн-распознавание русской речи моделью GigaAM v3 на движке sherpa-onnx.
  *
- * Модель лежит в assets/model-ru, при первом запуске распаковывается в файлы приложения.
- * Каждая законченная фраза передаётся в [onText], пока не вызван [stop].
+ * Звук с микрофона режет на фразы детектор речи Silero VAD (лежит в assets), каждую фразу целиком
+ * распознаёт GigaAM и передаёт текст в [onText]. Вся тяжёлая работа идёт в отдельном потоке,
+ * [state] обновляется в главном.
  */
-internal class OfflineSpeech(private val context: Context, private val onText: (String) -> Unit) :
-    RecognitionListener {
+internal class OfflineSpeech(private val context: Context, private val onText: (String) -> Unit) {
     /** Текущее состояние для экрана. */
     var state: VoiceState by mutableStateOf(VoiceState.Idle)
         private set
 
-    private var model: Model? = null
-    private var service: SpeechService? = null
-    private var released = false
+    private val worker: ExecutorService = Executors.newSingleThreadExecutor()
+    private val main = Handler(Looper.getMainLooper())
 
-    /** Включает микрофон. Разрешение RECORD_AUDIO должно быть уже выдано. */
+    @Volatile
+    private var listening = false
+    private var recognizer: OfflineRecognizer? = null
+    private var vad: Vad? = null
+
+    /** Включает микрофон, при первом запуске сначала скачивает модель. Разрешение RECORD_AUDIO уже выдано. */
     fun start() {
-        if (state != VoiceState.Idle && state != VoiceState.Failed) return
-        val loaded = model
-        if (loaded != null) {
-            listen(loaded)
-            return
-        }
+        val busy = state != VoiceState.Idle && state !is VoiceState.Failed
+        if (busy || worker.isShutdown) return
+        listening = true
         state = VoiceState.Preparing
-        LibVosk.setLogLevel(LogLevel.WARNINGS)
-        StorageService.unpack(
-            context,
-            MODEL_ASSETS,
-            MODEL_TARGET,
-            { unpacked ->
-                if (released) {
-                    unpacked.close()
-                } else {
-                    model = unpacked
-                    listen(unpacked)
-                }
-            },
-            { state = VoiceState.Failed },
-        )
+        worker.execute(::session)
     }
 
     /** Выключает микрофон; уже сказанное распознаётся до конца. */
     fun stop() {
-        service?.stop()
-        service?.shutdown()
-        service = null
-        if (state != VoiceState.Failed) state = VoiceState.Idle
+        if (listening) {
+            listening = false
+            if (state == VoiceState.Listening) state = VoiceState.Finishing
+        }
     }
 
     /** Освобождает микрофон и модель, когда экран закрыт. */
     fun release() {
-        released = true
-        service?.shutdown()
-        service = null
-        model?.close()
-        model = null
-        state = VoiceState.Idle
+        listening = false
+        worker.execute {
+            recognizer?.release()
+            recognizer = null
+            vad?.release()
+            vad = null
+        }
+        worker.shutdown()
     }
 
-    private fun listen(model: Model) {
-        state = try {
-            val speech = SpeechService(Recognizer(model, SAMPLE_RATE), SAMPLE_RATE)
-            service = speech
-            if (speech.startListening(this)) VoiceState.Listening("") else VoiceState.Failed
+    private fun session() {
+        val dir = File(context.filesDir, VoiceModel.NAME)
+        try {
+            if (!VoiceModel.isReady(dir)) download(dir)
+            val engine = recognizer ?: VoiceModel.recognizer(dir).also { recognizer = it }
+            val detector = vad ?: VoiceModel.vad(context.assets).also { vad = it }
+            record(engine, detector)
         } catch (ignored: IOException) {
-            VoiceState.Failed
+            post(VoiceState.Failed(VoiceFailure.Download))
         }
     }
 
-    override fun onPartialResult(hypothesis: String?) {
-        if (state is VoiceState.Listening) state = VoiceState.Listening(jsonField(hypothesis, "partial"))
+    private fun download(dir: File) {
+        var shown = -1
+        post(VoiceState.Downloading(0))
+        VoiceModel.download(dir) { percent ->
+            if (percent != shown) {
+                shown = percent
+                post(VoiceState.Downloading(percent))
+            }
+        }
+        post(VoiceState.Preparing)
     }
 
-    override fun onResult(hypothesis: String?) {
-        jsonField(hypothesis, "text").takeIf(String::isNotBlank)?.let(onText)
-        if (state is VoiceState.Listening) state = VoiceState.Listening("")
+    private fun record(engine: OfflineRecognizer, detector: Vad) {
+        if (!listening) {
+            post(VoiceState.Idle)
+            return
+        }
+        val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
+            PackageManager.PERMISSION_GRANTED
+        val audio = if (granted) openMicrophone() else null
+        if (audio == null) {
+            post(VoiceState.Failed(VoiceFailure.Microphone))
+            return
+        }
+        post(VoiceState.Listening)
+        val chunk = ShortArray(WINDOW)
+        try {
+            audio.startRecording()
+            while (listening) {
+                val read = audio.read(chunk, 0, chunk.size)
+                if (read > 0) {
+                    detector.acceptWaveform(FloatArray(read) { chunk[it] / PCM_SCALE })
+                    transcribe(engine, detector)
+                }
+            }
+        } finally {
+            audio.stop()
+            audio.release()
+        }
+        detector.flush()
+        transcribe(engine, detector)
+        detector.reset()
+        post(VoiceState.Idle)
     }
 
-    override fun onFinalResult(hypothesis: String?) {
-        jsonField(hypothesis, "text").takeIf(String::isNotBlank)?.let(onText)
+    private fun openMicrophone(): AudioRecord? {
+        val minimum = AudioRecord.getMinBufferSize(SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, ENCODING)
+        // Запас в несколько секунд: пока распознаётся фраза, микрофон пишет следующую в буфер.
+        val buffer = maxOf(minimum, SAMPLE_RATE * BYTES_PER_SAMPLE * BUFFER_SECONDS)
+        return try {
+            AudioRecord(
+                MediaRecorder.AudioSource.VOICE_RECOGNITION,
+                SAMPLE_RATE,
+                AudioFormat.CHANNEL_IN_MONO,
+                ENCODING,
+                buffer,
+            ).takeIf { it.state == AudioRecord.STATE_INITIALIZED }
+        } catch (ignored: SecurityException) {
+            null
+        }
     }
 
-    override fun onError(exception: Exception?) {
-        service?.shutdown()
-        service = null
-        state = VoiceState.Failed
+    private fun transcribe(engine: OfflineRecognizer, detector: Vad) {
+        while (!detector.empty()) {
+            val samples = detector.front().samples
+            detector.pop()
+            val stream = engine.createStream()
+            stream.acceptWaveform(samples, SAMPLE_RATE)
+            engine.decode(stream)
+            val text = engine.getResult(stream).text.trim()
+            stream.release()
+            if (text.isNotEmpty()) main.post { onText(text) }
+        }
     }
 
-    override fun onTimeout() {
-        stop()
+    private fun post(next: VoiceState) {
+        main.post {
+            val stopped = next == VoiceState.Listening && !listening
+            state = if (stopped) VoiceState.Finishing else next
+        }
     }
-
-    private fun jsonField(hypothesis: String?, name: String): String = hypothesis
-        ?.let { Json.parseToJsonElement(it).jsonObject[name]?.jsonPrimitive?.content }
-        .orEmpty()
 
     private companion object {
-        const val MODEL_ASSETS = "model-ru"
-        const val MODEL_TARGET = "model"
-        const val SAMPLE_RATE = 16_000f
+        const val SAMPLE_RATE = VoiceModel.SAMPLE_RATE
+        const val WINDOW = VoiceModel.VAD_WINDOW
+        const val ENCODING = AudioFormat.ENCODING_PCM_16BIT
+        const val BYTES_PER_SAMPLE = 2
+        const val BUFFER_SECONDS = 10
+        const val PCM_SCALE = 32_768f
     }
 }
 

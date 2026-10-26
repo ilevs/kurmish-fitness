@@ -31,6 +31,8 @@ jobs:
       - uses: gradle/actions/setup-gradle@v5
       - name: detekt (allRules, ktlint, Compose rules)
         run: ./gradlew detekt
+      - name: Fetch sherpa-onnx
+        run: scripts/fetch-sherpa-onnx.sh
       - name: Android Lint
         run: ./gradlew :app:lintDebug
       - name: Annotate Android Lint issues
@@ -66,14 +68,8 @@ jobs:
           java-version: '17'
       - uses: gradle/actions/setup-gradle@v5
 
-      - name: Cache voice model
-        uses: actions/cache@v4
-        with:
-          path: .voice-model/*.zip
-          key: voice-model-${{ hashFiles('scripts/fetch-voice-model.sh') }}
-
-      - name: Fetch offline voice model
-        run: scripts/fetch-voice-model.sh
+      - name: Fetch sherpa-onnx
+        run: scripts/fetch-sherpa-onnx.sh
 
       - name: Unit tests
         run: ./gradlew :app:testDebugUnitTest
@@ -98,8 +94,9 @@ jobs:
         run: |
           mkdir -p dist
           cp app/build/outputs/apk/debug/app-debug.apk dist/kurmish-fitness-debug.apk
-          # Без модели голосовой ввод в APK не работает: проверяем, что она попала в сборку.
-          unzip -l app/build/outputs/apk/debug/app-debug.apk | grep -q 'assets/model-ru/uuid'
+          # Без движка и детектора речи голосовой ввод не работает: проверяем, что они попали в сборку.
+          unzip -l app/build/outputs/apk/debug/app-debug.apk | grep -q 'assets/silero_vad.onnx'
+          unzip -l app/build/outputs/apk/debug/app-debug.apk | grep -q 'lib/arm64-v8a/libsherpa-onnx-jni.so'
           if [ -f app/build/outputs/apk/release/app-release.apk ]; then
             cp app/build/outputs/apk/release/app-release.apk dist/kurmish-fitness.apk
           fi
@@ -136,3 +133,27 @@ jobs:
         with:
           files: dist/*.apk
           generate_release_notes: true
+
+  # Зеркало модели распознавания речи в релизе voice-model: приложение качает её отсюда при первой
+  # голосовой записи (запасной адрес — Hugging Face). Модель заливается один раз.
+  voice-model:
+    name: Mirror voice model
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Upload GigaAM v3 to the voice-model release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          SOURCE: https://huggingface.co/csukuangfj/sherpa-onnx-nemo-ctc-giga-am-v3-russian-2025-12-16/resolve/main
+        run: |
+          gh release view voice-model >/dev/null 2>&1 || \
+            gh release create voice-model --prerelease --title "Voice model" \
+              --notes "GigaAM v3 CTC int8 для sherpa-onnx (лицензия MIT). Приложение скачивает её при первой голосовой записи."
+          assets=$(gh release view voice-model --json assets -q '.assets[].name')
+          for file in tokens.txt model.int8.onnx; do
+            if ! grep -qx "$file" <<<"$assets"; then
+              curl -fL --retry 4 --retry-delay 5 -o "$file" "$SOURCE/$file"
+              gh release upload voice-model "$file"
+            fi
+          done

@@ -38,6 +38,7 @@ import com.kurmish.fitness.core.Feeling
 import com.kurmish.fitness.core.ParsedWorkout
 import com.kurmish.fitness.core.WorkoutParser
 import com.kurmish.fitness.ui.voice.OfflineSpeech
+import com.kurmish.fitness.ui.voice.VoiceFailure
 import com.kurmish.fitness.ui.voice.VoiceState
 import com.kurmish.fitness.ui.voice.rememberOfflineSpeech
 
@@ -98,8 +99,10 @@ private fun VoiceButton(speech: OfflineSpeech, onMessage: (String) -> Unit) {
     val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) speech.start() else onMessage(denied)
     }
-    val active = speech.state is VoiceState.Listening || speech.state == VoiceState.Preparing
+    val active = speech.state == VoiceState.Listening
+    val idle = speech.state == VoiceState.Idle || speech.state is VoiceState.Failed
     FilledTonalButton(
+        enabled = active || idle,
         onClick = {
             val allowed = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
                 PackageManager.PERMISSION_GRANTED
@@ -119,9 +122,14 @@ private fun VoiceButton(speech: OfflineSpeech, onMessage: (String) -> Unit) {
 @Composable
 private fun voiceStatus(state: VoiceState): String? = when (state) {
     VoiceState.Idle -> null
+    is VoiceState.Downloading -> stringResource(R.string.log_voice_downloading, state.percent)
     VoiceState.Preparing -> stringResource(R.string.log_voice_preparing)
-    VoiceState.Failed -> stringResource(R.string.log_voice_failed)
-    is VoiceState.Listening -> state.partial.ifEmpty { stringResource(R.string.log_voice_listening) }
+    VoiceState.Listening -> stringResource(R.string.log_voice_listening)
+    VoiceState.Finishing -> stringResource(R.string.log_voice_finishing)
+    is VoiceState.Failed -> when (state.reason) {
+        VoiceFailure.Download -> stringResource(R.string.log_voice_download_failed)
+        VoiceFailure.Microphone -> stringResource(R.string.log_voice_failed)
+    }
 }
 
 @Composable
