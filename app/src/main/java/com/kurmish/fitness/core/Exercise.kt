@@ -390,6 +390,13 @@ enum class Exercise(
         level = 1,
         synonyms = listOf("подъем на носки сидя", "икры сидя"),
     ),
+    AssistedDips(
+        "Брусья в гравитроне",
+        bodyweight = false,
+        movement = Movement.VerticalPush,
+        level = 2,
+        synonyms = listOf("брусья в гравитроне", "отжимания на брусьях в гравитроне", "гравитрон брусья"),
+    ),
     ;
 
     /**

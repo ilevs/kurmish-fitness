@@ -6,8 +6,15 @@ package com.kurmish.fitness.core
  * @property kg вес.
  * @property from упражнение, через ПМ которого оценён этот; null — свой ПМ упражнения.
  * @property fromBodyweight ПМ оценён по собственному весу, потому что других данных нет.
+ * @property bodyweightKg собственный вес, если это ПМ полной нагрузки в подтягиваниях или брусьях
+ *   (свой вес плюс отягощение): тогда вес на снаряде — отягощение или противовес, см. [BodyweightLoad].
  */
-data class WorkingMax(val kg: Double, val from: Exercise? = null, val fromBodyweight: Boolean = false) {
+data class WorkingMax(
+    val kg: Double,
+    val from: Exercise? = null,
+    val fromBodyweight: Boolean = false,
+    val bodyweightKg: Double? = null,
+) {
     /** Оценка, а не свой ПМ упражнения. */
     val estimated: Boolean
         get() = from != null || fromBodyweight
@@ -91,9 +98,12 @@ internal object WeightAdvice {
     /** На сколько повторов подбирать вес, когда программа просит максимум повторов с отягощением. */
     private const val UNTIL_FAILURE_REPS = 10
 
-    /** Пояснение к весам в процентах [percents] от ПМ [max]. */
-    fun percentNote(percents: String, max: WorkingMax?): String = when {
+    /** Пояснение к весам в процентах [percents] от ПМ [max] упражнения [exercise]. */
+    fun percentNote(percents: String, max: WorkingMax?, exercise: Exercise? = null): String = when {
+        max == null && exercise?.let(BodyweightLoad::base) != null ->
+            "$percents от ПМ полной нагрузки: укажи свой вес в профиле и запиши подход в Дневник"
         max == null -> "$percents от ПМ: введи ПМ в профиле"
+        max.bodyweightKg != null -> "$percents от ПМ ${max.kg.kg()}: свой вес плюс отягощение"
         !max.estimated -> "$percents от ПМ"
         else -> "$percents от ПМ ≈ ${max.kg.kg()}: ${source(max)}"
     }
@@ -104,11 +114,13 @@ internal object WeightAdvice {
      *
      * @return вес и пояснение; null, если упражнение со своим весом или подобрать не по чему.
      */
-    fun byReps(exercise: Exercise, reps: String, max: WorkingMax?, last: SetGroup?): Pair<Double, String>? {
+    fun byReps(exercise: Exercise, reps: String, max: WorkingMax?, last: SetGroup?): Pair<Double?, String>? {
         val count = if (reps == MAX_REPS) UNTIL_FAILURE_REPS else reps.substringBefore('-').toIntOrNull()
         val reserve = "с запасом ${Strength.RESERVE} повтора"
-        val guess = when {
-            exercise.bodyweight || count == null -> null
+        val guess: Pair<Double?, String>? = when {
+            count == null -> null
+            max?.bodyweightKg != null -> byBodyweight(exercise, reps, count, max)
+            exercise.bodyweight -> null
             max != null && !max.estimated ->
                 Strength.forReps(max.kg, count, exercise.barbell) to "Вес от ПМ ${max.kg.kg()} $reserve"
             last?.weightKg != null ->
@@ -117,6 +129,13 @@ internal object WeightAdvice {
             else -> null
         }
         return guess?.let { (kg, note) -> kg to if (exercise.dumbbell) "$note. Вес одной гантели" else note }
+    }
+
+    /** Отягощение или противовес на [count] повторов; «мах» своим весом — просто до отказа, без веса. */
+    private fun byBodyweight(exercise: Exercise, reps: String, count: Int, max: WorkingMax): Pair<Double?, String>? {
+        val body = max.bodyweightKg ?: return null
+        return BodyweightLoad.onMachine(exercise, Strength.loadForReps(max.kg, count), body)
+            .takeUnless { exercise.bodyweight && reps == MAX_REPS }
     }
 
     private fun source(max: WorkingMax): String = when {

@@ -33,7 +33,9 @@ data class AppData(
                 entry.sets.mapNotNull { set ->
                     val weight = set.weightKg ?: return@mapNotNull null
                     val estimate = Strength.estimateMax(weight, set.reps) ?: return@mapNotNull null
-                    entry.exercise?.let { it to MaxEstimate(estimate, session.epochDay) }
+                    entry.exercise
+                        ?.takeUnless(BodyweightLoad::assisted)
+                        ?.let { it to MaxEstimate(estimate, session.epochDay) }
                 }
             }
         }
@@ -44,11 +46,31 @@ data class AppData(
     fun currentMax(exercise: Exercise, today: Long): Double? =
         profile.manualMaxes[exercise] ?: estimatedMaxes(today)[exercise]?.kg
 
-    /** ПМ для расчёта весов: свой, а если его нет, то оценка по ПМ близкого упражнения. */
+    /**
+     * ПМ для расчёта весов: свой, а если его нет, то оценка по ПМ близкого упражнения. У подтягиваний,
+     * брусьев и гравитрона — ПМ полной нагрузки по Дневнику и собственному весу.
+     */
     fun workingMax(exercise: Exercise, today: Long): WorkingMax? {
+        val base = BodyweightLoad.base(exercise)
+        if (base != null) return bodyweightMax(base, today)?.let { WorkingMax(it, bodyweightKg = profile.bodyweightKg) }
         val estimated = estimatedMaxes(today)
         val own = { lift: Exercise -> profile.manualMaxes[lift] ?: estimated[lift]?.kg }
         return own(exercise)?.let { WorkingMax(it) } ?: MaxRatios.estimate(exercise, own, profile.bodyweightKg)
+    }
+
+    /** ПМ полной нагрузки движения [base] за последние дни: подтягивания, с весом и в гравитроне вместе. */
+    fun bodyweightMax(base: Exercise, today: Long): Double? {
+        val body = profile.bodyweightKg ?: return null
+        return sessions
+            .filter { today - it.epochDay in 0..RECENT_DAYS }
+            .flatMap { it.entries }
+            .flatMap { entry ->
+                val exercise = entry.exercise?.takeIf { BodyweightLoad.base(it) == base } ?: return@flatMap emptyList()
+                entry.sets.mapNotNull { set ->
+                    Strength.estimateMax(BodyweightLoad.effective(exercise, set.weightKg, body), set.reps)
+                }
+            }
+            .maxOrNull()
     }
 
     /** Самый тяжёлый подход [exercise] с весом в последней тренировке до [today] включительно. */

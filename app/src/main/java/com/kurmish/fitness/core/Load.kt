@@ -64,13 +64,14 @@ object LoadCalculator {
             val max = entry.exercise?.let(maxOf)
             entry.sets.forEach { set ->
                 val reps = set.reps * set.sets
-                val weight = set.weightKg ?: 1.0
-                val share = if (max != null && set.weightKg != null) share(set.weightKg, max) else 0.0
+                val weightKg = set.weightKg.takeUnless { entry.exercise?.let(BodyweightLoad::assisted) == true }
+                val weight = weightKg ?: 1.0
+                val share = if (max != null && weightKg != null) share(weightKg, max) else 0.0
                 tonnage += weight * reps
                 lifts += reps
                 weighted += weight * reps * zoneFactor(share) * factor
                 minutes += set.sets * minuteFactor(share) * minutesPerSet(factor)
-                if (max != null && set.weightKg != null) {
+                if (max != null && weightKg != null) {
                     percentReps += share * reps
                     repsWithMax += reps
                 }

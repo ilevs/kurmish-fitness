@@ -55,24 +55,30 @@ internal object BasicTemplate {
         )
     }
 
+    private fun heavy(exercise: Exercise, scheme: Scheme, max: WorkingMax?): PlannedSets {
+        val reps = if (exercise == Exercise.Deadlift) minOf(scheme.reps, DEADLIFT_MAX_REPS) else scheme.reps
+        return if (max?.bodyweightKg != null) {
+            BodyweightLoad.byPercents(exercise, listOf(scheme.percent), scheme.sets, "$reps", max).single()
+        } else {
+            PlannedSets(scheme.sets, "$reps", max?.let { Strength.percentOf(it.kg, scheme.percent, exercise.barbell) })
+        }
+    }
+
     private fun item(exercise: Exercise, scheme: Scheme, max: WorkingMax?, last: SetGroup?): PlanItem {
         val light = exercise.movement in accessory || exercise.loadFactor == Exercise.ISOLATION
         val guess = if (light) WeightAdvice.byReps(exercise, CORE_REPS, max, last) else null
         val sets = when {
             light -> PlannedSets(CORE_SETS, CORE_REPS, guess?.first)
             exercise.bodyweight -> PlannedSets(scheme.sets, MAX_REPS, null)
-            else -> {
-                val reps = if (exercise == Exercise.Deadlift) minOf(scheme.reps, DEADLIFT_MAX_REPS) else scheme.reps
-                val weight = max?.let { Strength.percentOf(it.kg, scheme.percent, exercise.barbell) }
-                PlannedSets(scheme.sets, reps.toString(), weight)
-            }
+            else -> heavy(exercise, scheme, max)
         }
         val note = when {
             sets.reps == MAX_REPS -> "Оставляй 1–2 повтора в запасе"
             exercise.bodyweight -> null
             light -> guess?.second ?: "Лёгкий вес, без отказа"
+            max?.bodyweightKg != null -> BodyweightLoad.hint(exercise, max)
             sets.weightKg == null -> CHOOSE_WEIGHT
-            else -> WeightAdvice.percentNote("${scheme.percent} %", max)
+            else -> WeightAdvice.percentNote("${scheme.percent} %", max, exercise)
         }
         return PlanItem(PlanPart.Work, exercise.title, exercise, listOf(sets), listOfNotNull(note))
     }

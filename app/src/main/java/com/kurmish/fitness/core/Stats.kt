@@ -79,7 +79,7 @@ object Stats {
     /** Лучшая оценка ПМ по каждому дню, когда упражнение делали с весом до 10 повторов. */
     fun maxHistory(data: AppData, exercise: Exercise): List<MaxPoint> = data.sessions
         .flatMap { session ->
-            session.entries.filter { it.exercise == exercise }.flatMap { entry ->
+            session.entries.filter { it.exercise == exercise && !BodyweightLoad.assisted(exercise) }.flatMap { entry ->
                 entry.sets.mapNotNull { set ->
                     val weight = set.weightKg ?: return@mapNotNull null
                     Strength.estimateMax(weight, set.reps)?.let { MaxPoint(session.epochDay, it) }
