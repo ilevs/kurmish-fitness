@@ -59,6 +59,8 @@ android {
         checkTestSources = true
         // Проверки «вышла новая версия» зависят от даты, а не от кода: обновления идут отдельными PR.
         disable += setOf("GradleDependency", "NewerVersionAvailable", "AndroidGradlePluginVersion", "OldTargetApi")
+        textReport = true
+        textOutput = file("stdout")
         htmlReport = true
         sarifReport = true
     }
