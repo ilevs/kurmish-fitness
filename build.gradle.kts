@@ -17,7 +17,15 @@ detekt {
     allRules = true
     buildUponDefaultConfig = true
     config.setFrom(files("config/detekt/detekt.yml"))
-    source.setFrom(files("app/src/main/java", "app/src/test/java", "build.gradle.kts", "settings.gradle.kts", "app/build.gradle.kts"))
+    source.setFrom(
+        files(
+            "app/src/main/java",
+            "app/src/test/java",
+            "build.gradle.kts",
+            "settings.gradle.kts",
+            "app/build.gradle.kts",
+        ),
+    )
     parallel = true
 }
 
