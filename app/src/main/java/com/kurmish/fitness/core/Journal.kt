@@ -67,6 +67,13 @@ class JournalStore(private val file: File) {
         allowStructuredMapKeys = true
     }
 
+    /** Файл целиком, как он лежит на устройстве; null, если записей ещё не было. */
+    fun raw(): ByteArray? = file.takeIf { it.exists() }?.readBytes()
+
+    /** Разбирает копию файла, например из бэкапа; null, если это не Дневник. */
+    fun decode(bytes: ByteArray): AppData? =
+        runCatching { json.decodeFromString<AppData>(bytes.decodeToString()) }.getOrNull()
+
     /** Читает данные; при отсутствии или порче файла возвращает пустые. */
     fun load(): AppData = runCatching { json.decodeFromString<AppData>(file.readText()) }.getOrDefault(AppData())
 

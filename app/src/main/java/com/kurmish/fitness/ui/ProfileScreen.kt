@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import com.kurmish.fitness.R
+import com.kurmish.fitness.backup.BackupUi
 import com.kurmish.fitness.core.AppData
 import com.kurmish.fitness.core.CycleCatalog
 import com.kurmish.fitness.core.Discipline
@@ -42,13 +43,18 @@ private val DayOptions = listOf(2, 3, 4, 5)
 private val MaxLifts = listOf(Exercise.Squat, Exercise.Bench, Exercise.Deadlift, Exercise.OverheadPress)
 private const val ShownCycles = 5
 
-/** Профиль атлета, подбор цикла и синхронизация Дневника с Telegram. */
+/** Профиль атлета, подбор цикла, бэкап и синхронизация Дневника с Telegram. */
 @Composable
 internal fun ProfileScreen(
     data: AppData,
     today: Long,
     syncStatus: SyncStatus,
+    backup: BackupUi,
     onProfileChange: (Profile) -> Unit,
+    onBackupConnect: (String, String) -> Unit,
+    onBackupNow: () -> Unit,
+    onRestore: () -> Unit,
+    onBackupDisconnect: () -> Unit,
     onTelegramConnect: (String) -> Unit,
     onTelegramDisconnect: () -> Unit,
     onSync: () -> Unit,
@@ -103,6 +109,13 @@ internal fun ProfileScreen(
         MaxFields(data = data, today = today, onProfileChange = onProfileChange)
         ProgramCard(data = data, today = today, onProfileChange = onProfileChange)
         CyclesCard(profile)
+        BackupCard(
+            state = backup,
+            onConnect = onBackupConnect,
+            onBackup = onBackupNow,
+            onRestore = onRestore,
+            onDisconnect = onBackupDisconnect,
+        )
         TelegramCard(
             data = data,
             status = syncStatus,

@@ -9,6 +9,8 @@ import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.AP
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.kurmish.fitness.backup.Backup
+import com.kurmish.fitness.backup.BackupSettings
 import com.kurmish.fitness.core.AppData
 import com.kurmish.fitness.core.HttpTelegramApi
 import com.kurmish.fitness.core.JournalStore
@@ -37,7 +39,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
-import java.io.File
 import java.io.IOException
 import java.time.LocalDate
 import java.time.ZoneId
@@ -70,6 +71,7 @@ class TrainerViewModel(
     private val io: CoroutineDispatcher,
     private val telegramApi: (String) -> TelegramApi,
     networkAvailable: Flow<Unit>,
+    private val onSaved: () -> Unit = {},
 ) : ViewModel() {
     private val state = MutableStateFlow(AppData())
     private val saving = Mutex()
@@ -106,6 +108,11 @@ class TrainerViewModel(
     fun deleteWorkout(id: Long) {
         change { data -> data.withoutSession(id) }
         requestSync()
+    }
+
+    /** Заменяет Дневник и профиль копией из бэкапа. */
+    fun restore(restored: AppData) {
+        change { restored }
     }
 
     /** Обновляет профиль. */
@@ -182,7 +189,10 @@ class TrainerViewModel(
     private fun change(transform: (AppData) -> AppData): AppData {
         val updated = state.updateAndGet(transform)
         // Пишем всегда последнее состояние: сохранения из разных потоков не перезапишут новое старым.
-        viewModelScope.launch(io) { saving.withLock { store.save(state.value) } }
+        viewModelScope.launch(io) {
+            saving.withLock { store.save(state.value) }
+            onSaved()
+        }
         return updated
     }
 
@@ -195,10 +205,11 @@ class TrainerViewModel(
             initializer {
                 val app: Application = checkNotNull(this[APPLICATION_KEY])
                 TrainerViewModel(
-                    store = JournalStore(File(app.filesDir, "journal.json")),
+                    store = JournalStore(Backup.journalFile(app)),
                     io = Dispatchers.IO,
                     telegramApi = ::HttpTelegramApi,
                     networkAvailable = app.networkAvailable(),
+                    onSaved = { if (BackupSettings(app).connected) Backup.schedule(app) },
                 )
             }
         }

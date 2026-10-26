@@ -20,6 +20,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kurmish.fitness.R
+import com.kurmish.fitness.backup.BackupViewModel
 import com.kurmish.fitness.core.toSession
 import com.kurmish.fitness.ui.voice.rememberSpeaker
 
@@ -37,9 +38,11 @@ fun TrainerApp(
     modifier: Modifier = Modifier,
     viewModel: TrainerViewModel = viewModel(
         factory = TrainerViewModel.Factory
-    )
+    ),
+    backupViewModel: BackupViewModel = viewModel(),
 ) {
     val data by viewModel.data.collectAsState()
+    val backup by backupViewModel.ui.collectAsState()
     val syncStatus by viewModel.syncStatus.collectAsState()
     var tab by rememberSaveable { mutableStateOf(Tab.Today) }
     val speaker = rememberSpeaker()
@@ -84,7 +87,12 @@ fun TrainerApp(
                 data = data,
                 today = viewModel.today(),
                 syncStatus = syncStatus,
+                backup = backup,
                 onProfileChange = viewModel::updateProfile,
+                onBackupConnect = backupViewModel::connect,
+                onBackupNow = backupViewModel::backupNow,
+                onRestore = { backupViewModel.restore(viewModel::restore) },
+                onBackupDisconnect = backupViewModel::disconnect,
                 onTelegramConnect = viewModel::connectTelegram,
                 onTelegramDisconnect = viewModel::disconnectTelegram,
                 onSync = viewModel::requestSync,
