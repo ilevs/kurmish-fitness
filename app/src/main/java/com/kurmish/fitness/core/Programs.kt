@@ -289,7 +289,7 @@ object Programs {
     fun byId(id: String?): TrainingProgram? = all.firstOrNull { it.id == id }
 
     /**
-     * Прогресс по программе: каждая запись в журнале начиная с [startEpochDay] считается
+     * Прогресс по программе: каждая запись в дневнике начиная с [startEpochDay] считается
      * выполненной тренировкой программы, по порядку.
      */
     fun progress(program: TrainingProgram, startEpochDay: Long, sessions: List<WorkoutSession>): ProgramProgress {

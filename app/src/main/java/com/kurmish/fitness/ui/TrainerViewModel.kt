@@ -23,7 +23,7 @@ import kotlinx.coroutines.launch
 import java.io.File
 import java.time.LocalDate
 
-/** Держит журнал и профиль, сохраняет их в файл на устройстве. */
+/** Держит дневник и профиль, сохраняет их в файл на устройстве. */
 class TrainerViewModel(private val store: JournalStore, private val io: CoroutineDispatcher) : ViewModel() {
     private val state = MutableStateFlow(AppData())
 
@@ -54,7 +54,7 @@ class TrainerViewModel(private val store: JournalStore, private val io: Coroutin
         }
     }
 
-    /** Удаляет запись журнала. */
+    /** Удаляет запись дневника. */
     fun deleteWorkout(id: Long) {
         change { data -> data.copy(sessions = data.sessions.filterNot { it.id == id }) }
     }
@@ -69,9 +69,9 @@ class TrainerViewModel(private val store: JournalStore, private val io: Coroutin
         viewModelScope.launch(io) { store.save(updated) }
     }
 
-    /** Фабрика: журнал лежит во внутренней памяти приложения. */
+    /** Фабрика: дневник лежит во внутренней памяти приложения. */
     companion object {
-        /** Создаёт модель с файлом журнала приложения. */
+        /** Создаёт модель с файлом дневника приложения. */
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val app: Application = checkNotNull(this[APPLICATION_KEY])
