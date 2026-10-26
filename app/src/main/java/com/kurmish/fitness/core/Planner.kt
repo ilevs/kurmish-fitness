@@ -21,7 +21,7 @@ object Planner {
             BasicTemplate.plan(data, today, before.size)
         } else {
             val progress = Programs.progress(program, data.profile.programStartEpochDay ?: today, before)
-            programPlan(program, progress.next, data.profile.pool) { lift -> data.currentMax(lift, today) }
+            programPlan(program, progress.next, data, today)
         }
         val work = body.items
         val planned = if (work.isEmpty()) body else body.copy(items = listOf(warmUp(work.first())) + work + coolDown())
@@ -29,12 +29,7 @@ object Planner {
         return planned.copy(note = listOfNotNull(planned.note, dietNote).joinToString(" "))
     }
 
-    private fun programPlan(
-        program: TrainingProgram,
-        next: ProgramSession?,
-        pool: Map<String, Exercise>,
-        maxOf: (Exercise) -> Double?,
-    ): DayPlan =
+    private fun programPlan(program: TrainingProgram, next: ProgramSession?, data: AppData, today: Long): DayPlan =
         if (next == null) {
             DayPlan(
                 title = "Программа «${program.title}» пройдена",
@@ -44,35 +39,60 @@ object Planner {
         } else {
             DayPlan(
                 title = "${next.day}, микроцикл ${next.microcycle} из ${program.microcycles}",
-                items = next.items.map { item -> withChoice(item, pool[item.name], maxOf) },
+                items = next.items.map { item -> withChoice(item, data.profile.pool[item.name], data, today) },
                 note = "Программа «${program.title}».",
             )
         }
 
     /** Пункт программы; если атлет выбрал на цикл другое упражнение [chosen], веса считаются от его ПМ. */
-    private fun withChoice(item: ProgramItem, chosen: Exercise?, maxOf: (Exercise) -> Double?): PlanItem {
-        if (chosen == null) return fromProgram(item, item.maxOf?.let(maxOf))
-        val used = item.copy(name = chosen.title, maxOf = chosen.takeIf { item.maxOf != null })
-        return fromProgram(used, used.maxOf?.let(maxOf)).copy(exercise = chosen, slot = item.name)
+    private fun withChoice(item: ProgramItem, chosen: Exercise?, data: AppData, today: Long): PlanItem {
+        val used = chosen?.let { item.copy(name = it.title, maxOf = it.takeIf { item.maxOf != null }) } ?: item
+        val exercise = chosen ?: item.maxOf ?: exerciseIn(item.name)
+        val planned = fromProgram(
+            item = used,
+            exercise = exercise,
+            max = exercise?.let { data.workingMax(it, today) },
+            last = exercise?.let { data.lastSet(it, today) },
+        )
+        return if (chosen == null) planned else planned.copy(slot = item.name)
     }
 
-    /** Пункт программы с весами от ПМ [max]; без ПМ веса остаются процентами в пояснении. */
-    internal fun fromProgram(item: ProgramItem, max: Double?): PlanItem {
+    /**
+     * Пункт программы для упражнения [exercise] с весами от ПМ [max].
+     *
+     * Если программа задаёт вес процентами, а ПМ неизвестен, проценты остаются в пояснении. Если процентов нет,
+     * вес подбирается по числу повторов от своего ПМ, по последней записи в Дневнике [last] или по ПМ
+     * близкого упражнения.
+     */
+    internal fun fromProgram(
+        item: ProgramItem,
+        exercise: Exercise?,
+        max: WorkingMax?,
+        last: SetGroup? = null,
+    ): PlanItem {
         val match = item.scheme?.let { schemePattern.find(it) }
         val sets = match?.groupValues?.get(1)?.toInt()
         val reps = match?.groupValues?.get(2)
+        val guess = exercise?.takeIf { item.percents.isEmpty() && sets != null }
+            ?.let { WeightAdvice.byReps(it, reps.orEmpty(), max, last) }
         val planned = when {
             sets == null || reps == null -> emptyList()
-            item.percents.isEmpty() || max == null -> listOf(PlannedSets(sets, reps, null))
-            item.percents.size == 1 -> listOf(PlannedSets(sets, reps, item.weights(max).single()))
-            else -> item.weights(max).map { PlannedSets(1, reps, it) }
+            guess != null -> listOf(PlannedSets(sets, reps, guess.first))
+            else -> byPercents(item, sets, reps, max)
         }
         val percents = item.percents.takeIf { it.isNotEmpty() }?.joinToString(", ") { "$it %" }
         val notes = listOfNotNull(
             if (match == null) item.scheme else match.groupValues[SCHEME_REST].ifBlank { null },
-            percents?.let { if (max == null) "$it от ПМ: введи ПМ в профиле" else "$it от ПМ" },
+            percents?.let { WeightAdvice.percentNote(it, max) },
+            guess?.second,
         )
-        return PlanItem(PlanPart.Work, item.name, item.maxOf ?: exerciseIn(item.name), planned, notes)
+        return PlanItem(PlanPart.Work, item.name, exercise, planned, notes)
+    }
+
+    private fun byPercents(item: ProgramItem, sets: Int, reps: String, max: WorkingMax?): List<PlannedSets> = when {
+        item.percents.isEmpty() || max == null -> listOf(PlannedSets(sets, reps, null))
+        item.percents.size == 1 -> listOf(PlannedSets(sets, reps, item.weights(max.kg).single()))
+        else -> item.weights(max.kg).map { PlannedSets(1, reps, it) }
     }
 
     private fun exerciseIn(name: String): Exercise? {

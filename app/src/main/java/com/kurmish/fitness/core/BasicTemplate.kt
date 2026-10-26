@@ -31,9 +31,6 @@ internal object BasicTemplate {
     /** Типы движения, где хватает лёгкого веса и 3 × 15. */
     private val accessory = setOf(Movement.Core, Movement.Rotation, Movement.Arms)
 
-    /** Пока нет своего ПМ, вес вспомогательного движения считается от ПМ жима лёжа с этим коэффициентом. */
-    private val fromBench = mapOf(Exercise.BentOverRow to 0.7, Exercise.OverheadPress to 0.6)
-
     private fun schemeFor(goal: Goal): Scheme = when (goal) {
         Goal.Strength -> Scheme(sets = 5, reps = 5, percent = 80)
         Goal.Endurance -> Scheme(sets = 3, reps = 12, percent = 60)
@@ -51,35 +48,31 @@ internal object BasicTemplate {
             title = "Общая тренировка ${if (second) "Б" else "А"}, цель «${goal.title}»",
             items = (if (second) dayB else dayA).map { base ->
                 val chosen = data.profile.pool[base.title] ?: base
-                item(chosen, scheme) { lift -> data.currentMax(lift, today) }.copy(slot = base.title)
+                val max = data.workingMax(chosen, today)
+                item(chosen, scheme, max, data.lastSet(chosen, today)).copy(slot = base.title)
             },
             note = "Тренировки А и Б чередуются. Программу по микроциклам можно выбрать в профиле.",
         )
     }
 
-    private fun item(exercise: Exercise, scheme: Scheme, maxOf: (Exercise) -> Double?): PlanItem {
+    private fun item(exercise: Exercise, scheme: Scheme, max: WorkingMax?, last: SetGroup?): PlanItem {
         val light = exercise.movement in accessory || exercise.loadFactor == Exercise.ISOLATION
+        val guess = if (light) WeightAdvice.byReps(exercise, CORE_REPS, max, last) else null
         val sets = when {
-            light -> PlannedSets(CORE_SETS, CORE_REPS, null)
+            light -> PlannedSets(CORE_SETS, CORE_REPS, guess?.first)
             exercise.bodyweight -> PlannedSets(scheme.sets, MAX_REPS, null)
             else -> {
                 val reps = if (exercise == Exercise.Deadlift) minOf(scheme.reps, DEADLIFT_MAX_REPS) else scheme.reps
-                PlannedSets(scheme.sets, reps.toString(), weight(exercise, scheme.percent, maxOf))
+                PlannedSets(scheme.sets, reps.toString(), max?.let { Strength.percentOf(it.kg, scheme.percent) })
             }
         }
         val note = when {
             sets.reps == MAX_REPS -> "Оставляй 1–2 повтора в запасе"
             exercise.bodyweight -> null
-            light -> "Лёгкий вес, без отказа"
+            light -> guess?.second ?: "Лёгкий вес, без отказа"
             sets.weightKg == null -> CHOOSE_WEIGHT
-            else -> "${scheme.percent} % от ПМ"
+            else -> WeightAdvice.percentNote("${scheme.percent} %", max)
         }
         return PlanItem(PlanPart.Work, exercise.title, exercise, listOf(sets), listOfNotNull(note))
-    }
-
-    private fun weight(exercise: Exercise, percent: Int, maxOf: (Exercise) -> Double?): Double? {
-        val own = maxOf(exercise)
-        val borrowed = fromBench[exercise]?.let { share -> maxOf(Exercise.Bench)?.times(share) }
-        return (own ?: borrowed)?.let { Strength.percentOf(it, percent) }
     }
 }

@@ -52,11 +52,11 @@ class PlannerTest {
     @Test
     fun programSchemeWithTailAndSeveralPercents() {
         val item = ProgramItem("Присед", "3×3, последний подход ×2", Exercise.Squat, listOf(87, 93, 100))
-        val planned = Planner.fromProgram(item, 200.0)
+        val planned = Planner.fromProgram(item, Exercise.Squat, WorkingMax(200.0))
         assertEquals(listOf(175.0, 185.0, 200.0), planned.sets.map { it.weightKg })
         assertEquals("последний подход ×2", planned.notes.first())
         val pullUps = ProgramItem("Подтягивания широким хватом", "3-4×мах", null, emptyList())
-        val unknown = Planner.fromProgram(pullUps, null)
+        val unknown = Planner.fromProgram(pullUps, Exercise.PullUp, null)
         assertEquals(Exercise.PullUp, unknown.exercise)
         assertEquals(listOf(PlannedSets(3, "мах", null)), unknown.sets)
     }
@@ -93,5 +93,41 @@ class PlannerTest {
         assertEquals(Exercise.LegPress, WorkoutParser.parse("жим ногами 100 на 10").entries.single().exercise)
         val chinUps = WorkoutParser.parse("подтягивания обратным хватом 3 по 8")
         assertEquals(Exercise.ChinUp, chinUps.entries.single().exercise)
+    }
+
+    @Test
+    fun missingMaxIsEstimatedFromRelatedLift() {
+        val profile = Profile(programId = "hypertrophy", programStartEpochDay = 0, manualMaxes = maxes)
+            .choose("Присед с низкой штангой в бинтах", Exercise.StiffLegDeadlift)
+        val item = Planner.today(AppData(profile), today = 0).items.first { it.part == PlanPart.Work }
+        assertEquals(Exercise.StiffLegDeadlift, item.exercise)
+        // ПМ тяги на прямых ногах ≈ 120 × 0,7 = 84 кг; 67 % — 56,28 → 57,5 кг под блины.
+        assertEquals(57.5, item.sets.first().weightKg)
+        assertTrue(item.notes.any { "«Становая тяга»" in it })
+        assertEquals(WorkingMax(84.0, Exercise.Deadlift), AppData(profile).workingMax(Exercise.StiffLegDeadlift, 0))
+        assertNull(AppData(profile).workingMax(Exercise.LegPress, 0))
+    }
+
+    @Test
+    fun accessoryWeightComesFromDiary() {
+        val extensions = ExerciseEntry(Exercise.LegExtension, sets = listOf(SetGroup(35.0, 12), SetGroup(40.0, 12, 2)))
+        val data = AppData(
+            Profile(programId = "hypertrophy", programStartEpochDay = 0),
+            listOf(WorkoutSession(1, epochDay = -3, rawText = "", entries = listOf(extensions))),
+        )
+        val plan = Planner.today(data, today = 0)
+        val item = plan.items.first { it.exercise == Exercise.LegExtension }
+        assertEquals(listOf(PlannedSets(3, "12", 40.0)), item.sets)
+        assertTrue(item.notes.last().startsWith("Вес из последней записи"))
+        assertEquals(Exercise.HackSquat, plan.items.first { it.title.contains("гакк") }.exercise)
+        assertEquals(Exercise.Abs, plan.items.first { it.title.contains("закреплён") }.exercise)
+    }
+
+    @Test
+    fun ownMaxGivesWeightForReps() {
+        val item = ProgramItem("Фронтальный присед", "3×10", null, emptyList())
+        val planned = Planner.fromProgram(item, Exercise.FrontSquat, WorkingMax(100.0))
+        // 100 / (1 + 12/30) ≈ 71,4 → 72,5 кг: 10 повторов с запасом 2.
+        assertEquals(listOf(PlannedSets(3, "10", 72.5)), planned.sets)
     }
 }
