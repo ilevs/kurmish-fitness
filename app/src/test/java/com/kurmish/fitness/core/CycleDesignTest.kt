@@ -27,10 +27,16 @@ class CycleDesignTest {
         val edited = design.withDay(0, day.withItem(0, squat).withItem(day.items.size, extra).moved(day.items.size, -1))
             .withMicrocycles(5)
         val first = edited.toProgram().sessions.first()
-        assertEquals(ProgramItem("Присед с низкой штангой в бинтах", "5×5", Exercise.Squat, listOf(70)), first.items[0])
+        assertEquals(ProgramItem("Присед с низкой штангой", "5×5", Exercise.Squat, listOf(70)), first.items[0])
         assertEquals(ProgramItem("Пуловер", "3×12", null, emptyList(), 22.5), first.items[day.items.size - 1])
         assertEquals(5, edited.toProgram().microcycles)
         assertEquals(edited.days[0].items[0].weeks[3], edited.days[0].items[0].weeks[4])
+    }
+
+    @Test
+    fun oldEquipmentSlotsMoveToNewNames() {
+        val profile = Profile(pool = mapOf("Жим лёжа в слинге" to Exercise.DumbbellPress)).migrated()
+        assertEquals(mapOf("Жим штанги лёжа" to Exercise.DumbbellPress), profile.pool)
     }
 
     @Test

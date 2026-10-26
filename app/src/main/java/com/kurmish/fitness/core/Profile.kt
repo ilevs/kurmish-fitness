@@ -110,6 +110,9 @@ data class Profile(
     fun withoutDesign(id: String, today: Long): Profile =
         copy(designs = designs.filter { it.id != id }).withBlocks(blockIds.filter { it != id }, today)
 
+    /** Профиль после переименований в программах: выбор на цикл переносится на новые названия пунктов. */
+    fun migrated(): Profile = copy(pool = pool.mapKeys { (slot, _) -> Programs.renamed[slot] ?: slot })
+
     /** Запоминает на цикл [exercise] вместо пункта [slot]; null возвращает исходное упражнение. */
     fun choose(slot: String, exercise: Exercise?): Profile =
         copy(pool = if (exercise == null || exercise.title == slot) pool - slot else pool + (slot to exercise))

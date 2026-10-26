@@ -73,6 +73,9 @@ data class AppData(
             .maxOrNull()
     }
 
+    /** Данные после переименований в программах, см. [Profile.migrated]. */
+    fun migrated(): AppData = copy(profile = profile.migrated())
+
     /** Самый тяжёлый подход [exercise] с весом в последней тренировке до [today] включительно. */
     fun lastSet(exercise: Exercise, today: Long): SetGroup? = sessions
         .filter { it.epochDay <= today }
@@ -114,10 +117,11 @@ class JournalStore(private val file: File) {
 
     /** Разбирает копию файла, например из бэкапа; null, если это не Дневник. */
     fun decode(bytes: ByteArray): AppData? =
-        runCatching { json.decodeFromString<AppData>(bytes.decodeToString()) }.getOrNull()
+        runCatching { json.decodeFromString<AppData>(bytes.decodeToString()) }.getOrNull()?.migrated()
 
     /** Читает данные; при отсутствии или порче файла возвращает пустые. */
-    fun load(): AppData = runCatching { json.decodeFromString<AppData>(file.readText()) }.getOrDefault(AppData())
+    fun load(): AppData =
+        runCatching { json.decodeFromString<AppData>(file.readText()) }.getOrDefault(AppData()).migrated()
 
     /** Записывает атомарно: через временный файл, чтобы не потерять дневник при сбое. */
     fun save(data: AppData) {

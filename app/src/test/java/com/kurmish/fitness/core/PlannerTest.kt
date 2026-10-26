@@ -98,11 +98,11 @@ class PlannerTest {
     @Test
     fun missingMaxIsEstimatedFromRelatedLift() {
         val profile = Profile(programId = "hypertrophy", programStartEpochDay = 0, manualMaxes = maxes)
-            .choose("Присед с низкой штангой в бинтах", Exercise.StiffLegDeadlift)
+            .choose("Присед с низкой штангой", Exercise.StiffLegDeadlift)
         val item = Planner.today(AppData(profile), today = 0).items.first { it.part == PlanPart.Work }
         assertEquals(Exercise.StiffLegDeadlift, item.exercise)
-        // ПМ тяги на прямых ногах ≈ 120 × 0,7 = 84 кг; 67 % — 56,28 → 57,5 кг под блины.
-        assertEquals(57.5, item.sets.first().weightKg)
+        // ПМ тяги на прямых ногах ≈ 120 × 0,7 = 84 кг; 60 % — 50,4 → 50 кг под блины.
+        assertEquals(50.0, item.sets.first().weightKg)
         assertTrue(item.notes.any { "«Становая тяга»" in it })
         assertEquals(WorkingMax(84.0, Exercise.Deadlift), AppData(profile).workingMax(Exercise.StiffLegDeadlift, 0))
         assertNull(AppData(profile).workingMax(Exercise.ExternalRotation, 0))
