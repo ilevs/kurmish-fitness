@@ -15,7 +15,10 @@
 ```
 ui (Compose)  →  TrainerViewModel  →  core (чистый Kotlin)
                                         ├─ WorkoutParser   свободный текст → подходы
-                                        ├─ Strength        оценка ПМ, проценты, разминка
+                                        ├─ Strength        оценка ПМ, проценты от ПМ
+                                        ├─ WarmUp          таблицы подводящих подходов
+                                        ├─ LoadCalculator  тоннаж, КПШ, интенсивность, время
+                                        ├─ Programs        программы по микроциклам
                                         ├─ CycleCatalog    база циклов и подбор
                                         ├─ Coach           совет на сегодня
                                         └─ JournalStore    JSON-файл на устройстве

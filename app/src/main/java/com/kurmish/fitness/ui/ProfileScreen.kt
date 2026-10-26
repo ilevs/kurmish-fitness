@@ -13,6 +13,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -33,6 +34,7 @@ import com.kurmish.fitness.core.Discipline
 import com.kurmish.fitness.core.Exercise
 import com.kurmish.fitness.core.Goal
 import com.kurmish.fitness.core.Profile
+import com.kurmish.fitness.core.Programs
 import com.kurmish.fitness.core.Rank
 import com.kurmish.fitness.core.Strength
 
@@ -95,6 +97,7 @@ internal fun ProfileScreen(
             Text(stringResource(R.string.profile_natural))
         }
         MaxFields(data = data, today = today, onProfileChange = onProfileChange)
+        ProgramCard(data = data, today = today, onProfileChange = onProfileChange)
         CyclesCard(profile)
     }
 }
@@ -113,6 +116,35 @@ private fun MaxFields(data: AppData, today: Long, onProfileChange: (Profile) -> 
                 onProfileChange(data.profile.copy(manualMaxes = maxes))
             },
         )
+    }
+}
+
+@Composable
+private fun ProgramCard(data: AppData, today: Long, onProfileChange: (Profile) -> Unit) {
+    val profile = data.profile
+    val program = Programs.byId(profile.programId)
+    val none = stringResource(R.string.profile_program_none)
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(ScreenPadding), verticalArrangement = Arrangement.spacedBy(Gap)) {
+            ChoiceRow(
+                title = stringResource(R.string.profile_program),
+                options = listOf<Pair<String?, String>>(null to none) + Programs.all.map { it.id to it.title },
+                selected = profile.programId,
+                onSelect = { id ->
+                    if (id != profile.programId) {
+                        onProfileChange(profile.copy(programId = id, programStartEpochDay = id?.let { today }))
+                    }
+                },
+            )
+            if (program != null) {
+                val progress = Programs.progress(program, profile.programStartEpochDay ?: today, data.sessions)
+                Text(program.note, style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(R.string.profile_program_progress, progress.done, program.sessions.size))
+                OutlinedButton(onClick = { onProfileChange(profile.copy(programStartEpochDay = today)) }) {
+                    Text(stringResource(R.string.profile_program_restart))
+                }
+            }
+        }
     }
 }
 

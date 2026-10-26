@@ -16,7 +16,9 @@
     "daysPerWeek": 2,
     "correctionPercent": 0.5,
     "natural": true,
-    "manualMaxes": { "Bench": 110.0 }
+    "manualMaxes": { "Bench": 110.0 },
+    "programId": "maximum",
+    "programStartEpochDay": 20387
   },
   "sessions": [
     {
@@ -32,4 +34,4 @@
 }
 ```
 
-`epochDay` — число дней с 1 января 1970. Незнакомые поля при чтении пропускаются, поэтому старые версии файла читаются новыми версиями приложения.
+`epochDay` и `programStartEpochDay` — число дней с 1 января 1970. `programId` — `maximum`, `hypertrophy` или `null`. Незнакомые поля при чтении пропускаются, поэтому старые версии файла читаются новыми версиями приложения.

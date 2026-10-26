@@ -5,6 +5,7 @@ import com.kurmish.fitness.core.ExerciseEntry
 import com.kurmish.fitness.core.ParsedWorkout
 import com.kurmish.fitness.core.SetGroup
 import com.kurmish.fitness.core.kg
+import kotlin.math.roundToInt
 
 /** Внешний отступ экранов. */
 internal val ScreenPadding = 16.dp
@@ -31,3 +32,16 @@ internal fun ParsedWorkout.summary(): String = "Записал. " + entries.join
     }
     "${entry.displayName} $sets"
 }
+
+private const val KgInTonne = 1000.0
+private const val TonneDecimals = 10.0
+
+/** «3,2 т» от тонны, иначе «850 кг». */
+internal fun Double.tonnage(): String = if (this >= KgInTonne) {
+    "${((this / KgInTonne) * TonneDecimals).roundToInt() / TonneDecimals}".replace('.', ',') + " т"
+} else {
+    "${roundToInt()} кг"
+}
+
+/** Вес, округлённый до килограмма. */
+internal fun Double.roundedKg(): String = "${roundToInt()} кг"

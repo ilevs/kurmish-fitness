@@ -47,6 +47,8 @@ enum class Goal(val title: String) {
  * @property correctionPercent процент корректировки: на сколько растёт расчётный ПМ от недели к неделе.
  * @property natural тренируется без фармакологии.
  * @property manualMaxes ПМ, введённые вручную, в кг.
+ * @property programId выбранная программа из [Programs]; null — без программы.
+ * @property programStartEpochDay с какого дня записи журнала считаются тренировками программы.
  */
 @Serializable
 data class Profile(
@@ -58,6 +60,8 @@ data class Profile(
     val correctionPercent: Double = DEFAULT_CORRECTION,
     val natural: Boolean = true,
     val manualMaxes: Map<Exercise, Double> = emptyMap(),
+    val programId: String? = null,
+    val programStartEpochDay: Long? = null,
 ) {
     /** Значения по умолчанию. */
     companion object {

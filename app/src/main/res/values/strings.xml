@@ -11,7 +11,7 @@
     <string name="today_weights">Веса от ПМ</string>
     <string name="today_warm_up">Подводящие к 80 %%: %1$s</string>
     <string name="today_no_maxes">Запиши тренировку или введи ПМ в профиле, и здесь появятся рабочие веса.</string>
-    <string name="today_cycle_table_missing">Таблица процентов цикла по неделям пока не загружена в приложение. Тренируйся по своему циклу, а сюда записывай сделанное.</string>
+    <string name="today_plan_warm_up">Разминка перед базовым движением: %1$s</string>
 
     <string name="log_hint">Например: присед 120 на 5 по 3, жим 90х5х4, подтягивания 3 по 10, было легко</string>
     <string name="log_voice">Сказать</string>
@@ -37,4 +37,10 @@
     <string name="profile_max">ПМ: %1$s, кг</string>
     <string name="profile_cycles">Подходящие циклы</string>
     <string name="profile_cycle_fits">подходит</string>
+    <string name="profile_program">Программа</string>
+    <string name="profile_program_none">Без программы</string>
+    <string name="profile_program_progress">Сделано тренировок: %1$d из %2$d</string>
+    <string name="profile_program_restart">Начать программу заново с сегодня</string>
+    <string name="journal_load">Тоннаж %1$s · КПШ %2$d · средний вес %3$s · ~%4$d мин</string>
+    <string name="journal_intensity">Интенсивность %1$d %% от ПМ · нагрузка с коэффициентами %2$s</string>
 </resources>
