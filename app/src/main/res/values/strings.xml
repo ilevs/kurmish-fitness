@@ -9,6 +9,11 @@
     <string name="speak">Озвучить</string>
     <string name="today_tips">Советы</string>
     <string name="today_done">Записано: %1$s</string>
+    <string name="today_replace">Заменить</string>
+    <string name="today_restore">Вернуть</string>
+    <string name="today_instead">Вместо «%1$s» на весь цикл</string>
+    <string name="picker_title">Чем заменить «%1$s»</string>
+    <string name="picker_hint">Выбор запомнится на цикл: во всех тренировках, где стоит это упражнение.</string>
 
     <string name="log_hint">Например: присед 120 на 5 по 3, жим 90х5х4, подтягивания 3 по 10, было легко</string>
     <string name="log_voice">Сказать</string>

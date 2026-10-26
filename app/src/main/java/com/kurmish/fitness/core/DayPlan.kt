@@ -33,6 +33,7 @@ enum class PlanPart {
  * @property exercise упражнение каталога, по которому запись в Дневнике закрывает пункт.
  * @property sets подходы с весом и повторами.
  * @property notes пояснения: шаги разминки, проценты от ПМ, особенности схемы.
+ * @property slot название пункта в программе или шаблоне: по нему запоминается выбранная на цикл замена.
  */
 data class PlanItem(
     val part: PlanPart,
@@ -40,7 +41,12 @@ data class PlanItem(
     val exercise: Exercise?,
     val sets: List<PlannedSets>,
     val notes: List<String> = emptyList(),
+    val slot: String = title,
 ) {
+    /** Упражнение заменено атлетом на цикл. */
+    val replaced: Boolean
+        get() = slot != title
+
     /** Пункт для озвучки. */
     val speech: String
         get() = (listOf(title) + sets.map { it.label } + notes).joinToString(", ")
