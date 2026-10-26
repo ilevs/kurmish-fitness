@@ -49,6 +49,7 @@ enum class Feeling {
  * @property feeling самочувствие, если о нём сказали.
  * @property telegramMessageId номер копии записи в чате с ботом; null, пока копия не отправлена.
  * @property telegramParts сообщения боту, из которых собрана запись; пусто для записей из приложения.
+ * @property telegramStale запись исправлена после отправки: копию в Telegram надо обновить.
  */
 @Serializable
 data class WorkoutSession(
@@ -59,6 +60,7 @@ data class WorkoutSession(
     val feeling: Feeling = Feeling.Normal,
     val telegramMessageId: Long? = null,
     val telegramParts: List<TelegramPart> = emptyList(),
+    val telegramStale: Boolean = false,
 ) {
     /** Запись пришла из Telegram. */
     val fromTelegram: Boolean
@@ -67,6 +69,10 @@ data class WorkoutSession(
     /** Запись сделана в приложении и ещё не отправлена в Telegram. */
     val awaitsTelegram: Boolean
         get() = telegramMessageId == null && !fromTelegram
+
+    /** Копия записи в Telegram устарела после правки. */
+    val awaitsTelegramUpdate: Boolean
+        get() = telegramStale && telegramMessageId != null
 }
 
 /**

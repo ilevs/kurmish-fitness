@@ -12,7 +12,6 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.kurmish.fitness.core.AppData
 import com.kurmish.fitness.core.HttpTelegramApi
 import com.kurmish.fitness.core.JournalStore
-import com.kurmish.fitness.core.ParsedWorkout
 import com.kurmish.fitness.core.Profile
 import com.kurmish.fitness.core.SyncReport
 import com.kurmish.fitness.core.TelegramApi
@@ -20,6 +19,8 @@ import com.kurmish.fitness.core.TelegramException
 import com.kurmish.fitness.core.TelegramState
 import com.kurmish.fitness.core.TelegramSync
 import com.kurmish.fitness.core.WorkoutSession
+import com.kurmish.fitness.core.withSaved
+import com.kurmish.fitness.core.withoutSession
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
@@ -93,28 +94,17 @@ class TrainerViewModel(
     /** Сегодняшняя дата в днях с 1970-01-01. */
     fun today(): Long = LocalDate.now().toEpochDay()
 
-    /** Записывает разобранную тренировку. */
-    fun addWorkout(rawText: String, parsed: ParsedWorkout) {
-        change { data ->
-            val session = WorkoutSession(
-                id = data.nextId,
-                epochDay = today() + parsed.dayOffset,
-                rawText = rawText.trim(),
-                entries = parsed.entries,
-                feeling = parsed.feeling,
-            )
-            data.copy(sessions = data.sessions + session)
-        }
+    /**
+     * Сохраняет запись: новую (с номером 0) добавляет, исправленную заменяет и обновляет её копию в Telegram.
+     */
+    fun saveWorkout(session: WorkoutSession) {
+        change { data -> data.withSaved(session) }
         requestSync()
     }
 
     /** Удаляет запись дневника; её копия в Telegram удалится при следующей синхронизации. */
     fun deleteWorkout(id: Long) {
-        change { data ->
-            val copy = data.sessions.firstOrNull { it.id == id }?.telegramMessageId
-            val telegram = copy?.let { data.telegram.copy(pendingDeletes = data.telegram.pendingDeletes + it) }
-            data.copy(sessions = data.sessions.filterNot { it.id == id }, telegram = telegram ?: data.telegram)
-        }
+        change { data -> data.withoutSession(id) }
         requestSync()
     }
 
@@ -147,7 +137,7 @@ class TrainerViewModel(
                 } else {
                     data.copy(
                         telegram = TelegramState(token = trimmed, botId = bot.id, botUsername = bot.username.orEmpty()),
-                        sessions = data.sessions.map { it.copy(telegramMessageId = null) },
+                        sessions = data.sessions.map { it.copy(telegramMessageId = null, telegramStale = false) },
                     )
                 }
             }

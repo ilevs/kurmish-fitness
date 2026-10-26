@@ -1,6 +1,7 @@
 package com.kurmish.fitness.core
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -146,8 +147,69 @@ class TelegramSyncTest {
         assertNull(data.telegram.lastSyncEpochSecond)
     }
 
-    private class FakeApi(private val updates: List<TgUpdate>) : TelegramApi {
+    @Test
+    fun editedSessionUpdatesItsCopy() {
+        val edited = sentBench.copy(feeling = Feeling.Hard, telegramStale = true)
+        val api = FakeApi(emptyList())
+        var data = connected(edited)
+        val report = TelegramSync(api, zone) { transform -> transform(data).also { data = it } }.run()
+
+        assertEquals(SyncReport(received = 0, sent = 1), report)
+        assertEquals(listOf(50L), api.edited)
+        assertTrue(api.sent.isEmpty())
+        assertEquals(50L, data.sessions.single().telegramMessageId)
+        assertFalse(data.sessions.single().telegramStale)
+    }
+
+    @Test
+    fun copyDeletedInChatIsSentAgain() {
+        val api = FakeApi(emptyList(), editError = TelegramException("Bad Request: message to edit not found", 400))
+        var data = connected(sentBench.copy(telegramStale = true))
+        TelegramSync(api, zone) { transform -> transform(data).also { data = it } }.run()
+
+        assertEquals(1, api.sent.size)
+        assertEquals(api.nextId - 1, data.sessions.single().telegramMessageId)
+        assertFalse(data.sessions.single().awaitsTelegramUpdate)
+    }
+
+    @Test
+    fun unchangedCopyIsNotSentAgain() {
+        val api = FakeApi(emptyList(), editError = TelegramException("Bad Request: message is not modified", 400))
+        var data = connected(sentBench.copy(telegramStale = true))
+        TelegramSync(api, zone) { transform -> transform(data).also { data = it } }.run()
+
+        assertTrue(api.sent.isEmpty())
+        assertEquals(50L, data.sessions.single().telegramMessageId)
+        assertFalse(data.sessions.single().telegramStale)
+    }
+
+    @Test
+    fun editOfMessageDetachedInAppIsIgnored() {
+        val session = sentBench.copy(telegramMessageId = null)
+        val data = connected(session).let { it.copy(telegram = it.telegram.copy(detachedMessages = listOf(10))) }
+        val result = TelegramInbox.apply(
+            data = data,
+            updates = listOf(TgUpdate(updateId = 1, editedMessage = message(10, "жим 120 на 5"))),
+            zone = zone,
+        )
+        assertEquals(listOf(session), result.data.sessions)
+        assertEquals(TelegramFormat.EDITED_IN_APP, result.replies.single().text)
+    }
+
+    private val sentBench = WorkoutSession(
+        id = 1,
+        epochDay = day.toEpochDay(),
+        rawText = "жим 100 на 5",
+        entries = listOf(ExerciseEntry(Exercise.Bench, sets = listOf(SetGroup(100.0, 5)))),
+        telegramMessageId = 50,
+    )
+
+    private class FakeApi(
+        private val updates: List<TgUpdate>,
+        private val editError: TelegramException? = null,
+    ) : TelegramApi {
         val sent = mutableListOf<String>()
+        val edited = mutableListOf<Long>()
         val deleted = mutableListOf<Long>()
         val reactions = mutableListOf<Long>()
         var nextId = 100L
@@ -159,6 +221,11 @@ class TelegramSyncTest {
         override fun sendMessage(chatId: Long, text: String): TgMessage {
             sent += text
             return TgMessage(messageId = nextId++, chat = TgChat(chatId))
+        }
+
+        override fun editMessage(chatId: Long, messageId: Long, text: String) {
+            editError?.let { throw it }
+            edited += messageId
         }
 
         override fun deleteMessage(chatId: Long, messageId: Long) {
@@ -176,6 +243,8 @@ class TelegramSyncTest {
         override fun getUpdates(offset: Long): List<TgUpdate> = throw IOException("offline")
 
         override fun sendMessage(chatId: Long, text: String): TgMessage = throw IOException("offline")
+
+        override fun editMessage(chatId: Long, messageId: Long, text: String): Unit = throw IOException("offline")
 
         override fun deleteMessage(chatId: Long, messageId: Long): Unit = throw IOException("offline")
 
