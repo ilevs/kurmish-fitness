@@ -130,10 +130,10 @@ private fun Connected(state: BackupUi, onBackup: () -> Unit, onRestore: () -> Un
                             confirmRestore = false
                             onRestore()
                         },
-                    ) { Text(stringResource(R.string.backup_restore_confirm)) }
+                    ) { Text(stringResource(R.string.backup_restore)) }
                 },
                 dismissButton = {
-                    TextButton(onClick = { confirmRestore = false }) { Text(stringResource(R.string.backup_cancel)) }
+                    TextButton(onClick = { confirmRestore = false }) { Text(stringResource(R.string.editor_cancel)) }
                 },
             )
         }

@@ -92,8 +92,6 @@
     <string name="backup_disconnect">Отключить</string>
     <string name="backup_restore_title">Восстановить Дневник?</string>
     <string name="backup_restore_text">Дневник и профиль на этом телефоне заменятся последней копией с Яндекс Диска.</string>
-    <string name="backup_restore_confirm">Восстановить</string>
-    <string name="backup_cancel">Отмена</string>
     <string name="backup_working">Связываюсь с Яндекс Диском…</string>
     <string name="backup_restored">Дневник восстановлен из копии.</string>
     <string name="backup_nothing">На Диске ещё нет копии Дневника.</string>
