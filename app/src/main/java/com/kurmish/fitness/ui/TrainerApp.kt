@@ -67,6 +67,7 @@ fun TrainerApp(
                 today = viewModel.today(),
                 onSpeak = speaker::speak,
                 onChoose = { slot, exercise -> viewModel.updateProfile(data.profile.choose(slot, exercise)) },
+                dietActions = viewModel.dietActions(),
                 modifier = content
             )
             Tab.Journal -> JournalScreen(
@@ -95,3 +96,10 @@ fun TrainerApp(
         }
     }
 }
+
+private fun TrainerViewModel.dietActions() = DietActions(
+    onLogWeight = ::logWeight,
+    onRefeedDone = ::markRefeed,
+    onApplyCorrection = ::applyCalorieCorrection,
+    onPhaseChange = ::changeDietPhase,
+)

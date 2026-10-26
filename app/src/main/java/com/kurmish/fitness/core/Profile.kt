@@ -50,6 +50,7 @@ enum class Goal(val title: String) {
  * @property programId выбранная программа из [Programs]; null — без программы.
  * @property programStartEpochDay с какого дня записи дневника считаются тренировками программы.
  * @property pool упражнения, выбранные на цикл вместо предложенных: название пункта плана → упражнение.
+ * @property diet питание: фаза, процент жира, активность, рефиды.
  */
 @Serializable
 data class Profile(
@@ -64,6 +65,7 @@ data class Profile(
     val programId: String? = null,
     val programStartEpochDay: Long? = null,
     val pool: Map<String, Exercise> = emptyMap(),
+    val diet: DietSettings = DietSettings(),
 ) {
     /** Запоминает на цикл [exercise] вместо пункта [slot]; null возвращает исходное упражнение. */
     fun choose(slot: String, exercise: Exercise?): Profile =

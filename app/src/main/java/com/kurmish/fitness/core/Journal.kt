@@ -9,11 +9,13 @@ import java.io.File
  *
  * @property profile данные атлета.
  * @property sessions записанные тренировки, новые в конце.
+ * @property weights взвешивания по дням.
  */
 @Serializable
 data class AppData(
     val profile: Profile = Profile(),
     val sessions: List<WorkoutSession> = emptyList(),
+    val weights: List<WeightEntry> = emptyList(),
 ) {
     /** Следующий свободный номер записи. */
     val nextId: Long

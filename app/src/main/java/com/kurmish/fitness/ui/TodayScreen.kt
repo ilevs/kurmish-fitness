@@ -31,8 +31,10 @@ import androidx.compose.ui.res.stringResource
 import com.kurmish.fitness.R
 import com.kurmish.fitness.core.AppData
 import com.kurmish.fitness.core.Coach
+import com.kurmish.fitness.core.DietPhase
 import com.kurmish.fitness.core.Exercise
 import com.kurmish.fitness.core.ExerciseEntry
+import com.kurmish.fitness.core.FlexibleDiet
 import com.kurmish.fitness.core.PlanItem
 import com.kurmish.fitness.core.PlanPart
 import com.kurmish.fitness.core.Planner
@@ -44,9 +46,11 @@ internal fun TodayScreen(
     today: Long,
     onSpeak: (String) -> Unit,
     onChoose: (slot: String, exercise: Exercise?) -> Unit,
+    dietActions: DietActions,
     modifier: Modifier = Modifier,
 ) {
     val advice = remember(data, today) { Coach.advise(data, today) }
+    val diet = remember(data, today) { FlexibleDiet.day(data, today) }
     val plan = remember(data, today) { Planner.today(data, today) }
     val entries = remember(data, today) { data.sessions.filter { it.epochDay == today }.flatMap { it.entries } }
     var ticked by rememberSaveable(today) { mutableStateOf(emptyList<Int>()) }
@@ -84,6 +88,14 @@ internal fun TodayScreen(
                     choosing = null
                 },
                 onDismiss = { choosing = null },
+            )
+        }
+        if (data.profile.diet.phase != DietPhase.Off) {
+            DietCard(
+                phase = data.profile.diet.phase,
+                day = diet,
+                missing = FlexibleDiet.missing(data),
+                actions = dietActions,
             )
         }
         if (advice.points.isNotEmpty()) {

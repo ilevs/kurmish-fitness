@@ -30,6 +30,7 @@ object Coach {
     private const val ENDURANCE_REPS = 8
     private const val MAX_DAYS_WITH_REST = 3
     private const val EPSILON = 0.001
+    private const val DEFICIT_CEILING = 0.5
 
     /** Совет на день [today] (дни с 1970-01-01). */
     fun advise(data: AppData, today: Long): Advice {
@@ -37,10 +38,12 @@ object Coach {
         val cycle = CycleCatalog.best(profile)
         val last = data.sessions.maxByOrNull { it.epochDay }
         val program = Programs.byId(profile.programId)
+        val diet = FlexibleDiet.day(data, today)
         val points = buildList {
+            diet?.trainingNotes?.let(::addAll)
             if (program == null) add(cycleLine(cycle))
             addAll(maxLines(data, today))
-            if (program == null) correctionLine(last, profile, cycle)?.let(::add)
+            if (program == null) correctionLine(last, profile, cycle, diet?.phase == DietPhase.Deficit)?.let(::add)
             addAll(if (program == null) techniqueLines(cycle?.strengthMode != false) else programTechniqueLines())
         }
         return Advice(headline(last, profile, today), points)
@@ -79,17 +82,25 @@ object Coach {
         }
     }
 
-    private fun correctionLine(last: WorkoutSession?, profile: Profile, cycle: TrainingCycle?): String? {
-        val ceiling = cycle?.maxCorrectionPercent
+    private fun correctionLine(
+        last: WorkoutSession?,
+        profile: Profile,
+        cycle: TrainingCycle?,
+        deficit: Boolean,
+    ): String? {
+        val ceiling = listOfNotNull(cycle?.maxCorrectionPercent, DEFICIT_CEILING.takeIf { deficit }).minOrNull()
         val current = profile.correctionPercent
         return when (last?.feeling) {
             Feeling.Hard -> "Прошлая тренировка далась тяжело: поставь процент корректировки 0 %."
             Feeling.Easy -> {
                 val raised = (current + EASY_STEP).let { if (ceiling != null) minOf(it, ceiling) else it }
-                if (abs(raised - current) < EPSILON) {
-                    "Было легко, но процент корректировки уже на максимуме для цикла: замедли темп."
-                } else {
-                    "Было легко: процент корректировки можно поднять до ${raised.percent()}."
+                when {
+                    deficit && raised < current + EPSILON ->
+                        "Было легко, но идёт сброс жира: процент корректировки выше 0,5 % не поднимай."
+                    abs(raised - current) < EPSILON ->
+                        "Было легко, но процент корректировки уже на максимуме для цикла: замедли темп."
+                    else ->
+                        "Было легко: процент корректировки можно поднять до ${raised.percent()}."
                 }
             }
             else -> if (profile.natural && current > NATURAL_CEILING) {
