@@ -162,11 +162,11 @@ data class CycleDesign(
 }
 
 /** Заменяет элемент [index]; null удаляет его, индекс за концом списка добавляет [value] в конец. */
-private fun <T> List<T>.replaced(index: Int, value: T?): List<T> = when {
+internal fun <T> List<T>.replaced(index: Int, value: T?): List<T> = when {
     index >= size -> if (value == null) this else this + value
     value == null -> filterIndexed { i, _ -> i != index }
     else -> mapIndexed { i, old -> if (i == index) value else old }
 }
 
 /** Список длины [size]: новые места повторяют последний элемент. */
-private fun List<DesignWeek?>.resized(size: Int): List<DesignWeek?> = List(size) { getOrElse(it) { lastOrNull() } }
+internal fun List<DesignWeek?>.resized(size: Int): List<DesignWeek?> = List(size) { getOrElse(it) { lastOrNull() } }
