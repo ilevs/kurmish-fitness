@@ -212,17 +212,17 @@ class TrainerViewModel(
                 )
             }
         }
+    }
+}
 
-        /** Сообщает о каждом появлении сети. */
-        private fun Application.networkAvailable(): Flow<Unit> = callbackFlow {
-            val manager = getSystemService(ConnectivityManager::class.java)
-            val callback = object : ConnectivityManager.NetworkCallback() {
-                override fun onAvailable(network: Network) {
-                    trySend(Unit)
-                }
-            }
-            manager.registerDefaultNetworkCallback(callback)
-            awaitClose { manager.unregisterNetworkCallback(callback) }
+/** Сообщает о каждом появлении сети. */
+internal fun Application.networkAvailable(): Flow<Unit> = callbackFlow {
+    val manager = getSystemService(ConnectivityManager::class.java)
+    val callback = object : ConnectivityManager.NetworkCallback() {
+        override fun onAvailable(network: Network) {
+            trySend(Unit)
         }
     }
+    manager.registerDefaultNetworkCallback(callback)
+    awaitClose { manager.unregisterNetworkCallback(callback) }
 }

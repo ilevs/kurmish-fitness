@@ -37,8 +37,11 @@ private val DateFormat = DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.forL
 internal fun JournalScreen(
     data: AppData,
     today: Long,
+    syncStatus: SyncStatus,
     onDelete: (Long) -> Unit,
-    telegram: @Composable () -> Unit,
+    onTelegramConnect: (String) -> Unit,
+    onTelegramDisconnect: () -> Unit,
+    onSync: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val sessions = remember(data) {
@@ -54,7 +57,15 @@ internal fun JournalScreen(
         contentPadding = PaddingValues(ScreenPadding),
         verticalArrangement = Arrangement.spacedBy(Gap),
     ) {
-        item(key = "telegram") { telegram() }
+        item(key = "telegram") {
+            TelegramCard(
+                data = data,
+                status = syncStatus,
+                onConnect = onTelegramConnect,
+                onDisconnect = onTelegramDisconnect,
+                onSync = onSync,
+            )
+        }
         if (sessions.isEmpty()) {
             item(key = "empty") { Text(text = stringResource(R.string.journal_empty)) }
         }
