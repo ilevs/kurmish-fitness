@@ -6,12 +6,28 @@ import kotlin.math.abs
  * Совет тренера на сегодня.
  *
  * @property headline главное в одной фразе.
+ * @property plan что делать на следующей тренировке программы; пусто без программы.
+ * @property warmUp подводящие подходы к первому рабочему весу тренировки.
  * @property points подробности по пунктам.
  */
-data class Advice(val headline: String, val points: List<String>) {
+data class Advice(
+    val headline: String,
+    val plan: List<String>,
+    val warmUp: List<WarmUpSet>,
+    val points: List<String>,
+) {
     /** Текст для озвучки целиком. */
     val speech: String
-        get() = (listOf(headline) + points).joinToString(" ")
+        get() {
+            val warm = if (warmUp.isEmpty()) {
+                emptyList()
+            } else {
+                listOf(
+                    "Разминка: " + warmUp.joinToString { it.label } + "."
+                )
+            }
+            return (listOf(headline) + plan + warm + points).joinToString(" ")
+        }
 }
 
 /**
@@ -38,13 +54,42 @@ object Coach {
         val profile = data.profile
         val cycle = CycleCatalog.best(profile)
         val last = data.sessions.maxByOrNull { it.epochDay }
+        val program = Programs.byId(profile.programId)
+        val progress = program?.let { Programs.progress(it, profile.programStartEpochDay ?: today, data.sessions) }
+        val next = progress?.next
         val points = buildList {
-            add(cycleLine(cycle))
+            if (program == null) add(cycleLine(cycle))
             addAll(maxLines(data, today))
-            correctionLine(last, profile, cycle)?.let(::add)
-            addAll(techniqueLines(cycle?.strengthMode != false))
+            if (program == null) correctionLine(last, profile, cycle)?.let(::add)
+            addAll(if (program == null) techniqueLines(cycle?.strengthMode != false) else programTechniqueLines())
         }
-        return Advice(headline(last, profile, today), points)
+        val plan = when {
+            program == null || progress == null -> emptyList()
+            next == null -> listOf(
+                "Программа «${program.title}» пройдена. Дальше разгрузочная неделя с ограниченной " +
+                    "интенсивностью и объёмом, после неё проверь максимум.",
+            )
+            else -> planLines(program, next, data, today)
+        }
+        return Advice(headline(last, profile, today), plan, warmUpFor(next, data, today), points)
+    }
+
+    private fun planLines(program: TrainingProgram, next: ProgramSession, data: AppData, today: Long): List<String> =
+        listOf("Следующая тренировка: ${next.day}, микроцикл ${next.microcycle} из ${program.microcycles}.") +
+            next.items.map { item -> item.describe(item.maxOf?.let { data.currentMax(it, today) }) + "." }
+
+    private fun warmUpFor(next: ProgramSession?, data: AppData, today: Long): List<WarmUpSet> {
+        val main = next?.items?.firstOrNull { it.maxOf != null && it.percents.isNotEmpty() }
+        val lift = main?.maxOf
+        val max = lift?.let { data.currentMax(it, today) }
+        return if (main == null || lift == null || max == null) {
+            emptyList()
+        } else {
+            WarmUp.sets(
+                lift,
+                main.weights(max).first()
+            )
+        }
     }
 
     private fun headline(last: WorkoutSession?, profile: Profile, today: Long): String {
@@ -100,6 +145,12 @@ object Coach {
             }
         }
     }
+
+    private fun programTechniqueLines(): List<String> = listOf(
+        "Перед базовым движением сделай подводящие подходы по таблице разминки.",
+        "Отдых между подходами не ограничивай: размеренный, неспешный темп силовой тренировки только на пользу.",
+        "В подсобных упражнениях вес подбирай так, чтобы схема выполнялась чисто, без отказа.",
+    )
 
     private fun techniqueLines(strengthMode: Boolean): List<String> = listOf(
         "Начни с общей разминки и подводящих подходов от пустого грифа.",

@@ -45,7 +45,30 @@ enum class Exercise(val title: String, val bodyweight: Boolean, val synonyms: Li
     Hyperextension("Гиперэкстензия", bodyweight = true, synonyms = listOf("гиперэкстензия", "гиперы")),
     ;
 
+    /**
+     * Коэффициент воздействия на организм: 1 — тяжёлое базовое движение, 0,6 — другое многосуставное,
+     * 0,3 — односуставное или с собственным весом. Влияет на интенсивность и время тренировки.
+     */
+    val loadFactor: Double
+        get() = when (this) {
+            Squat, Bench, Deadlift -> HEAVY
+            FrenchPress, BicepsCurl, PushUp, Abs, Hyperextension -> ISOLATION
+            else -> COMPOUND
+        }
+
     /** Соревновательное движение, по которому ведётся предельный максимум (ПМ). */
     val isMainLift: Boolean
         get() = this == Squat || this == Bench || this == Deadlift
+
+    /** Значения коэффициента воздействия. */
+    companion object {
+        /** Тяжёлое базовое движение. */
+        const val HEAVY = 1.0
+
+        /** Многосуставное вспомогательное. */
+        const val COMPOUND = 0.6
+
+        /** Односуставное или с собственным весом. */
+        const val ISOLATION = 0.3
+    }
 }

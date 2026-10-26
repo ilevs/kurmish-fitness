@@ -71,7 +71,12 @@ fun TrainerApp(
                 },
                 modifier = content,
             )
-            Tab.Journal -> JournalScreen(data = data, onDelete = viewModel::deleteWorkout, modifier = content)
+            Tab.Journal -> JournalScreen(
+                data = data,
+                today = viewModel.today(),
+                onDelete = viewModel::deleteWorkout,
+                modifier = content,
+            )
             Tab.Profile -> ProfileScreen(
                 data = data,
                 today = viewModel.today(),

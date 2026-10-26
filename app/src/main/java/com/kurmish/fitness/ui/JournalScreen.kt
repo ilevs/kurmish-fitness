@@ -22,19 +22,27 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import com.kurmish.fitness.R
 import com.kurmish.fitness.core.AppData
+import com.kurmish.fitness.core.LoadCalculator
+import com.kurmish.fitness.core.LoadMetrics
 import com.kurmish.fitness.core.WorkoutSession
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import kotlin.math.roundToInt
 
 private val DateFormat = DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.forLanguageTag("ru-RU"))
 
 /** Журнал тренировок, новые сверху. */
 @Composable
-internal fun JournalScreen(data: AppData, onDelete: (Long) -> Unit, modifier: Modifier = Modifier) {
-    val sessions = remember(
-        data
-    ) { data.sessions.sortedWith(compareByDescending<WorkoutSession> { it.epochDay }.thenByDescending { it.id }) }
+internal fun JournalScreen(data: AppData, today: Long, onDelete: (Long) -> Unit, modifier: Modifier = Modifier) {
+    val sessions = remember(data) {
+        data.sessions.sortedWith(compareByDescending<WorkoutSession> { it.epochDay }.thenByDescending { it.id })
+    }
+    val loads = remember(data, today) {
+        data.sessions.associate { session ->
+            session.id to LoadCalculator.session(session) { data.currentMax(it, today) }
+        }
+    }
     if (sessions.isEmpty()) {
         Text(text = stringResource(R.string.journal_empty), modifier = modifier.padding(ScreenPadding))
     } else {
@@ -43,13 +51,13 @@ internal fun JournalScreen(data: AppData, onDelete: (Long) -> Unit, modifier: Mo
             contentPadding = PaddingValues(ScreenPadding),
             verticalArrangement = Arrangement.spacedBy(Gap),
         ) {
-            items(sessions, key = { it.id }) { session -> SessionCard(session, onDelete) }
+            items(sessions, key = { it.id }) { session -> SessionCard(session, loads[session.id], onDelete) }
         }
     }
 }
 
 @Composable
-private fun SessionCard(session: WorkoutSession, onDelete: (Long) -> Unit) {
+private fun SessionCard(session: WorkoutSession, load: LoadMetrics?, onDelete: (Long) -> Unit) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Row(modifier = Modifier.padding(ScreenPadding), verticalAlignment = Alignment.Top) {
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Gap)) {
@@ -57,6 +65,7 @@ private fun SessionCard(session: WorkoutSession, onDelete: (Long) -> Unit) {
                 Text(text = date.replaceFirstChar { it.uppercaseChar() }, style = MaterialTheme.typography.titleMedium)
                 session.entries.forEach { entry -> Text(entry.label()) }
                 feelingLabel(session.feeling)?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+                if (load != null && load.lifts > 0) LoadLines(load)
             }
             IconButton(onClick = { onDelete(session.id) }) {
                 Icon(
@@ -67,3 +76,35 @@ private fun SessionCard(session: WorkoutSession, onDelete: (Long) -> Unit) {
         }
     }
 }
+
+@Composable
+private fun LoadLines(load: LoadMetrics) {
+    val style = MaterialTheme.typography.bodySmall
+    val color = MaterialTheme.colorScheme.onSurfaceVariant
+    Column {
+        Text(
+            text = stringResource(
+                R.string.journal_load,
+                load.tonnageKg.tonnage(),
+                load.lifts,
+                load.averageKg.roundedKg(),
+                load.minutes,
+            ),
+            style = style,
+            color = color,
+        )
+        load.relativeIntensity?.let { intensity ->
+            Text(
+                text = stringResource(
+                    R.string.journal_intensity,
+                    (intensity * PERCENT).roundToInt(),
+                    load.weightedIntensity.tonnage(),
+                ),
+                style = style,
+                color = color,
+            )
+        }
+    }
+}
+
+private const val PERCENT = 100
