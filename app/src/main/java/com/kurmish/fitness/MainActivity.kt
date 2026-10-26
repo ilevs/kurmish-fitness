@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.kurmish.fitness.ui.HomeScreen
+import com.kurmish.fitness.ui.TrainerApp
 import com.kurmish.fitness.ui.theme.KurmishFitnessTheme
 
 /** Единственная Activity приложения: хост для Compose-экранов. */
@@ -14,7 +14,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             KurmishFitnessTheme {
-                HomeScreen()
+                TrainerApp()
             }
         }
     }
