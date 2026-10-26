@@ -56,4 +56,15 @@ class ProgramsTest {
         assertEquals(PlannedSets(3, "5", 20.0), plan.items.first().sets.first())
         assertEquals(PlanPart.CoolDown, plan.items.last().part)
     }
+
+    @Test
+    fun programsDescribeThemselvesAndCompareWithProfile() {
+        assertEquals("4 тренировки в неделю · 5 недель · цель: сила", Programs.maximum.summary)
+        assertEquals("4 тренировки в неделю · 4 недели · цель: масса", Programs.hypertrophy.summary)
+        val profile = Profile(goal = Goal.Mass, daysPerWeek = 3)
+        assertEquals(listOf("в профиле 3 тренировки в неделю"), Programs.hypertrophy.mismatches(profile))
+        assertEquals(2, Programs.maximum.mismatches(profile).size)
+        assertEquals("21 неделя", plural(21, "неделя", "недели", "недель"))
+        assertEquals("12 недель", plural(12, "неделя", "недели", "недель"))
+    }
 }

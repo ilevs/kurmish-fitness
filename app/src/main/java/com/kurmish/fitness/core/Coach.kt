@@ -41,7 +41,7 @@ object Coach {
         val diet = FlexibleDiet.day(data, today)
         val points = buildList {
             diet?.trainingNotes?.let(::addAll)
-            if (program == null) add(cycleLine(cycle))
+            if (program == null) cycle?.let { add("Цикл методики под твой профиль: ${it.id}. ${it.note}") }
             addAll(maxLines(data, today))
             if (program == null) correctionLine(last, profile, cycle, diet?.phase == DietPhase.Deficit)?.let(::add)
             addAll(if (program == null) techniqueLines(cycle?.strengthMode != false) else programTechniqueLines())
@@ -58,12 +58,6 @@ object Coach {
                     "подойдёт лёгкая зарядка или растяжка."
             else -> "Сегодня можно тренироваться."
         }
-    }
-
-    private fun cycleLine(cycle: TrainingCycle?): String = if (cycle == null) {
-        "Подходящий цикл не найден: проверь профиль и выбери цикл с наименьшими оговорками на вкладке «Профиль»."
-    } else {
-        "Твой цикл: ${cycle.id}. ${cycle.note}"
     }
 
     private fun maxLines(data: AppData, today: Long): List<String> {
