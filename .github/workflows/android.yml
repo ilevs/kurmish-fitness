@@ -33,6 +33,9 @@ jobs:
         run: ./gradlew detekt
       - name: Android Lint
         run: ./gradlew :app:lintDebug
+      - name: Print Android Lint issues
+        if: failure()
+        run: cat app/build/intermediates/lint_intermediate_text_report/debug/lintReportDebug/lint-results-debug.txt
       - name: Upload lint reports
         if: always()
         uses: actions/upload-artifact@v5
