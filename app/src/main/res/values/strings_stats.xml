@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="tab_stats">Статистика</string>
+  <string name="stats_empty">Здесь появятся графики, когда в Дневнике будут тренировки.</string>
+  <string name="stats_summary">Последние 4 недели</string>
+  <string name="stats_sessions">тренировок</string>
+  <string name="stats_per_week">в неделю</string>
+  <string name="stats_tonnage">тоннаж</string>
+  <string name="stats_last_today">Последняя тренировка сегодня.</string>
+  <string name="stats_last_days">Последняя тренировка: %1$d дн. назад.</string>
+  <string name="stats_max_title">Динамика ПМ</string>
+  <string name="stats_max_empty">График появится, когда в Дневнике будут подходы с весом до 10 повторов.</string>
+  <string name="stats_max_point">%1$s · %2$s</string>
+  <string name="stats_max_change">%1$s с %2$s</string>
+  <string name="stats_max_hint">Оценка разового максимума по лучшему подходу дня. Нажмите на график, чтобы увидеть другой день.</string>
+  <string name="stats_max_chart">График ПМ: от %1$s до %2$s</string>
+  <string name="stats_weeks_title">Нагрузка по неделям, последние 12</string>
+  <string name="stats_metric_tonnage">Тоннаж</string>
+  <string name="stats_metric_lifts">КПШ</string>
+  <string name="stats_metric_intensity">Интенсивность</string>
+  <string name="stats_metric_sessions">Тренировки</string>
+  <string name="stats_week_value">Неделя с %1$s: %2$s</string>
+  <string name="stats_no_value">нет данных</string>
+  <string name="stats_weeks_chart">Столбцы по неделям: %1$s. Нажмите на столбец, чтобы увидеть значение.</string>
+  <string name="stats_intensity_hint">Средний процент от ПМ по упражнениям, для которых ПМ известен.</string>
+  <string name="stats_balance_title">Баланс движений за 4 недели</string>
+  <string name="stats_balance_empty">Нет узнанных упражнений за этот период.</string>
+  <string name="stats_balance_more_push">Повторений в жимах заметно больше, чем в тягах. Добавьте тяги, чтобы плечи оставались здоровыми.</string>
+  <string name="stats_balance_more_pull">Повторений в тягах заметно больше, чем в жимах. Можно добавить жимы.</string>
+  <string name="stats_balance_ok">Жимы и тяги в равновесии.</string>
+</resources>
