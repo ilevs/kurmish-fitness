@@ -21,6 +21,8 @@ ui (Compose)  →  TrainerViewModel  →  core (чистый Kotlin)
                                         ├─ WarmUp          таблицы подводящих подходов
                                         ├─ LoadCalculator  тоннаж, КПШ, интенсивность, время
                                         ├─ Programs        программы по микроциклам
+                                        ├─ CycleDesign     свои циклы, правка по микроциклам
+                                        ├─ Macrocycle      блоки-программы друг за другом
                                         ├─ CycleCatalog    база циклов и подбор
                                         ├─ Coach           совет на сегодня
                                         ├─ FlexibleDiet    фаза питания, калории, рефиды

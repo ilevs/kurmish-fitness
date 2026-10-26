@@ -18,6 +18,11 @@ internal val Gap = 12.dp
 
 private val DayFormat = DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.forLanguageTag("ru-RU"))
 
+private val ShortDateFormat = DateTimeFormatter.ofPattern("d MMM", Locale.forLanguageTag("ru-RU"))
+
+/** «26 окт.» для дня в днях с 1970-01-01. */
+internal fun Long.shortDate(): String = LocalDate.ofEpochDay(this).format(ShortDateFormat)
+
 /** «Понедельник, 26 октября» для дня в днях с 1970-01-01. */
 internal fun Long.dayTitle(): String =
     LocalDate.ofEpochDay(this).format(DayFormat).replaceFirstChar { it.uppercaseChar() }
