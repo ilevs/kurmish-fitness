@@ -79,20 +79,24 @@
     <string name="journal_load">Тоннаж %1$s · КПШ %2$d · средний вес %3$s · ~%4$d мин</string>
     <string name="journal_intensity">Интенсивность %1$d %% от ПМ · нагрузка с коэффициентами %2$s</string>
 
-    <string name="telegram_title">Telegram</string>
-    <string name="telegram_intro">Дневник может синхронизироваться с вашим ботом в Telegram: записи из приложения приходят в чат, а тренировки, написанные боту, попадают в Дневник. Создайте бота у @BotFather командой /newbot и вставьте сюда токен, который он пришлёт.</string>
-    <string name="telegram_open_botfather">Открыть @BotFather</string>
-    <string name="telegram_token">Токен бота</string>
-    <string name="telegram_connect">Подключить</string>
-    <string name="telegram_press_start">Бот @%1$s подключён. Откройте его в Telegram и нажмите «Старт», затем «Проверить».</string>
-    <string name="telegram_open_bot">Открыть бота</string>
-    <string name="telegram_check">Проверить</string>
-    <string name="telegram_connected">Дневник синхронизируется с ботом @%1$s, когда есть сеть.</string>
-    <string name="telegram_pending">Ждут отправки: %1$d</string>
-    <string name="telegram_sync">Синхронизировать</string>
-    <string name="telegram_disconnect">Отключить</string>
-    <string name="telegram_running">Синхронизирую…</string>
-    <string name="telegram_offline">Нет сети. Записи сохранены и уйдут в Telegram, когда сеть появится.</string>
-    <string name="telegram_failed">Telegram ответил: %1$s</string>
-    <string name="telegram_last_sync">Последняя синхронизация: %1$s</string>
+
+    <string name="backup_title">Бэкап на Яндекс Диск</string>
+    <string name="backup_intro">Чтобы Дневник не пропал, если телефон сломается или потеряется, приложение само отправляет его копию на ваш Яндекс Диск, как только есть интернет. Создайте пароль приложения с типом «Файлы» и введите его здесь вместе с логином Яндекса.</string>
+    <string name="backup_open_passwords">Создать пароль приложения</string>
+    <string name="backup_login">Логин Яндекса</string>
+    <string name="backup_password">Пароль приложения</string>
+    <string name="backup_connect">Подключить</string>
+    <string name="backup_connected">Копия Дневника уходит на Диск %1$s, в папку kurmish-fitness, когда есть интернет.</string>
+    <string name="backup_now">Сохранить сейчас</string>
+    <string name="backup_restore">Восстановить</string>
+    <string name="backup_disconnect">Отключить</string>
+    <string name="backup_restore_title">Восстановить Дневник?</string>
+    <string name="backup_restore_text">Дневник и профиль на этом телефоне заменятся последней копией с Яндекс Диска.</string>
+    <string name="backup_working">Связываюсь с Яндекс Диском…</string>
+    <string name="backup_restored">Дневник восстановлен из копии.</string>
+    <string name="backup_nothing">На Диске ещё нет копии Дневника.</string>
+    <string name="backup_bad">Файл на Диске не похож на Дневник, восстановить не получилось.</string>
+    <string name="backup_offline">Нет связи с Диском. Копия уйдёт сама, когда появится интернет.</string>
+    <string name="backup_wrong_password">Яндекс Диск не принял логин или пароль приложения. Проверьте их и подключите заново.</string>
+    <string name="backup_last">Последняя копия: %1$s</string>
 </resources>

@@ -9,13 +9,11 @@ import java.io.File
  *
  * @property profile данные атлета.
  * @property sessions записанные тренировки, новые в конце.
- * @property telegram настройки и состояние синхронизации с Telegram.
  */
 @Serializable
 data class AppData(
     val profile: Profile = Profile(),
     val sessions: List<WorkoutSession> = emptyList(),
-    val telegram: TelegramState = TelegramState(),
 ) {
     /** Следующий свободный номер записи. */
     val nextId: Long
@@ -66,6 +64,13 @@ class JournalStore(private val file: File) {
         encodeDefaults = true
         allowStructuredMapKeys = true
     }
+
+    /** Файл целиком, как он лежит на устройстве; null, если записей ещё не было. */
+    fun raw(): ByteArray? = file.takeIf { it.exists() }?.readBytes()
+
+    /** Разбирает копию файла, например из бэкапа; null, если это не Дневник. */
+    fun decode(bytes: ByteArray): AppData? =
+        runCatching { json.decodeFromString<AppData>(bytes.decodeToString()) }.getOrNull()
 
     /** Читает данные; при отсутствии или порче файла возвращает пустые. */
     fun load(): AppData = runCatching { json.decodeFromString<AppData>(file.readText()) }.getOrDefault(AppData())

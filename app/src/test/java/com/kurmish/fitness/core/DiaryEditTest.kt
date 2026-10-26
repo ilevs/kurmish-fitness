@@ -55,42 +55,23 @@ class DiaryEditTest {
         val added = checkNotNull(SessionDraft.of(bench).copy(id = 0).toSession())
         val data = AppData(sessions = listOf(bench)).withSaved(added)
         assertEquals(listOf(3L, 4L), data.sessions.map { it.id })
-        assertTrue(data.sessions.last().awaitsTelegram)
     }
 
     @Test
-    fun editOfSentSessionMarksCopyStale() {
-        val sent = bench.copy(telegramMessageId = 50)
-        val data = AppData(sessions = listOf(sent)).withSaved(bench.copy(epochDay = bench.epochDay - 1))
-        val edited = data.sessions.single()
-        assertEquals(bench.epochDay - 1, edited.epochDay)
-        assertEquals(50L, edited.telegramMessageId)
-        assertTrue(edited.awaitsTelegramUpdate)
+    fun editReplacesSession() {
+        val data = AppData(sessions = listOf(bench)).withSaved(bench.copy(epochDay = bench.epochDay - 1))
+        assertEquals(bench.epochDay - 1, data.sessions.single().epochDay)
     }
 
     @Test
     fun saveWithoutChangesKeepsData() {
-        val data = AppData(sessions = listOf(bench.copy(telegramMessageId = 50)))
+        val data = AppData(sessions = listOf(bench))
         assertSame(data, data.withSaved(bench))
     }
 
     @Test
-    fun editedTelegramSessionLivesOnItsOwn() {
-        val fromBot = bench.copy(telegramParts = listOf(TelegramPart(10, "жим 100 на 5"), TelegramPart(11, "по 3")))
-        val data = AppData(sessions = listOf(fromBot)).withSaved(bench.copy(feeling = Feeling.Easy))
-        val edited = data.sessions.single()
-        assertFalse(edited.fromTelegram)
-        assertTrue(edited.awaitsTelegram)
-        assertEquals(listOf(10L, 11L), data.telegram.detachedMessages)
-    }
-
-    @Test
-    fun deleteQueuesCopyAndDetachesMessages() {
-        val sent = bench.copy(telegramMessageId = 50)
-        val fromBot = bench.copy(id = 4, telegramParts = listOf(TelegramPart(10, "жим 100 на 5")))
-        val data = AppData(sessions = listOf(sent, fromBot)).withoutSession(3).withoutSession(4)
-        assertTrue(data.sessions.isEmpty())
-        assertEquals(listOf(50L), data.telegram.pendingDeletes)
-        assertEquals(listOf(10L), data.telegram.detachedMessages)
+    fun deleteRemovesSession() {
+        val data = AppData(sessions = listOf(bench, bench.copy(id = 4))).withoutSession(3)
+        assertEquals(listOf(4L), data.sessions.map { it.id })
     }
 }

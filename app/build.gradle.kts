@@ -15,8 +15,8 @@ android {
         applicationId = "com.kurmish.fitness"
         minSdk = 26
         targetSdk = 35
-        versionCode = 7
-        versionName = "0.7.0"
+        versionCode = 8
+        versionName = "0.8.0"
         // Распознавание речи GigaAM тянут только 64-битные телефоны, поэтому нативные библиотеки только arm64.
         ndk { abiFilters += listOf("arm64-v8a") }
     }
@@ -80,6 +80,9 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.kotlinx.serialization.json)
+    // Бэкап Дневника на Яндекс Диск: WebDAV (нужен метод MKCOL) и фоновая отправка при появлении сети.
+    implementation(libs.okhttp)
+    implementation(libs.androidx.work.runtime.ktx)
     // Офлайн-распознавание речи sherpa-onnx: aar скачивает scripts/fetch-sherpa-onnx.sh.
     implementation(files("libs/sherpa-onnx.aar"))
     implementation(libs.androidx.activity.compose)
@@ -90,4 +93,5 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     testImplementation(libs.junit)
+    testImplementation(libs.okhttp.mockwebserver)
 }
