@@ -30,17 +30,21 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import com.kurmish.fitness.R
 import com.kurmish.fitness.core.AppData
+import com.kurmish.fitness.core.ExerciseNames
 import com.kurmish.fitness.core.LoadCalculator
 import com.kurmish.fitness.core.LoadMetrics
+import com.kurmish.fitness.core.ParsedWorkout
 import com.kurmish.fitness.core.SessionDraft
 import com.kurmish.fitness.core.WorkoutSession
+import com.kurmish.fitness.core.customExerciseNames
 import kotlin.math.roundToInt
 
-/** Дневник тренировок, новые сверху. Нажатие на запись открывает редактор. */
+/** Дневник: сверху ввод тренировки, ниже записи, новые первыми. Запись открывается в редакторе. */
 @Composable
 internal fun JournalScreen(
     data: AppData,
     today: Long,
+    onRecord: (String, ParsedWorkout) -> Unit,
     onSave: (WorkoutSession) -> Unit,
     onDelete: (Long) -> Unit,
     modifier: Modifier = Modifier,
@@ -49,6 +53,7 @@ internal fun JournalScreen(
         data.sessions.sortedWith(compareByDescending<WorkoutSession> { it.epochDay }.thenByDescending { it.id })
     }
     var editing by remember { mutableStateOf<SessionDraft?>(null) }
+    val customNames = remember(data) { data.customExerciseNames() }
     val loads = remember(data, today) {
         data.sessions.associate { session ->
             session.id to LoadCalculator.session(session) { data.currentMax(it, today) }
@@ -59,6 +64,7 @@ internal fun JournalScreen(
         contentPadding = PaddingValues(ScreenPadding),
         verticalArrangement = Arrangement.spacedBy(Gap),
     ) {
+        item(key = "record") { RecordForm(onSave = onRecord) }
         item(key = "add") { AddButton(empty = sessions.isEmpty(), onClick = { editing = SessionDraft.new(today) }) }
         items(sessions, key = { it.id }) { session ->
             SessionCard(
@@ -72,6 +78,7 @@ internal fun JournalScreen(
     editing?.let { draft ->
         SessionEditor(
             initial = draft,
+            suggest = { query -> ExerciseNames.suggest(query, customNames) },
             onSave = { session ->
                 onSave(session)
                 editing = null

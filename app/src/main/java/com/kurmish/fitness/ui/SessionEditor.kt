@@ -2,7 +2,6 @@ package com.kurmish.fitness.ui
 
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,13 +17,15 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -45,7 +46,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.kurmish.fitness.R
 import com.kurmish.fitness.core.EntryDraft
-import com.kurmish.fitness.core.Exercise
 import com.kurmish.fitness.core.Feeling
 import com.kurmish.fitness.core.SessionDraft
 import com.kurmish.fitness.core.SetDraft
@@ -57,11 +57,13 @@ private const val MillisInDay = 86_400_000L
 /**
  * Полноэкранный редактор записи Дневника: дата, упражнения, подходы, самочувствие и исходный текст.
  *
+ * @param suggest подсказки названий упражнений к введённому тексту.
  * @param onDelete удаление записи; null для новой записи.
  */
 @Composable
 internal fun SessionEditor(
     initial: SessionDraft,
+    suggest: (String) -> List<String>,
     onSave: (WorkoutSession) -> Unit,
     onDelete: (() -> Unit)?,
     onDismiss: () -> Unit,
@@ -83,6 +85,7 @@ internal fun SessionEditor(
                 draft.entries.forEachIndexed { index, entry ->
                     EntryCard(
                         entry = entry,
+                        suggest = suggest,
                         onChange = { changed ->
                             val entries = draft.entries.mapIndexed { i, e -> if (i == index) changed else e }
                             draft = draft.copy(entries = entries)
@@ -164,24 +167,19 @@ private fun FeelingRow(feeling: Feeling, onChange: (Feeling) -> Unit) {
 }
 
 @Composable
-private fun EntryCard(entry: EntryDraft, onChange: (EntryDraft) -> Unit, onRemove: () -> Unit) {
+private fun EntryCard(
+    entry: EntryDraft,
+    suggest: (String) -> List<String>,
+    onChange: (EntryDraft) -> Unit,
+    onRemove: () -> Unit,
+) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(ScreenPadding), verticalArrangement = Arrangement.spacedBy(Gap)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                ExercisePicker(entry = entry, onChange = onChange, modifier = Modifier.weight(1f))
+                ExerciseField(entry = entry, suggest = suggest, onChange = onChange, modifier = Modifier.weight(1f))
                 IconButton(onClick = onRemove) {
                     Icon(painterResource(R.drawable.ic_delete), stringResource(R.string.editor_remove_exercise))
                 }
-            }
-            if (entry.exercise == null) {
-                OutlinedTextField(
-                    value = entry.customName,
-                    onValueChange = { onChange(entry.copy(customName = it)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(R.string.editor_custom_name)) },
-                    isError = entry.nameMissing,
-                    singleLine = true,
-                )
             }
             entry.sets.forEachIndexed { index, set ->
                 SetRow(
@@ -200,30 +198,47 @@ private fun EntryCard(entry: EntryDraft, onChange: (EntryDraft) -> Unit, onRemov
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ExercisePicker(entry: EntryDraft, onChange: (EntryDraft) -> Unit, modifier: Modifier = Modifier) {
-    var open by remember { mutableStateOf(false) }
-    Box(modifier = modifier) {
-        OutlinedButton(onClick = { open = true }, modifier = Modifier.fillMaxWidth()) {
-            Text(entry.exercise?.title ?: stringResource(R.string.editor_custom))
-        }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            Exercise.entries.forEach { exercise ->
+private fun ExerciseField(
+    entry: EntryDraft,
+    suggest: (String) -> List<String>,
+    onChange: (EntryDraft) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val options = remember(entry.name, expanded) { if (expanded) suggest(entry.name) else emptyList() }
+    val open = expanded && options.isNotEmpty()
+    ExposedDropdownMenuBox(expanded = open, onExpandedChange = { expanded = it }, modifier = modifier) {
+        OutlinedTextField(
+            value = entry.name,
+            onValueChange = {
+                onChange(entry.named(it))
+                expanded = true
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .menuAnchor(MenuAnchorType.PrimaryEditable),
+            label = { Text(stringResource(R.string.editor_exercise)) },
+            supportingText = if (entry.exercise == null && entry.name.isNotBlank()) {
+                { Text(stringResource(R.string.editor_custom_hint)) }
+            } else {
+                null
+            },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = open) },
+            isError = entry.nameMissing,
+            singleLine = true,
+        )
+        ExposedDropdownMenu(expanded = open, onDismissRequest = { expanded = false }) {
+            options.forEach { option ->
                 DropdownMenuItem(
-                    text = { Text(exercise.title) },
+                    text = { Text(option) },
                     onClick = {
-                        onChange(entry.copy(exercise = exercise))
-                        open = false
+                        onChange(entry.named(option))
+                        expanded = false
                     },
                 )
             }
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.editor_custom)) },
-                onClick = {
-                    onChange(entry.copy(exercise = null))
-                    open = false
-                },
-            )
         }
     }
 }

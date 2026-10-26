@@ -8,13 +8,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -44,9 +40,9 @@ import com.kurmish.fitness.ui.voice.rememberOfflineSpeech
 
 private val InputMinHeight = 160.dp
 
-/** Ввод тренировки текстом или голосом с живым предпросмотром разбора. */
+/** Ввод тренировки текстом или голосом с живым предпросмотром разбора: верх Дневника. */
 @Composable
-internal fun LogScreen(onSave: (String, ParsedWorkout) -> Unit, modifier: Modifier = Modifier) {
+internal fun RecordForm(onSave: (String, ParsedWorkout) -> Unit, modifier: Modifier = Modifier) {
     var text by rememberSaveable { mutableStateOf("") }
     var status by rememberSaveable { mutableStateOf("") }
     val parsed = remember(text) { WorkoutParser.parse(text) }
@@ -55,13 +51,7 @@ internal fun LogScreen(onSave: (String, ParsedWorkout) -> Unit, modifier: Modifi
         text = listOf(text.trim(), spoken).filter { it.isNotEmpty() }.joinToString(", ")
         status = ""
     }
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(ScreenPadding),
-        verticalArrangement = Arrangement.spacedBy(Gap),
-    ) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(Gap)) {
         OutlinedTextField(
             value = text,
             onValueChange = {
@@ -87,7 +77,7 @@ internal fun LogScreen(onSave: (String, ParsedWorkout) -> Unit, modifier: Modifi
         }
         voiceStatus(speech.state)?.let { Text(text = it, color = MaterialTheme.colorScheme.secondary) }
         if (status.isNotEmpty()) Text(text = status, color = MaterialTheme.colorScheme.primary)
-        ParsedPreview(parsed)
+        if (text.isNotBlank()) ParsedPreview(parsed)
     }
 }
 
