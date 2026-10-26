@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Курмыш Фитнес</string>
+    <string name="greeting">Готов к тренировке</string>
+</resources>
