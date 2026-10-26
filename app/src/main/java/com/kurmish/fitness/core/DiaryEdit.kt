@@ -67,10 +67,17 @@ data class SetDraft(val weight: String = "", val reps: String = "", val sets: St
  * Упражнение в редакторе.
  *
  * @property exercise упражнение из каталога; null — своё название.
- * @property customName своё название, когда [exercise] не выбран.
+ * @property customName название, как его ввели; пусто — название упражнения из каталога.
  * @property sets строки подходов.
  */
 data class EntryDraft(val exercise: Exercise?, val customName: String = "", val sets: List<SetDraft>) {
+    /** Название в поле ввода. */
+    val name: String
+        get() = customName.ifEmpty { exercise?.title.orEmpty() }
+
+    /** Новое название: совпадающее с упражнением базы становится этим упражнением. */
+    fun named(text: String): EntryDraft = copy(exercise = ExerciseNames.resolve(text), customName = text)
+
     /** Не выбрано упражнение и не введено название. */
     val nameMissing: Boolean
         get() = exercise == null && customName.isBlank()
@@ -80,8 +87,8 @@ data class EntryDraft(val exercise: Exercise?, val customName: String = "", val 
         val filled = sets.filterNot { it.blank }
         val groups = filled.mapNotNull { it.toSetGroup() }
         if (nameMissing || groups.isEmpty() || groups.size != filled.size) return null
-        val name = customName.trim().takeIf { exercise == null }
-        return ExerciseEntry(exercise = exercise, customName = name, sets = groups)
+        val custom = customName.trim().takeIf { exercise == null }
+        return ExerciseEntry(exercise = exercise, customName = custom, sets = groups)
     }
 
     /** Значения по умолчанию. */

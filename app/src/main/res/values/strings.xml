@@ -3,7 +3,6 @@
     <string name="app_name">Курмыш Фитнес</string>
 
     <string name="tab_today">Сегодня</string>
-    <string name="tab_log">Записать</string>
     <string name="tab_journal">Дневник</string>
     <string name="tab_profile">Профиль</string>
 
@@ -39,12 +38,12 @@
     <string name="editor_feeling_easy">Было легко</string>
     <string name="editor_feeling_normal">Нормально</string>
     <string name="editor_feeling_hard">Было тяжело</string>
-    <string name="editor_custom">Своё упражнение</string>
-    <string name="editor_custom_name">Название упражнения</string>
-    <string name="editor_weight">Вес, кг</string>
+    <string name="editor_exercise">Упражнение</string>
+    <string name="editor_custom_hint">Нет в базе: запишется как своё упражнение</string>
+    <string name="editor_weight">Вес</string>
     <string name="editor_weight_own">свой</string>
-    <string name="editor_reps">Повторы</string>
-    <string name="editor_sets">Подходы</string>
+    <string name="editor_reps">Повт.</string>
+    <string name="editor_sets">Подх.</string>
     <string name="editor_add_set">Добавить подход</string>
     <string name="editor_remove_set">Удалить подход</string>
     <string name="editor_remove_exercise">Удалить упражнение</string>

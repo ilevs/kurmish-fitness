@@ -27,7 +27,6 @@ import com.kurmish.fitness.ui.voice.rememberSpeaker
 /** Вкладки нижней панели. */
 private enum class Tab(@StringRes val label: Int, @DrawableRes val icon: Int) {
     Today(R.string.tab_today, R.drawable.ic_today),
-    Log(R.string.tab_log, R.drawable.ic_add),
     Journal(R.string.tab_journal, R.drawable.ic_list),
     Stats(R.string.tab_stats, R.drawable.ic_chart),
     Profile(R.string.tab_profile, R.drawable.ic_person),
@@ -69,16 +68,13 @@ fun TrainerApp(
                 onSpeak = speaker::speak,
                 modifier = content
             )
-            Tab.Log -> LogScreen(
-                onSave = { text, parsed ->
-                    viewModel.saveWorkout(parsed.toSession(text, viewModel.today()))
-                    speaker.speak(parsed.summary())
-                },
-                modifier = content,
-            )
             Tab.Journal -> JournalScreen(
                 data = data,
                 today = viewModel.today(),
+                onRecord = { text, parsed ->
+                    viewModel.saveWorkout(parsed.toSession(text, viewModel.today()))
+                    speaker.speak(parsed.summary())
+                },
                 onSave = viewModel::saveWorkout,
                 onDelete = viewModel::deleteWorkout,
                 modifier = content,
