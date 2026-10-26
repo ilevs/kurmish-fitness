@@ -20,7 +20,8 @@ class ProgramsTest {
         val first = Programs.maximum.sessions.first().items.first()
         assertEquals("Жим штанги лёжа 10×10 по 50 кг (50 %)", first.describe(100.0))
         val squat = Programs.hypertrophy.sessions.first().items.first()
-        assertEquals(listOf(135.0, 140.0, 145.0, 155.0), squat.weights(200.0))
+        assertEquals(listOf(120.0, 125.0, 132.5, 137.5), squat.weights(200.0))
+        assertEquals("Присед с низкой штангой", Programs.renamed["Присед с низкой штангой в бинтах"])
     }
 
     @Test
