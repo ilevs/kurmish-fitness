@@ -9,6 +9,5 @@ local.properties
 *.keystore
 captures/
 
-# Модель распознавания речи скачивается в CI (scripts/fetch-voice-model.sh)
-app/src/main/assets/model-ru/
-.voice-model/
+# Движок распознавания речи скачивается скриптом scripts/fetch-sherpa-onnx.sh
+app/libs/
