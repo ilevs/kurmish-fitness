@@ -1,0 +1,185 @@
+package com.kurmish.fitness.core
+
+/**
+ * Тип движения: по нему считается баланс нагрузки.
+ *
+ * @property title название для экрана.
+ */
+enum class Movement(val title: String) {
+    /** Присед и другие движения с упором на колени. */
+    Squat("Присед"),
+
+    /** Тяги с пола и наклоны: упор на таз и спину. */
+    Hinge("Тяги с пола, наклоны"),
+
+    /** Жимы от груди и отжимания. */
+    HorizontalPush("Жим от груди"),
+
+    /** Жимы вверх и брусья. */
+    VerticalPush("Жим вверх, брусья"),
+
+    /** Тяги к поясу. */
+    HorizontalPull("Тяга к поясу"),
+
+    /** Подтягивания и тяги сверху. */
+    VerticalPull("Подтягивания"),
+
+    /** Бицепс и трицепс отдельно. */
+    Arms("Руки"),
+
+    /** Пресс. */
+    Core("Пресс"),
+    ;
+
+    /** Жимовое движение. */
+    val isPush: Boolean
+        get() = this == HorizontalPush || this == VerticalPush
+
+    /** Тяговое движение верхом тела. */
+    val isPull: Boolean
+        get() = this == HorizontalPull || this == VerticalPull
+}
+
+/** Тип движения упражнения. Временное соответствие, пока в базе упражнений нет своих типов. */
+val Exercise.movement: Movement
+    get() = when (this) {
+        Exercise.Squat -> Movement.Squat
+        Exercise.Deadlift, Exercise.StiffLegDeadlift, Exercise.Hyperextension -> Movement.Hinge
+        Exercise.Bench, Exercise.MidGripBench, Exercise.CloseGripBench, Exercise.DumbbellPress, Exercise.PushUp ->
+            Movement.HorizontalPush
+        Exercise.OverheadPress, Exercise.Dips -> Movement.VerticalPush
+        Exercise.BentOverRow -> Movement.HorizontalPull
+        Exercise.PullUp -> Movement.VerticalPull
+        Exercise.FrenchPress, Exercise.BicepsCurl -> Movement.Arms
+        Exercise.Abs -> Movement.Core
+    }
+
+/**
+ * Итоги одной календарной недели (с понедельника).
+ *
+ * @property weekStart понедельник недели в днях с 1970-01-01.
+ * @property sessions сколько было тренировок.
+ * @property tonnageKg суммарный тоннаж.
+ * @property lifts суммарное КПШ.
+ * @property relativeIntensity средний % от ПМ, взвешенный по КПШ тренировок; null, если ПМ не было.
+ * @property weightedIntensity сумма нагрузки с коэффициентами.
+ */
+data class WeekStats(
+    val weekStart: Long,
+    val sessions: Int,
+    val tonnageKg: Double,
+    val lifts: Int,
+    val relativeIntensity: Double?,
+    val weightedIntensity: Double,
+)
+
+/**
+ * Точка графика ПМ.
+ *
+ * @property epochDay день тренировки.
+ * @property kg лучшая за день оценка разового максимума.
+ */
+data class MaxPoint(val epochDay: Long, val kg: Double)
+
+/**
+ * Сводка за последние недели.
+ *
+ * @property sessions тренировок за период.
+ * @property perWeek в среднем тренировок в неделю.
+ * @property tonnageKg тоннаж за период.
+ * @property daysSinceLast сколько дней прошло после последней тренировки; null, если тренировок не было.
+ */
+data class StatsSummary(val sessions: Int, val perWeek: Double, val tonnageKg: Double, val daysSinceLast: Long?)
+
+/** Статистика по Дневнику для графиков. Всё считается на устройстве. */
+object Stats {
+    /** Сколько недель показывают графики нагрузки. */
+    const val WEEKS = 12
+
+    /** За сколько дней считаются сводка и баланс движений. */
+    const val RECENT_DAYS = 28
+
+    private const val DAYS_IN_WEEK = 7
+    private const val MONDAY_SHIFT = 3
+
+    /** Понедельник недели, в которую входит день (1970-01-01 был четвергом). */
+    fun weekStart(epochDay: Long): Long = epochDay - Math.floorMod(epochDay + MONDAY_SHIFT, DAYS_IN_WEEK)
+
+    /** Последние [count] недель по порядку, включая текущую; недели без тренировок тоже есть, с нулями. */
+    fun weeks(data: AppData, today: Long, count: Int = WEEKS): List<WeekStats> {
+        val maxes = maxLookup(data, today)
+        val current = weekStart(today)
+        val byWeek = data.sessions.groupBy { weekStart(it.epochDay) }
+        return (count - 1 downTo 0).map { back ->
+            val start = current - back * DAYS_IN_WEEK
+            val loads = byWeek[start].orEmpty().map { LoadCalculator.session(it, maxes) }
+            val intensityLoads = loads.filter { it.relativeIntensity != null && it.lifts > 0 }
+            val intensityLifts = intensityLoads.sumOf { it.lifts }
+            WeekStats(
+                weekStart = start,
+                sessions = loads.size,
+                tonnageKg = loads.sumOf { it.tonnageKg },
+                lifts = loads.sumOf { it.lifts },
+                relativeIntensity = if (intensityLifts == 0) {
+                    null
+                } else {
+                    intensityLoads.sumOf { (it.relativeIntensity ?: 0.0) * it.lifts } / intensityLifts
+                },
+                weightedIntensity = loads.sumOf { it.weightedIntensity },
+            )
+        }
+    }
+
+    /** Лучшая оценка ПМ по каждому дню, когда упражнение делали с весом до 10 повторов. */
+    fun maxHistory(data: AppData, exercise: Exercise): List<MaxPoint> = data.sessions
+        .flatMap { session ->
+            session.entries.filter { it.exercise == exercise }.flatMap { entry ->
+                entry.sets.mapNotNull { set ->
+                    val weight = set.weightKg ?: return@mapNotNull null
+                    Strength.estimateMax(weight, set.reps)?.let { MaxPoint(session.epochDay, it) }
+                }
+            }
+        }
+        .groupBy { it.epochDay }
+        .map { (_, points) -> points.maxBy { it.kg } }
+        .sortedBy { it.epochDay }
+
+    /** Упражнения, для которых есть график ПМ: сначала соревновательные, потом по числу дней. */
+    fun exercisesWithMaxes(data: AppData): List<Exercise> = Exercise.entries
+        .map { it to maxHistory(data, it).size }
+        .filter { it.second > 0 }
+        .sortedWith(compareByDescending<Pair<Exercise, Int>> { it.first.isMainLift }.thenByDescending { it.second })
+        .map { it.first }
+
+    /** Повторы по типам движений за последние [days] дней; неузнанные упражнения не учитываются. */
+    fun balance(data: AppData, today: Long, days: Int = RECENT_DAYS): Map<Movement, Int> {
+        val reps = data.sessions
+            .filter { today - it.epochDay in 0 until days }
+            .flatMap { it.entries }
+            .mapNotNull { entry ->
+                entry.exercise?.let { it.movement to entry.sets.sumOf { set -> set.reps * set.sets } }
+            }
+            .groupBy({ it.first }, { it.second })
+            .mapValues { (_, values) -> values.sum() }
+        return Movement.entries.associateWith { reps[it] ?: 0 }
+    }
+
+    /** Сводка за последние [days] дней. */
+    fun summary(data: AppData, today: Long, days: Int = RECENT_DAYS): StatsSummary {
+        val maxes = maxLookup(data, today)
+        val recent = data.sessions.filter { today - it.epochDay in 0 until days }
+        val last = data.sessions.filter { it.epochDay <= today }.maxOfOrNull { it.epochDay }
+        return StatsSummary(
+            sessions = recent.size,
+            perWeek = recent.size * DAYS_IN_WEEK / days.toDouble(),
+            tonnageKg = recent.sumOf { LoadCalculator.session(it, maxes).tonnageKg },
+            daysSinceLast = last?.let { today - it },
+        )
+    }
+
+    /** ПМ каждого упражнения считается один раз, а не на каждый подход. */
+    private fun maxLookup(data: AppData, today: Long): (Exercise) -> Double? {
+        val maxes = Exercise.entries.associateWith { data.currentMax(it, today) }
+        return { maxes[it] }
+    }
+}
