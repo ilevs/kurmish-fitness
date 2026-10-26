@@ -130,4 +130,15 @@ class DietTest {
         assertTrue(day.target.carbsG >= 100)
         assertTrue(day.points.first().startsWith("Две недели перерыва прошли"))
     }
+
+    @Test
+    fun activityComesFromProfile() {
+        val base = Profile(daysPerWeek = 3)
+        assertEquals(Activity.Moderate, base.activityLevel())
+        assertEquals(Activity.High, base.copy(daysPerWeek = 4).activityLevel())
+        assertEquals(Activity.Extreme, base.copy(daysPerWeek = 5, rank = Rank.Kms).activityLevel())
+        val onFeet = base.copy(diet = DietSettings(lifestyle = Lifestyle.OnFeet))
+        assertEquals(Activity.High, onFeet.activityLevel())
+        assertEquals(Activity.Extreme, onFeet.copy(daysPerWeek = 5, rank = Rank.Ms).activityLevel())
+    }
 }

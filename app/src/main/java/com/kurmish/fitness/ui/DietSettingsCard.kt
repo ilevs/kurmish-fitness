@@ -11,11 +11,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.kurmish.fitness.R
-import com.kurmish.fitness.core.Activity
 import com.kurmish.fitness.core.DietPhase
 import com.kurmish.fitness.core.DietSettings
+import com.kurmish.fitness.core.Lifestyle
 import com.kurmish.fitness.core.Profile
 import com.kurmish.fitness.core.Sex
+import com.kurmish.fitness.core.activityLevel
 import com.kurmish.fitness.core.withPhase
 
 /** Настройки питания в профиле: фаза, пол, активность, дефицит, процент жира или рост и возраст. */
@@ -46,12 +47,21 @@ internal fun DietSettingsCard(
                     onSelect = { change(diet.copy(sex = it)) },
                 )
                 ChoiceRow(
-                    title = stringResource(R.string.diet_activity),
-                    options = Activity.entries.map { it to it.title },
-                    selected = diet.activity,
-                    onSelect = { change(diet.copy(activity = it)) },
+                    title = stringResource(R.string.diet_lifestyle),
+                    options = Lifestyle.entries.map { it to it.title },
+                    selected = diet.lifestyle,
+                    onSelect = { change(diet.copy(lifestyle = it)) },
                 )
-                Text(diet.activity.hint, style = MaterialTheme.typography.bodySmall)
+                val activity = profile.activityLevel()
+                Text(
+                    text = stringResource(
+                        R.string.diet_activity_auto,
+                        diet.lifestyle.hint,
+                        activity.title.lowercase(),
+                        activity.hint,
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                )
                 ChoiceRow(
                     title = stringResource(R.string.diet_deficit),
                     options = DietSettings.DEFICIT_OPTIONS.map { it to "$it" },
@@ -64,23 +74,30 @@ internal fun DietSettingsCard(
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
-                NumberField(
-                    label = stringResource(R.string.diet_fat),
-                    value = diet.bodyFatPercent,
-                    onValueChange = { change(diet.copy(bodyFatPercent = it)) },
-                )
-                NumberField(
-                    label = stringResource(R.string.diet_height),
-                    value = diet.heightCm,
-                    onValueChange = { change(diet.copy(heightCm = it)) },
-                )
-                NumberField(
-                    label = stringResource(R.string.diet_age),
-                    value = diet.age?.toDouble(),
-                    onValueChange = { change(diet.copy(age = it?.toInt())) },
-                )
+                BodyFields(diet = diet, onChange = change)
             }
         }
+    }
+}
+
+@Composable
+private fun BodyFields(diet: DietSettings, onChange: (DietSettings) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(Gap)) {
+        NumberField(
+            label = stringResource(R.string.diet_fat),
+            value = diet.bodyFatPercent,
+            onValueChange = { onChange(diet.copy(bodyFatPercent = it)) },
+        )
+        NumberField(
+            label = stringResource(R.string.diet_height),
+            value = diet.heightCm,
+            onValueChange = { onChange(diet.copy(heightCm = it)) },
+        )
+        NumberField(
+            label = stringResource(R.string.diet_age),
+            value = diet.age?.toDouble(),
+            onValueChange = { onChange(diet.copy(age = it?.toInt())) },
+        )
     }
 }
 
