@@ -1,5 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Курмыш Фитнес</string>
-    <string name="greeting">Готов к тренировке</string>
+
+    <string name="tab_today">Сегодня</string>
+    <string name="tab_log">Записать</string>
+    <string name="tab_journal">Журнал</string>
+    <string name="tab_profile">Профиль</string>
+
+    <string name="speak">Озвучить</string>
+    <string name="today_weights">Веса от ПМ</string>
+    <string name="today_warm_up">Подводящие к 80 %%: %1$s</string>
+    <string name="today_no_maxes">Запиши тренировку или введи ПМ в профиле, и здесь появятся рабочие веса.</string>
+    <string name="today_cycle_table_missing">Таблица процентов цикла по неделям пока не загружена в приложение. Тренируйся по своему циклу, а сюда записывай сделанное.</string>
+
+    <string name="log_hint">Например: присед 120 на 5 по 3, жим 90х5х4, подтягивания 3 по 10, было легко</string>
+    <string name="log_voice">Сказать</string>
+    <string name="log_save">Сохранить</string>
+    <string name="log_preview">Распознано</string>
+    <string name="log_nothing">Пока ничего не распознано</string>
+    <string name="log_saved">Записал</string>
+    <string name="log_voice_missing">На телефоне нет распознавания речи. Установи голосовой ввод Google и скачай русский язык для работы без сети.</string>
+    <string name="log_voice_prompt">Расскажи, что сделал</string>
+
+    <string name="journal_empty">Записей пока нет</string>
+    <string name="journal_delete">Удалить запись</string>
+    <string name="feeling_easy">легко</string>
+    <string name="feeling_hard">тяжело</string>
+
+    <string name="profile_bodyweight">Собственный вес, кг</string>
+    <string name="profile_days">Тренировок в неделю</string>
+    <string name="profile_correction">Процент корректировки</string>
+    <string name="profile_natural">Без фармакологии</string>
+    <string name="profile_discipline">Направление</string>
+    <string name="profile_rank">Уровень</string>
+    <string name="profile_goal">Задача</string>
+    <string name="profile_max">ПМ: %1$s, кг</string>
+    <string name="profile_cycles">Подходящие циклы</string>
+    <string name="profile_cycle_fits">подходит</string>
 </resources>
