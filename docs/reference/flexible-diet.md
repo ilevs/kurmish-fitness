@@ -1,6 +1,6 @@
 # Питание: правила и числа
 
-Справочник по расчётам вкладки «Сегодня» → карточка «Питание». Код: `core/FlexibleDiet.kt`, `core/Refeeds.kt`, `core/DietProgress.kt`, `core/DietAdvice.kt`.
+Справочник по расчётам плана на сегодня в «Дневнике» → карточка «Питание». Код: `core/FlexibleDiet.kt`, `core/Refeeds.kt`, `core/DietProgress.kt`, `core/DietAdvice.kt`.
 
 ## Фазы
 

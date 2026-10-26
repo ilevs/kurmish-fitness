@@ -58,6 +58,13 @@ data class SetDraft(val weight: String = "", val reps: String = "", val sets: St
             sets = group.sets.toString(),
         )
 
+        /** Черновик из подходов плана: «мах» и диапазон повторов оставляют повторы пустыми или берут нижнюю границу. */
+        fun planned(group: PlannedSets): SetDraft = SetDraft(
+            weight = group.weightKg?.let(::formatWeight).orEmpty(),
+            reps = group.reps.substringBefore('-').toIntOrNull()?.toString().orEmpty(),
+            sets = group.sets.toString(),
+        )
+
         private fun formatWeight(kg: Double): String =
             if (kg == Math.floor(kg)) kg.toLong().toString() else kg.toString().replace('.', ',')
     }
@@ -95,6 +102,13 @@ data class EntryDraft(val exercise: Exercise?, val customName: String = "", val 
     companion object {
         /** Пустое упражнение с одной строкой подходов. */
         fun empty(): EntryDraft = EntryDraft(exercise = null, sets = listOf(SetDraft()))
+
+        /** Черновик из рабочего пункта плана: упражнение, подходы, повторы и вес как в плане. */
+        fun planned(item: PlanItem): EntryDraft = EntryDraft(
+            exercise = item.exercise,
+            customName = if (item.exercise == null) item.title else "",
+            sets = item.sets.map(SetDraft::planned).ifEmpty { listOf(SetDraft()) },
+        )
 
         /** Черновик из записанного упражнения. */
         fun of(entry: ExerciseEntry): EntryDraft = EntryDraft(
@@ -154,6 +168,19 @@ data class SessionDraft(
             entries = listOf(EntryDraft.empty()),
             feeling = Feeling.Normal,
         )
+
+        /**
+         * Черновик записи по плану [plan] на день [epochDay]. Если за этот день уже есть запись [existing],
+         * открывается она, а в конец добавляются ещё не записанные упражнения плана.
+         */
+        fun fromPlan(plan: DayPlan, epochDay: Long, existing: WorkoutSession?): SessionDraft {
+            val base = existing?.let(::of) ?: new(epochDay).copy(entries = emptyList())
+            val recorded = existing?.entries.orEmpty()
+            val planned = plan.items
+                .filter { it.part == PlanPart.Work && it.recordedIn(recorded).isEmpty() }
+                .map(EntryDraft::planned)
+            return base.copy(entries = (base.entries + planned).ifEmpty { listOf(EntryDraft.empty()) })
+        }
 
         /** Черновик из записи Дневника. */
         fun of(session: WorkoutSession): SessionDraft = SessionDraft(

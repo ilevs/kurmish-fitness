@@ -2,12 +2,17 @@
 <resources>
     <string name="app_name">Курмыш Фитнес</string>
 
-    <string name="tab_today">Сегодня</string>
+    <string name="tab_cycles">Циклы</string>
+    <string name="cycles_schedule">Расписание программы</string>
+    <string name="cycles_microcycle">Микроцикл %1$d из %2$d</string>
+    <string name="cycles_next">%1$s — следующая</string>
     <string name="tab_journal">Дневник</string>
     <string name="tab_profile">Профиль</string>
 
     <string name="speak">Озвучить</string>
-    <string name="today_tips">Советы</string>
+    <string name="today_tips">Показать советы</string>
+    <string name="today_tips_hide">Скрыть советы</string>
+    <string name="today_record_plan">Записать по плану</string>
     <string name="today_done">Записано: %1$s</string>
     <string name="today_replace">Заменить</string>
     <string name="today_restore">Вернуть</string>

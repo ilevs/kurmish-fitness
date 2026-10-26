@@ -26,8 +26,8 @@ import com.kurmish.fitness.ui.voice.rememberSpeaker
 
 /** Вкладки нижней панели. */
 private enum class Tab(@StringRes val label: Int, @DrawableRes val icon: Int) {
-    Today(R.string.tab_today, R.drawable.ic_today),
     Journal(R.string.tab_journal, R.drawable.ic_list),
+    Cycles(R.string.tab_cycles, R.drawable.ic_today),
     Stats(R.string.tab_stats, R.drawable.ic_chart),
     Profile(R.string.tab_profile, R.drawable.ic_person),
 }
@@ -43,7 +43,7 @@ fun TrainerApp(
 ) {
     val data by viewModel.data.collectAsState()
     val backup by backupViewModel.ui.collectAsState()
-    var tab by rememberSaveable { mutableStateOf(Tab.Today) }
+    var tab by rememberSaveable { mutableStateOf(Tab.Journal) }
     val speaker = rememberSpeaker()
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -62,23 +62,26 @@ fun TrainerApp(
     ) { padding ->
         val content = Modifier.padding(padding)
         when (tab) {
-            Tab.Today -> TodayScreen(
-                data = data,
-                today = viewModel.today(),
-                onSpeak = speaker::speak,
-                onChoose = { slot, exercise -> viewModel.updateProfile(data.profile.choose(slot, exercise)) },
-                dietActions = viewModel.dietActions(),
-                modifier = content
-            )
             Tab.Journal -> JournalScreen(
                 data = data,
                 today = viewModel.today(),
-                onRecord = { text, parsed ->
-                    viewModel.saveWorkout(parsed.toSession(text, viewModel.today()))
-                    speaker.speak(parsed.summary())
-                },
-                onSave = viewModel::saveWorkout,
-                onDelete = viewModel::deleteWorkout,
+                actions = JournalActions(
+                    onRecord = { text, parsed ->
+                        viewModel.saveWorkout(parsed.toSession(text, viewModel.today()))
+                        speaker.speak(parsed.summary())
+                    },
+                    onSave = viewModel::saveWorkout,
+                    onDelete = viewModel::deleteWorkout,
+                    onSpeak = speaker::speak,
+                    onChoose = { slot, exercise -> viewModel.updateProfile(data.profile.choose(slot, exercise)) },
+                    diet = viewModel.dietActions(),
+                ),
+                modifier = content,
+            )
+            Tab.Cycles -> CyclesScreen(
+                data = data,
+                today = viewModel.today(),
+                onProfileChange = viewModel::updateProfile,
                 modifier = content,
             )
             Tab.Stats -> StatsScreen(data = data, today = viewModel.today(), modifier = content)

@@ -160,4 +160,21 @@ class PlannerTest {
         assertTrue(item.notes.last().endsWith("Вес одной гантели"))
         assertEquals(Exercise.Pullover, WorkoutParser.parse("пуловер 20 на 12").entries.single().exercise)
     }
+
+    @Test
+    fun planBecomesEditableDiaryDraft() {
+        val data = AppData(Profile(goal = Goal.Strength, manualMaxes = maxes))
+        val plan = Planner.today(data, today = 50)
+        val draft = SessionDraft.fromPlan(plan, epochDay = 50, existing = null)
+        assertEquals(0L, draft.id)
+        assertEquals(Exercise.Squat, draft.entries.first().exercise)
+        assertEquals(SetDraft(weight = "80", reps = "5", sets = "5"), draft.entries.first().sets.single())
+        assertTrue(draft.valid)
+        val squat = ExerciseEntry(Exercise.Squat, sets = listOf(SetGroup(80.0, 5, 5)))
+        val existing = WorkoutSession(7, 50, "присед 80 на 5 по 5", listOf(squat))
+        val continued = SessionDraft.fromPlan(plan, epochDay = 50, existing = existing)
+        assertEquals(7L, continued.id)
+        assertEquals(1, continued.entries.count { it.exercise == Exercise.Squat })
+        assertEquals(Exercise.Bench, continued.entries[1].exercise)
+    }
 }

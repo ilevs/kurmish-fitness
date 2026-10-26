@@ -30,6 +30,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import com.kurmish.fitness.R
 import com.kurmish.fitness.core.AppData
+import com.kurmish.fitness.core.Exercise
 import com.kurmish.fitness.core.ExerciseNames
 import com.kurmish.fitness.core.LoadCalculator
 import com.kurmish.fitness.core.LoadMetrics
@@ -39,14 +40,15 @@ import com.kurmish.fitness.core.WorkoutSession
 import com.kurmish.fitness.core.customExerciseNames
 import kotlin.math.roundToInt
 
-/** Дневник: сверху ввод тренировки, ниже записи, новые первыми. Запись открывается в редакторе. */
+/**
+ * Дневник: сверху план на сегодня, под ним ввод тренировки, ниже записи, новые первыми.
+ * Запись и план открываются в редакторе.
+ */
 @Composable
 internal fun JournalScreen(
     data: AppData,
     today: Long,
-    onRecord: (String, ParsedWorkout) -> Unit,
-    onSave: (WorkoutSession) -> Unit,
-    onDelete: (Long) -> Unit,
+    actions: JournalActions,
     modifier: Modifier = Modifier,
 ) {
     val sessions = remember(data) {
@@ -64,14 +66,27 @@ internal fun JournalScreen(
         contentPadding = PaddingValues(ScreenPadding),
         verticalArrangement = Arrangement.spacedBy(Gap),
     ) {
-        item(key = "record") { RecordForm(onSave = onRecord) }
+        item(key = "today") {
+            TodayPlan(
+                data = data,
+                today = today,
+                onSpeak = actions.onSpeak,
+                onChoose = actions.onChoose,
+                onRecordPlan = { plan ->
+                    val existing = data.sessions.filter { it.epochDay == today }.maxByOrNull { it.id }
+                    editing = SessionDraft.fromPlan(plan, today, existing)
+                },
+                dietActions = actions.diet,
+            )
+        }
+        item(key = "record") { RecordForm(onSave = actions.onRecord) }
         item(key = "add") { AddButton(empty = sessions.isEmpty(), onClick = { editing = SessionDraft.new(today) }) }
         items(sessions, key = { it.id }) { session ->
             SessionCard(
                 session = session,
                 load = loads[session.id],
                 onEdit = { editing = SessionDraft.of(session) },
-                onDelete = { onDelete(session.id) },
+                onDelete = { actions.onDelete(session.id) },
             )
         }
     }
@@ -80,17 +95,36 @@ internal fun JournalScreen(
             initial = draft,
             suggest = { query -> ExerciseNames.suggest(query, customNames) },
             onSave = { session ->
-                onSave(session)
+                actions.onSave(session)
                 editing = null
             },
             onDelete = {
-                onDelete(draft.id)
+                actions.onDelete(draft.id)
                 editing = null
             }.takeIf { draft.id != 0L },
             onDismiss = { editing = null },
         )
     }
 }
+
+/**
+ * Что Дневник делает с данными.
+ *
+ * @property onRecord сохранить тренировку из текста или голоса.
+ * @property onSave сохранить запись из редактора.
+ * @property onDelete удалить запись по номеру.
+ * @property onSpeak озвучить текст.
+ * @property onChoose заменить упражнение плана на цикл; null возвращает исходное.
+ * @property diet действия карточки питания.
+ */
+internal class JournalActions(
+    val onRecord: (String, ParsedWorkout) -> Unit,
+    val onSave: (WorkoutSession) -> Unit,
+    val onDelete: (Long) -> Unit,
+    val onSpeak: (String) -> Unit,
+    val onChoose: (slot: String, exercise: Exercise?) -> Unit,
+    val diet: DietActions,
+)
 
 @Composable
 private fun AddButton(empty: Boolean, onClick: () -> Unit) {
