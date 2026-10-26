@@ -89,7 +89,8 @@ internal fun CycleEditor(
     }
     editing?.let { (dayIndex, itemIndex) ->
         val day = design.days.getOrNull(dayIndex)
-        day?.items?.getOrNull(itemIndex)?.let { item ->
+        val item = day?.items?.getOrNull(itemIndex)
+        if (day != null && item != null) {
             DesignItemDialog(
                 item = item,
                 week = week,

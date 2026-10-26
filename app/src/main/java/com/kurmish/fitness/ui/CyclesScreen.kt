@@ -136,7 +136,7 @@ private fun BlockRow(
             color = if (position != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
         )
         Text(
-            text = "≈ ${block.startEpochDay.shortDate()} – ${block.endEpochDay.shortDate()} · ${block.program.summary}",
+            text = "≈ ${block.startEpochDay.monthDay()} – ${block.endEpochDay.monthDay()} · ${block.program.summary}",
             style = MaterialTheme.typography.bodySmall,
         )
         position?.let {
