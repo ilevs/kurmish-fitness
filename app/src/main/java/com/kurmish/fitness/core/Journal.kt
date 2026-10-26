@@ -17,7 +17,7 @@ data class AppData(val profile: Profile = Profile(), val sessions: List<WorkoutS
         get() = (sessions.maxOfOrNull { it.id } ?: 0L) + 1
 
     /**
-     * Лучшая оценка разового максимума по журналу за последние [days] дней.
+     * Лучшая оценка разового максимума по дневнику за последние [days] дней.
      *
      * @return упражнение → оценка ПМ в кг и дата подхода, по которому она получена.
      */
@@ -35,13 +35,13 @@ data class AppData(val profile: Profile = Profile(), val sessions: List<WorkoutS
         .groupBy({ it.first }, { it.second })
         .mapValues { (_, estimates) -> estimates.maxBy { it.kg } }
 
-    /** Действующий ПМ: введённый вручную, а если его нет, то оценка по журналу. */
+    /** Действующий ПМ: введённый вручную, а если его нет, то оценка по дневнику. */
     fun currentMax(exercise: Exercise, today: Long): Double? =
         profile.manualMaxes[exercise] ?: estimatedMaxes(today)[exercise]?.kg
 
     /** Значения по умолчанию. */
     companion object {
-        /** За сколько дней журнал учитывается при оценке ПМ. */
+        /** За сколько дней дневник учитывается при оценке ПМ. */
         const val RECENT_DAYS = 60
     }
 }
@@ -65,7 +65,7 @@ class JournalStore(private val file: File) {
     /** Читает данные; при отсутствии или порче файла возвращает пустые. */
     fun load(): AppData = runCatching { json.decodeFromString<AppData>(file.readText()) }.getOrDefault(AppData())
 
-    /** Записывает атомарно: через временный файл, чтобы не потерять журнал при сбое. */
+    /** Записывает атомарно: через временный файл, чтобы не потерять дневник при сбое. */
     fun save(data: AppData) {
         val temp = File(file.parentFile, file.name + ".tmp")
         temp.writeText(json.encodeToString(AppData.serializer(), data))

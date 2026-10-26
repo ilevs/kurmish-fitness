@@ -48,7 +48,7 @@ enum class Goal(val title: String) {
  * @property natural тренируется без фармакологии.
  * @property manualMaxes ПМ, введённые вручную, в кг.
  * @property programId выбранная программа из [Programs]; null — без программы.
- * @property programStartEpochDay с какого дня записи журнала считаются тренировками программы.
+ * @property programStartEpochDay с какого дня записи дневника считаются тренировками программы.
  */
 @Serializable
 data class Profile(

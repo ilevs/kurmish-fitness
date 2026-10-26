@@ -32,7 +32,7 @@ import kotlin.math.roundToInt
 
 private val DateFormat = DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.forLanguageTag("ru-RU"))
 
-/** Журнал тренировок, новые сверху. */
+/** Дневник тренировок, новые сверху. */
 @Composable
 internal fun JournalScreen(data: AppData, today: Long, onDelete: (Long) -> Unit, modifier: Modifier = Modifier) {
     val sessions = remember(data) {

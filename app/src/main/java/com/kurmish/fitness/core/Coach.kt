@@ -31,7 +31,7 @@ data class Advice(
 }
 
 /**
- * Даёт совет «что и как тренировать» по профилю и журналу.
+ * Даёт совет «что и как тренировать» по профилю и дневнику.
  *
  * Правила взяты из инструкций к циклам: отдых между тренировками, процент корректировки по самочувствию,
  * разминка от пустого грифа, ограничения по повторам, лёгкая заминка. Все правила перечислены
@@ -116,10 +116,10 @@ object Coach {
             val estimate = estimates[exercise]?.kg?.let(Strength::roundToPlates)
             when {
                 manual != null && estimate != null && estimate - manual >= MIN_DIFFERENCE_KG ->
-                    "${exercise.title}: по журналу максимум около ${estimate.kg()}, это выше введённого " +
+                    "${exercise.title}: по дневнику максимум около ${estimate.kg()}, это выше введённого " +
                         "${manual.kg()}. Не завышай ПМ: ставь реальный или близкий к нему."
                 manual != null -> "${exercise.title}: ПМ ${manual.kg()}."
-                estimate != null -> "${exercise.title}: оценка ПМ по журналу ${estimate.kg()}."
+                estimate != null -> "${exercise.title}: оценка ПМ по дневнику ${estimate.kg()}."
                 else -> null
             }
         }

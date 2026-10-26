@@ -4,7 +4,7 @@
 
     <string name="tab_today">Сегодня</string>
     <string name="tab_log">Записать</string>
-    <string name="tab_journal">Журнал</string>
+    <string name="tab_journal">Дневник</string>
     <string name="tab_profile">Профиль</string>
 
     <string name="speak">Озвучить</string>
@@ -19,8 +19,11 @@
     <string name="log_preview">Распознано</string>
     <string name="log_nothing">Пока ничего не распознано</string>
     <string name="log_saved">Записал</string>
-    <string name="log_voice_missing">На телефоне нет распознавания речи. Установи голосовой ввод Google и скачай русский язык для работы без сети.</string>
-    <string name="log_voice_prompt">Расскажи, что сделал</string>
+    <string name="log_voice_stop">Стоп</string>
+    <string name="log_voice_preparing">Готовлю распознавание речи, при первом запуске это занимает несколько секунд…</string>
+    <string name="log_voice_listening">Слушаю. Говори, например: «присед сто двадцать на пять, три подхода». Закончил — нажми «Стоп».</string>
+    <string name="log_voice_failed">Не получилось включить микрофон. Закрой другие приложения, которые его используют, и попробуй ещё раз.</string>
+    <string name="log_voice_denied">Без доступа к микрофону голосовой ввод не работает. Разреши его в настройках приложения или вводи текстом.</string>
 
     <string name="journal_empty">Записей пока нет</string>
     <string name="journal_delete">Удалить запись</string>
