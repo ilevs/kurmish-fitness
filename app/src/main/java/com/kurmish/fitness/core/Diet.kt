@@ -24,6 +24,18 @@ enum class Activity(val title: String, val hint: String) {
     Extreme("Очень высокий", "больше двух часов тренировок в день"),
 }
 
+/**
+ * Активность вне зала: прибавляется к той, что считается по тренировкам.
+ *
+ * @property title название.
+ * @property hint что под ним понимается.
+ */
+@Serializable
+enum class Lifestyle(val title: String, val hint: String) {
+    Desk("Сидячая", "офис, учёба, за рулём"),
+    OnFeet("На ногах", "много хожу, работа стоя или физический труд"),
+}
+
 /** Фаза питания: под неё подстраиваются калории и советы по тренировкам. */
 @Serializable
 enum class DietPhase(val title: String) {
@@ -49,7 +61,7 @@ enum class DietPhase(val title: String) {
  * @property bodyFatPercent процент жира; null — оценить по росту и возрасту.
  * @property heightCm рост для оценки процента жира.
  * @property age возраст для оценки процента жира.
- * @property activity уровень активности.
+ * @property lifestyle активность вне зала; уровень активности считается по ней и по тренировкам из профиля.
  * @property deficitPercent на сколько процентов меньше поддерживающих калорий есть при сбросе жира.
  * @property calorieCorrectionPercent поправка калорий на дефиците по скорости снижения веса.
  * @property correctedEpochDay когда поправку меняли последний раз.
@@ -63,7 +75,7 @@ data class DietSettings(
     val bodyFatPercent: Double? = null,
     val heightCm: Double? = null,
     val age: Int? = null,
-    val activity: Activity = Activity.Moderate,
+    val lifestyle: Lifestyle = Lifestyle.Desk,
     val deficitPercent: Int = DEFAULT_DEFICIT,
     val calorieCorrectionPercent: Int = 0,
     val correctedEpochDay: Long? = null,
@@ -213,4 +225,23 @@ fun DietSettings.withPhase(phase: DietPhase, epochDay: Long): DietSettings = if 
     this
 } else {
     copy(phase = phase, phaseStartEpochDay = epochDay, calorieCorrectionPercent = 0, correctedEpochDay = null)
+}
+
+private const val MinTrainingDays = 2
+private const val HighDays = 4
+private const val AthleteDays = 5
+
+/**
+ * Уровень активности из профиля: 2–3 силовые в неделю — умеренный, 4–5 — высокий,
+ * КМС и выше с пятью тренировками — очень высокий; работа на ногах добавляет ступень.
+ */
+fun Profile.activityLevel(): Activity {
+    val training = when {
+        daysPerWeek < MinTrainingDays -> Activity.Light
+        rank >= Rank.Kms && daysPerWeek >= AthleteDays -> Activity.Extreme
+        daysPerWeek >= HighDays -> Activity.High
+        else -> Activity.Moderate
+    }
+    val step = if (diet.lifestyle == Lifestyle.OnFeet) 1 else 0
+    return Activity.entries[minOf(training.ordinal + step, Activity.entries.lastIndex)]
 }
