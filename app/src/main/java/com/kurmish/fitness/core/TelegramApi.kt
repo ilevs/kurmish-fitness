@@ -104,8 +104,13 @@ class TelegramException(message: String, val code: Int?) : IOException(message) 
     val unauthorized: Boolean
         get() = code == UNAUTHORIZED
 
+    /** Правка совпадает с тем, что уже в сообщении. */
+    val notModified: Boolean
+        get() = message.orEmpty().contains(NOT_MODIFIED)
+
     private companion object {
         const val UNAUTHORIZED = 401
+        const val NOT_MODIFIED = "message is not modified"
     }
 }
 
@@ -119,6 +124,9 @@ interface TelegramApi {
 
     /** Отправляет текст в чат. */
     fun sendMessage(chatId: Long, text: String): TgMessage
+
+    /** Заменяет текст сообщения бота. */
+    fun editMessage(chatId: Long, messageId: Long, text: String)
 
     /** Удаляет сообщение бота. */
     fun deleteMessage(chatId: Long, messageId: Long)
@@ -150,6 +158,18 @@ class HttpTelegramApi(private val token: String) : TelegramApi {
         },
         serializer = TgMessage.serializer(),
     )
+
+    override fun editMessage(chatId: Long, messageId: Long, text: String) {
+        call(
+            method = "editMessageText",
+            body = buildJsonObject {
+                put("chat_id", chatId)
+                put("message_id", messageId)
+                put("text", text)
+            },
+            serializer = TgMessage.serializer(),
+        )
+    }
 
     override fun deleteMessage(chatId: Long, messageId: Long) {
         call(

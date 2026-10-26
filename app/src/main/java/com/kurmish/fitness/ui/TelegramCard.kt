@@ -51,13 +51,14 @@ internal fun TelegramCard(
     modifier: Modifier = Modifier,
 ) {
     val telegram = data.telegram
+    val pending = data.sessions.count { it.awaitsTelegram || it.awaitsTelegramUpdate }
     Card(modifier = modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(ScreenPadding), verticalArrangement = Arrangement.spacedBy(Gap)) {
             Text(text = stringResource(R.string.telegram_title), style = MaterialTheme.typography.titleMedium)
             when {
                 !telegram.connected -> ConnectForm(onConnect)
                 telegram.chatId == null -> WaitingForStart(telegram, onSync, onDisconnect)
-                else -> Connected(telegram, data.sessions.count { it.awaitsTelegram }, onSync, onDisconnect)
+                else -> Connected(telegram, pending, onSync, onDisconnect)
             }
             statusText(status, telegram)?.let { text ->
                 Text(

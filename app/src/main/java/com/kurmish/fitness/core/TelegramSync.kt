@@ -16,6 +16,8 @@ import java.util.Locale
  * @property chatId чат с владельцем: первый, кто написал боту. Сообщения из других чатов не принимаются.
  * @property lastUpdateId номер последнего обработанного события Bot API.
  * @property pendingDeletes сообщения бота, которые надо удалить: их записи удалены в приложении.
+ * @property detachedMessages сообщения боту, чьи записи исправлены или удалены в приложении: их правки
+ * в Telegram Дневник больше не меняют.
  * @property lastSyncEpochSecond когда синхронизация последний раз прошла без ошибок.
  */
 @Serializable
@@ -26,6 +28,7 @@ data class TelegramState(
     val chatId: Long? = null,
     val lastUpdateId: Long = 0,
     val pendingDeletes: List<Long> = emptyList(),
+    val detachedMessages: List<Long> = emptyList(),
     val lastSyncEpochSecond: Long? = null,
 ) {
     /** Бот подключён. */
@@ -47,6 +50,10 @@ object TelegramFormat {
     /** Ответ на сообщение без упражнений. */
     const val NOT_UNDERSTOOD = "Не нашёл упражнений с подходами. Пример: «жим 100 на 5 по 3». " +
         "Исправьте сообщение, и я запишу его."
+
+    /** Ответ на правку сообщения, чья запись уже исправлена в приложении. */
+    const val EDITED_IN_APP = "Эта запись уже исправлена в приложении, поэтому правка сообщения её не меняет. " +
+        "Исправьте запись в Дневнике приложения."
 
     /** Ответ на голосовое, фото и прочее без текста. */
     const val TEXT_ONLY = "Понимаю только текст. Голосом удобно записывать прямо в приложении."
@@ -111,6 +118,8 @@ object TelegramInbox {
             val reply = when {
                 text == null -> TelegramReply(message.messageId, TelegramFormat.TEXT_ONLY)
                 text.startsWith("/") -> TelegramReply(message.messageId, TelegramFormat.HELP)
+                message.messageId in telegram.detachedMessages ->
+                    TelegramReply(message.messageId, TelegramFormat.EDITED_IN_APP)
                 else -> {
                     val (updated, understood) = record(current, message, text, zone)
                     current = updated
@@ -174,7 +183,7 @@ data class SyncReport(val received: Int, val sent: Int)
 
 /**
  * Синхронизирует Дневник с чатом бота: забирает новые сообщения, удаляет копии удалённых записей,
- * отправляет записи, которых в чате ещё нет.
+ * обновляет копии исправленных и отправляет записи, которых в чате ещё нет.
  *
  * Данные меняются только через [change]: пока идёт сеть, человек может записать новую тренировку,
  * поэтому каждый шаг применяется к свежим данным, а не к снимку.
@@ -190,7 +199,7 @@ class TelegramSync(
     fun run(): SyncReport {
         val received = receive()
         removeDeleted()
-        val sent = sendPending()
+        val sent = updateEdited() + sendPending()
         change { it.copy(telegram = it.telegram.copy(lastSyncEpochSecond = Instant.now().epochSecond)) }
         return SyncReport(received, sent)
     }
@@ -237,24 +246,53 @@ class TelegramSync(
         }
     }
 
+    /** Переписывает копии исправленных записей. Бот может править свои сообщения любой давности. */
+    private fun updateEdited(): Int {
+        val data = change { it }
+        val chatId = data.telegram.chatId ?: return 0
+        val edited = data.sessions.filter { it.awaitsTelegramUpdate }
+        edited.forEach { session ->
+            val copyId = checkNotNull(session.telegramMessageId)
+            val text = TelegramFormat.session(session)
+            val messageId = try {
+                api.editMessage(chatId, copyId, text)
+                copyId
+            } catch (failed: TelegramException) {
+                when {
+                    failed.unauthorized -> throw failed
+                    failed.notModified -> copyId
+                    // Копию удалили в чате: отправляем запись заново.
+                    else -> api.sendMessage(chatId, text).messageId
+                }
+            }
+            change { current -> markSent(current, session, messageId) }
+        }
+        return edited.size
+    }
+
     private fun sendPending(): Int {
         val data = change { it }
         val chatId = data.telegram.chatId ?: return 0
         val pending = data.sessions.filter { it.awaitsTelegram }.sortedWith(compareBy({ it.epochDay }, { it.id }))
         pending.forEach { session ->
             val message = api.sendMessage(chatId, TelegramFormat.session(session))
-            change { current -> markSent(current, session.id, message.messageId) }
+            change { current -> markSent(current, session, message.messageId) }
         }
         return pending.size
     }
 
-    /** Запоминает копию записи; если запись успели удалить, копию надо удалить тоже. */
-    private fun markSent(data: AppData, sessionId: Long, messageId: Long): AppData =
-        if (data.sessions.any { it.id == sessionId }) {
-            data.copy(
-                sessions = data.sessions.map { if (it.id == sessionId) it.copy(telegramMessageId = messageId) else it },
-            )
+    /**
+     * Запоминает копию записи [sent]. Если запись успели удалить, копию надо удалить тоже; если успели
+     * исправить, копию надо обновить ещё раз.
+     */
+    private fun markSent(data: AppData, sent: WorkoutSession, messageId: Long): AppData {
+        val current = data.sessions.firstOrNull { it.id == sent.id }
+        return if (current == null) {
+            val deletes = (data.telegram.pendingDeletes + messageId).distinct()
+            data.copy(telegram = data.telegram.copy(pendingDeletes = deletes))
         } else {
-            data.copy(telegram = data.telegram.copy(pendingDeletes = data.telegram.pendingDeletes + messageId))
+            val marked = current.copy(telegramMessageId = messageId, telegramStale = !current.sameContent(sent))
+            data.copy(sessions = data.sessions.map { if (it.id == sent.id) marked else it })
         }
+    }
 }

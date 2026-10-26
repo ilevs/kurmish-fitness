@@ -5,6 +5,9 @@ import com.kurmish.fitness.core.ExerciseEntry
 import com.kurmish.fitness.core.ParsedWorkout
 import com.kurmish.fitness.core.SetGroup
 import com.kurmish.fitness.core.kg
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 import kotlin.math.roundToInt
 
 /** Внешний отступ экранов. */
@@ -12,6 +15,12 @@ internal val ScreenPadding = 16.dp
 
 /** Промежуток между блоками. */
 internal val Gap = 12.dp
+
+private val DayFormat = DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.forLanguageTag("ru-RU"))
+
+/** «Понедельник, 26 октября» для дня в днях с 1970-01-01. */
+internal fun Long.dayTitle(): String =
+    LocalDate.ofEpochDay(this).format(DayFormat).replaceFirstChar { it.uppercaseChar() }
 
 /** «100 кг × 5 × 3» или «10 × 3» для собственного веса. */
 internal fun SetGroup.label(): String {

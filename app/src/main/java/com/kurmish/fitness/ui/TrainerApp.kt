@@ -20,6 +20,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kurmish.fitness.R
+import com.kurmish.fitness.core.toSession
 import com.kurmish.fitness.ui.voice.rememberSpeaker
 
 /** Вкладки нижней панели. */
@@ -67,7 +68,7 @@ fun TrainerApp(
             )
             Tab.Log -> LogScreen(
                 onSave = { text, parsed ->
-                    viewModel.addWorkout(text, parsed)
+                    viewModel.saveWorkout(parsed.toSession(text, viewModel.today()))
                     speaker.speak(parsed.summary())
                 },
                 modifier = content,
@@ -75,6 +76,7 @@ fun TrainerApp(
             Tab.Journal -> JournalScreen(
                 data = data,
                 today = viewModel.today(),
+                onSave = viewModel::saveWorkout,
                 onDelete = viewModel::deleteWorkout,
                 modifier = content,
             )

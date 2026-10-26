@@ -30,7 +30,8 @@
       ],
       "feeling": "Hard",
       "telegramMessageId": 57,
-      "telegramParts": []
+      "telegramParts": [],
+      "telegramStale": false
     }
   ],
   "telegram": {
@@ -40,6 +41,7 @@
     "chatId": 987654321,
     "lastUpdateId": 70451234,
     "pendingDeletes": [],
+    "detachedMessages": [],
     "lastSyncEpochSecond": 1793000000
   }
 }
@@ -52,10 +54,12 @@
 | Поле | Значение |
 |---|---|
 | `sessions[].telegramMessageId` | номер копии записи в чате с ботом; `null` — запись ещё не отправлена |
-| `sessions[].telegramParts` | сообщения боту (`messageId`, `text`), из которых собрана запись; пусто для записей из приложения |
+| `sessions[].telegramParts` | сообщения боту (`messageId`, `text`), из которых собрана запись; пусто для записей из приложения и записей, исправленных в приложении |
+| `sessions[].telegramStale` | запись исправлена после отправки: копию в чате надо переписать (`editMessageText`) |
 | `telegram.token` | токен бота; пустая строка — синхронизация выключена |
 | `telegram.botId`, `botUsername` | бот, к которому подключались последним |
 | `telegram.chatId` | чат владельца: первый личный чат, написавший боту |
 | `telegram.lastUpdateId` | последнее обработанное событие Bot API |
 | `telegram.pendingDeletes` | сообщения бота, которые надо удалить, потому что запись удалена в приложении |
+| `telegram.detachedMessages` | сообщения боту, чьи записи исправлены или удалены в приложении: их правки в Telegram больше не меняют Дневник |
 | `telegram.lastSyncEpochSecond` | время последней успешной синхронизации, секунды с 1970 года |

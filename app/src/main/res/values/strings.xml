@@ -30,6 +30,35 @@
 
     <string name="journal_empty">Записей пока нет</string>
     <string name="journal_delete">Удалить запись</string>
+    <string name="journal_add">Добавить запись</string>
+    <string name="journal_edit">Исправить запись</string>
+    <string name="journal_edit_hint">Нажми на запись, чтобы исправить дату, упражнения, вес, повторы, подходы или самочувствие.</string>
+
+    <string name="editor_title_new">Новая запись</string>
+    <string name="editor_prev_day">Предыдущий день</string>
+    <string name="editor_next_day">Следующий день</string>
+    <string name="editor_pick_date">Выбрать дату</string>
+    <string name="editor_feeling_easy">Было легко</string>
+    <string name="editor_feeling_normal">Нормально</string>
+    <string name="editor_feeling_hard">Было тяжело</string>
+    <string name="editor_custom">Своё упражнение</string>
+    <string name="editor_custom_name">Название упражнения</string>
+    <string name="editor_weight">Вес, кг</string>
+    <string name="editor_weight_own">свой</string>
+    <string name="editor_reps">Повторы</string>
+    <string name="editor_sets">Подходы</string>
+    <string name="editor_add_set">Добавить подход</string>
+    <string name="editor_remove_set">Удалить подход</string>
+    <string name="editor_remove_exercise">Удалить упражнение</string>
+    <string name="editor_add_exercise">Добавить упражнение</string>
+    <string name="editor_text">Текст записи</string>
+    <string name="editor_text_hint">Можно исправить текст и разобрать его заново: упражнения и самочувствие заменятся разобранными.</string>
+    <string name="editor_reparse">Разобрать текст заново</string>
+    <string name="editor_invalid">Проверь поля, отмеченные красным: у каждого упражнения нужны название и хотя бы один подход с повторами.</string>
+    <string name="editor_cancel">Отмена</string>
+    <string name="editor_ok">Готово</string>
+    <string name="editor_delete">Удалить</string>
+    <string name="editor_delete_confirm">Удалить запись за %1$s?</string>
     <string name="feeling_easy">легко</string>
     <string name="feeling_hard">тяжело</string>
 
