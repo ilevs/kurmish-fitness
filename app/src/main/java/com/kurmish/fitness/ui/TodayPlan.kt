@@ -4,18 +4,16 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -31,6 +29,7 @@ import androidx.compose.ui.res.stringResource
 import com.kurmish.fitness.R
 import com.kurmish.fitness.core.AppData
 import com.kurmish.fitness.core.Coach
+import com.kurmish.fitness.core.DayPlan
 import com.kurmish.fitness.core.DietPhase
 import com.kurmish.fitness.core.Exercise
 import com.kurmish.fitness.core.ExerciseEntry
@@ -39,13 +38,18 @@ import com.kurmish.fitness.core.PlanItem
 import com.kurmish.fitness.core.PlanPart
 import com.kurmish.fitness.core.Planner
 
-/** Тренировка на сегодня чек-листом: разминка, упражнения с весом и подходами, заминка; ниже советы. */
+/**
+ * План на сегодня наверху Дневника: чек-лист разминки, упражнений с весом и подходами и заминки, ниже советы.
+ *
+ * @param onRecordPlan открыть редактор записи, заполненный по плану.
+ */
 @Composable
-internal fun TodayScreen(
+internal fun TodayPlan(
     data: AppData,
     today: Long,
     onSpeak: (String) -> Unit,
     onChoose: (slot: String, exercise: Exercise?) -> Unit,
+    onRecordPlan: (DayPlan) -> Unit,
     dietActions: DietActions,
     modifier: Modifier = Modifier,
 ) {
@@ -55,21 +59,24 @@ internal fun TodayScreen(
     val entries = remember(data, today) { data.sessions.filter { it.epochDay == today }.flatMap { it.entries } }
     var ticked by rememberSaveable(today) { mutableStateOf(emptyList<Int>()) }
     var choosing by remember { mutableStateOf<PlanItem?>(null) }
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(ScreenPadding),
-        verticalArrangement = Arrangement.spacedBy(Gap),
-    ) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(Gap)) {
         Text(text = advice.headline, style = MaterialTheme.typography.titleLarge)
-        Button(onClick = { onSpeak((listOf(advice.headline, plan.speech) + advice.points).joinToString(" ")) }) {
-            Icon(painterResource(R.drawable.ic_volume), contentDescription = null)
-            Spacer(Modifier.width(Gap))
-            Text(stringResource(R.string.speak))
-        }
         Text(text = plan.title, style = MaterialTheme.typography.titleMedium)
         plan.note?.let { Text(text = it, style = MaterialTheme.typography.bodySmall) }
+        Row(horizontalArrangement = Arrangement.spacedBy(Gap)) {
+            if (plan.items.any { it.part == PlanPart.Work }) {
+                Button(onClick = { onRecordPlan(plan) }) {
+                    Icon(painterResource(R.drawable.ic_edit), contentDescription = null)
+                    Spacer(Modifier.width(Gap))
+                    Text(stringResource(R.string.today_record_plan))
+                }
+            }
+            OutlinedButton(
+                onClick = { onSpeak((listOf(advice.headline, plan.speech) + advice.points).joinToString(" ")) },
+            ) {
+                Icon(painterResource(R.drawable.ic_volume), contentDescription = stringResource(R.string.speak))
+            }
+        }
         plan.items.forEachIndexed { index, item ->
             PlanItemCard(
                 item = item,
@@ -98,10 +105,18 @@ internal fun TodayScreen(
                 actions = dietActions,
             )
         }
-        if (advice.points.isNotEmpty()) {
-            Text(text = stringResource(R.string.today_tips), style = MaterialTheme.typography.titleMedium)
-            advice.points.forEach { point -> Text(text = "• $point", style = MaterialTheme.typography.bodyMedium) }
+        if (advice.points.isNotEmpty()) Tips(advice.points)
+    }
+}
+
+@Composable
+private fun Tips(points: List<String>) {
+    var shown by rememberSaveable { mutableStateOf(false) }
+    Column {
+        TextButton(onClick = { shown = !shown }) {
+            Text(stringResource(if (shown) R.string.today_tips_hide else R.string.today_tips))
         }
+        if (shown) points.forEach { point -> Text(text = "• $point", style = MaterialTheme.typography.bodyMedium) }
     }
 }
 
