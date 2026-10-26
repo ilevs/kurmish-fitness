@@ -1,0 +1,45 @@
+name: Init signing key
+
+# Одноразовый запуск: создаёт ключ подписи прямо в GitHub и кладёт его в Secrets.
+# Ключ нигде не печатается и не покидает раннер. Нужен секрет ADMIN_TOKEN:
+# fine-grained token на этот репозиторий с правом "Secrets: Read and write".
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  init:
+    runs-on: ubuntu-24.04
+    env:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+      REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Refuse to overwrite an existing key
+        run: |
+          if gh secret list -R "$REPO" | grep -q '^KEYSTORE_BASE64'; then
+            echo "::error::KEYSTORE_BASE64 уже есть. Перезапись сломает обновления приложения."
+            exit 1
+          fi
+
+      - name: Generate keystore and store secrets
+        run: |
+          set -euo pipefail
+          umask 077
+          PW=$(openssl rand -hex 24)
+          echo "::add-mask::$PW"
+          keytool -genkeypair -keystore "$RUNNER_TEMP/release.p12" -storetype PKCS12 \
+            -alias fitness -keyalg RSA -keysize 4096 -validity 10000 \
+            -storepass "$PW" -keypass "$PW" -dname "CN=Kurmish Fitness" >/dev/null 2>&1
+          base64 -w0 "$RUNNER_TEMP/release.p12" | gh secret set KEYSTORE_BASE64 -R "$REPO"
+          printf %s "$PW" | gh secret set KEYSTORE_PASSWORD -R "$REPO"
+          printf %s "$PW" | gh secret set KEY_PASSWORD -R "$REPO"
+          printf fitness | gh secret set KEY_ALIAS -R "$REPO"
+          rm -f "$RUNNER_TEMP/release.p12"
+          echo "Ключ создан и сохранён в Secrets."
