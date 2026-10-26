@@ -20,8 +20,11 @@
     <string name="log_nothing">Пока ничего не распознано</string>
     <string name="log_saved">Записал</string>
     <string name="log_voice_stop">Стоп</string>
-    <string name="log_voice_preparing">Готовлю распознавание речи, при первом запуске это занимает несколько секунд…</string>
-    <string name="log_voice_listening">Слушаю. Говори, например: «присед сто двадцать на пять, три подхода». Закончил — нажми «Стоп».</string>
+    <string name="log_voice_downloading">Первый запуск: скачиваю модель распознавания речи (225 МБ, один раз), готово %1$d %%. Лучше через Wi-Fi.</string>
+    <string name="log_voice_download_failed">Не получилось скачать модель распознавания речи. Нужен интернет только на первый раз: подключись и нажми «Сказать» ещё раз.</string>
+    <string name="log_voice_preparing">Загружаю распознавание речи…</string>
+    <string name="log_voice_listening">Слушаю. Говори, например: «присед сто двадцать на пять, три подхода». Фразы появятся в поле после короткой паузы. Закончил — нажми «Стоп».</string>
+    <string name="log_voice_finishing">Распознаю последнюю фразу…</string>
     <string name="log_voice_failed">Не получилось включить микрофон. Закрой другие приложения, которые его используют, и попробуй ещё раз.</string>
     <string name="log_voice_denied">Без доступа к микрофону голосовой ввод не работает. Разреши его в настройках приложения или вводи текстом.</string>
 
