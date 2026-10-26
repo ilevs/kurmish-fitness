@@ -1,8 +1,9 @@
 # Хранение данных
 
-- Файл: `files/journal.json` во внутренней памяти приложения. В сеть данные уходят только в чат с ботом Telegram, если [синхронизация](../how-to/sync-telegram.md) включена. Токен бота хранится в этом же файле.
+- Файл: `files/journal.json` во внутренней памяти приложения. В сеть он уходит только на ваш Яндекс Диск, если включён [бэкап](../how-to/backup-yandex-disk.md).
 - Запись атомарная: сначала `journal.json.tmp`, потом переименование.
-- Резервное копирование Android выключено (`allowBackup=false`), поэтому при удалении приложения дневник пропадает.
+- Резервное копирование Android выключено (`allowBackup=false`). Без бэкапа на Яндекс Диск Дневник пропадает при удалении приложения.
+- Вход на Диск (логин, пароль приложения, время и отпечаток последней копии) лежит отдельно, в `shared_prefs/backup.xml`, и в копию не попадает.
 
 ## Схема
 
@@ -28,38 +29,19 @@
       "entries": [
         { "exercise": "Bench", "customName": null, "sets": [ { "weightKg": 100.0, "reps": 5, "sets": 3 } ] }
       ],
-      "feeling": "Hard",
-      "telegramMessageId": 57,
-      "telegramParts": [],
-      "telegramStale": false
+      "feeling": "Hard"
     }
-  ],
-  "telegram": {
-    "token": "123456789:AA…",
-    "botId": 123456789,
-    "botUsername": "my_diary_bot",
-    "chatId": 987654321,
-    "lastUpdateId": 70451234,
-    "pendingDeletes": [],
-    "detachedMessages": [],
-    "lastSyncEpochSecond": 1793000000
-  }
+  ]
 }
 ```
 
 `epochDay` и `programStartEpochDay` — число дней с 1 января 1970. `programId` — `maximum`, `hypertrophy` или `null`. Незнакомые поля при чтении пропускаются, поэтому старые версии файла читаются новыми версиями приложения.
 
-Поля синхронизации с Telegram:
+## Бэкап на Яндекс Диске
 
-| Поле | Значение |
+| Файл | Что это |
 |---|---|
-| `sessions[].telegramMessageId` | номер копии записи в чате с ботом; `null` — запись ещё не отправлена |
-| `sessions[].telegramParts` | сообщения боту (`messageId`, `text`), из которых собрана запись; пусто для записей из приложения и записей, исправленных в приложении |
-| `sessions[].telegramStale` | запись исправлена после отправки: копию в чате надо переписать (`editMessageText`) |
-| `telegram.token` | токен бота; пустая строка — синхронизация выключена |
-| `telegram.botId`, `botUsername` | бот, к которому подключались последним |
-| `telegram.chatId` | чат владельца: первый личный чат, написавший боту |
-| `telegram.lastUpdateId` | последнее обработанное событие Bot API |
-| `telegram.pendingDeletes` | сообщения бота, которые надо удалить, потому что запись удалена в приложении |
-| `telegram.detachedMessages` | сообщения боту, чьи записи исправлены или удалены в приложении: их правки в Telegram больше не меняют Дневник |
-| `telegram.lastSyncEpochSecond` | время последней успешной синхронизации, секунды с 1970 года |
+| `kurmish-fitness/journal.json` | последняя копия, её берёт кнопка «Восстановить» |
+| `kurmish-fitness/history/journal-ГГГГ-ММ-ДД.json` | последняя копия за каждый день |
+
+Формат копий тот же, что у `journal.json` на телефоне.

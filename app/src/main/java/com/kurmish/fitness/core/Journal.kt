@@ -9,13 +9,11 @@ import java.io.File
  *
  * @property profile данные атлета.
  * @property sessions записанные тренировки, новые в конце.
- * @property telegram настройки и состояние синхронизации с Telegram.
  */
 @Serializable
 data class AppData(
     val profile: Profile = Profile(),
     val sessions: List<WorkoutSession> = emptyList(),
-    val telegram: TelegramState = TelegramState(),
 ) {
     /** Следующий свободный номер записи. */
     val nextId: Long

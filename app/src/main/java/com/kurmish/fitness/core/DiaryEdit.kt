@@ -159,40 +159,18 @@ data class SessionDraft(
     }
 }
 
-/**
- * Сохраняет запись из редактора: новую добавляет, существующую заменяет.
- *
- * Копия исправленной записи в Telegram обновится при следующей синхронизации. Запись, собранная из
- * сообщений боту, после правки в приложении живёт сама по себе: её сообщения больше её не меняют,
- * а в чат уходит исправленная копия.
- */
+/** Сохраняет запись из редактора: новую добавляет, существующую заменяет. */
 fun AppData.withSaved(edited: WorkoutSession): AppData {
     val old = sessions.firstOrNull { it.id == edited.id }
-    // Новой записи и записи из Telegram копии в чате ещё нет: она уйдёт при синхронизации.
-    val sentCopy = old?.telegramMessageId?.takeUnless { old.fromTelegram }
-    val updated = edited.copy(
-        id = old?.id ?: nextId,
-        telegramMessageId = sentCopy,
-        telegramParts = emptyList(),
-        telegramStale = sentCopy != null,
-    )
     return when {
-        old == null -> copy(sessions = sessions + updated)
+        old == null -> copy(sessions = sessions + edited.copy(id = nextId))
         old.sameContent(edited) -> this
-        else -> copy(
-            sessions = sessions.map { if (it.id == old.id) updated else it },
-            telegram = telegram.detached(old),
-        )
+        else -> copy(sessions = sessions.map { if (it.id == old.id) edited else it })
     }
 }
 
-/** Удаляет запись; её копия в Telegram удалится при следующей синхронизации. */
-fun AppData.withoutSession(id: Long): AppData {
-    val old = sessions.firstOrNull { it.id == id } ?: return this
-    val deletes = listOfNotNull(old.telegramMessageId)
-    val telegram = telegram.detached(old).let { it.copy(pendingDeletes = it.pendingDeletes + deletes) }
-    return copy(sessions = sessions.filterNot { it.id == id }, telegram = telegram)
-}
+/** Удаляет запись. */
+fun AppData.withoutSession(id: Long): AppData = copy(sessions = sessions.filterNot { it.id == id })
 
 /** Новая запись из разобранного текста: дата — [today] со сдвигом «вчера» и «позавчера». */
 fun ParsedWorkout.toSession(rawText: String, today: Long): WorkoutSession = WorkoutSession(
@@ -206,11 +184,3 @@ fun ParsedWorkout.toSession(rawText: String, today: Long): WorkoutSession = Work
 /** Одинаковые дата, текст, упражнения и самочувствие. */
 fun WorkoutSession.sameContent(other: WorkoutSession): Boolean =
     epochDay == other.epochDay && rawText == other.rawText && entries == other.entries && feeling == other.feeling
-
-/** Сообщения боту, из которых собрана [session], больше не меняют Дневник. */
-private fun TelegramState.detached(session: WorkoutSession): TelegramState =
-    if (session.fromTelegram) {
-        copy(detachedMessages = detachedMessages + session.telegramParts.map { it.messageId })
-    } else {
-        this
-    }

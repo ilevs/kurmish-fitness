@@ -43,21 +43,17 @@ private val DayOptions = listOf(2, 3, 4, 5)
 private val MaxLifts = listOf(Exercise.Squat, Exercise.Bench, Exercise.Deadlift, Exercise.OverheadPress)
 private const val ShownCycles = 5
 
-/** Профиль атлета, подбор цикла, бэкап и синхронизация Дневника с Telegram. */
+/** Профиль атлета, подбор цикла и бэкап Дневника. */
 @Composable
 internal fun ProfileScreen(
     data: AppData,
     today: Long,
-    syncStatus: SyncStatus,
     backup: BackupUi,
     onProfileChange: (Profile) -> Unit,
     onBackupConnect: (String, String) -> Unit,
     onBackupNow: () -> Unit,
     onRestore: () -> Unit,
     onBackupDisconnect: () -> Unit,
-    onTelegramConnect: (String) -> Unit,
-    onTelegramDisconnect: () -> Unit,
-    onSync: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val profile = data.profile
@@ -115,13 +111,6 @@ internal fun ProfileScreen(
             onBackup = onBackupNow,
             onRestore = onRestore,
             onDisconnect = onBackupDisconnect,
-        )
-        TelegramCard(
-            data = data,
-            status = syncStatus,
-            onConnect = onTelegramConnect,
-            onDisconnect = onTelegramDisconnect,
-            onSync = onSync,
         )
     }
 }

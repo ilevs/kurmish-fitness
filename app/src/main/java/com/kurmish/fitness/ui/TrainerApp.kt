@@ -43,7 +43,6 @@ fun TrainerApp(
 ) {
     val data by viewModel.data.collectAsState()
     val backup by backupViewModel.ui.collectAsState()
-    val syncStatus by viewModel.syncStatus.collectAsState()
     var tab by rememberSaveable { mutableStateOf(Tab.Today) }
     val speaker = rememberSpeaker()
     Scaffold(
@@ -86,16 +85,12 @@ fun TrainerApp(
             Tab.Profile -> ProfileScreen(
                 data = data,
                 today = viewModel.today(),
-                syncStatus = syncStatus,
                 backup = backup,
                 onProfileChange = viewModel::updateProfile,
                 onBackupConnect = backupViewModel::connect,
                 onBackupNow = backupViewModel::backupNow,
                 onRestore = { backupViewModel.restore(viewModel::restore) },
                 onBackupDisconnect = backupViewModel::disconnect,
-                onTelegramConnect = viewModel::connectTelegram,
-                onTelegramDisconnect = viewModel::disconnectTelegram,
-                onSync = viewModel::requestSync,
                 modifier = content,
             )
         }
