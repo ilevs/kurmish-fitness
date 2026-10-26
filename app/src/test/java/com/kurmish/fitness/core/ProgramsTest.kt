@@ -2,7 +2,6 @@ package com.kurmish.fitness.core
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ProgramsTest {
@@ -41,16 +40,20 @@ class ProgramsTest {
     }
 
     @Test
-    fun coachShowsProgramPlanAndWarmUp() {
+    fun plannerShowsProgramDayWithWeightsAndWarmUp() {
         val profile = Profile(
             programId = "maximum",
             programStartEpochDay = 10,
             manualMaxes = mapOf(Exercise.Squat to 150.0)
         )
         val bench = ExerciseEntry(Exercise.Bench, sets = listOf(SetGroup(50.0, 10, 10)))
-        val advice = Coach.advise(AppData(profile, listOf(WorkoutSession(1, 10, "", listOf(bench)))), today = 12)
-        assertTrue(advice.plan.first().contains("Д2, микроцикл 1 из 5"))
-        assertTrue(advice.plan.any { it.contains("по 75 кг (50 %)") })
-        assertEquals(WarmUpSet(20.0, 3, "5"), advice.warmUp.first())
+        val plan = Planner.today(AppData(profile, listOf(WorkoutSession(1, 10, "", listOf(bench)))), today = 12)
+        assertEquals("Д2, микроцикл 1 из 5", plan.title)
+        val squat = plan.items[1]
+        assertEquals(Exercise.Squat, squat.exercise)
+        assertEquals(listOf(PlannedSets(10, "10", 75.0)), squat.sets)
+        assertEquals(PlanPart.WarmUp, plan.items.first().part)
+        assertEquals(PlannedSets(3, "5", 20.0), plan.items.first().sets.first())
+        assertEquals(PlanPart.CoolDown, plan.items.last().part)
     }
 }

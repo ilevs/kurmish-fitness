@@ -2,6 +2,7 @@ package com.kurmish.fitness.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,30 +12,36 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import com.kurmish.fitness.R
-import com.kurmish.fitness.core.Advice
 import com.kurmish.fitness.core.AppData
 import com.kurmish.fitness.core.Coach
-import com.kurmish.fitness.core.Exercise
-import com.kurmish.fitness.core.Strength
-import com.kurmish.fitness.core.WarmUp
-import com.kurmish.fitness.core.kg
+import com.kurmish.fitness.core.ExerciseEntry
+import com.kurmish.fitness.core.PlanItem
+import com.kurmish.fitness.core.PlanPart
+import com.kurmish.fitness.core.Planner
 
-private val Percents = listOf(60, 70, 80, 90)
-private const val WarmUpPercent = 80
-
-/** Совет на сегодня, тренировка программы и рабочие веса от ПМ. */
+/** Тренировка на сегодня чек-листом: разминка, упражнения с весом и подходами, заминка; ниже советы. */
 @Composable
 internal fun TodayScreen(data: AppData, today: Long, onSpeak: (String) -> Unit, modifier: Modifier = Modifier) {
     val advice = remember(data, today) { Coach.advise(data, today) }
+    val plan = remember(data, today) { Planner.today(data, today) }
+    val entries = remember(data, today) { data.sessions.filter { it.epochDay == today }.flatMap { it.entries } }
+    var ticked by rememberSaveable(today) { mutableStateOf(emptyList<Int>()) }
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -43,55 +50,50 @@ internal fun TodayScreen(data: AppData, today: Long, onSpeak: (String) -> Unit, 
         verticalArrangement = Arrangement.spacedBy(Gap),
     ) {
         Text(text = advice.headline, style = MaterialTheme.typography.titleLarge)
-        Button(onClick = { onSpeak(advice.speech) }) {
+        Button(onClick = { onSpeak((listOf(advice.headline, plan.speech) + advice.points).joinToString(" ")) }) {
             Icon(painterResource(R.drawable.ic_volume), contentDescription = null)
             Spacer(Modifier.width(Gap))
             Text(stringResource(R.string.speak))
         }
-        if (advice.plan.isNotEmpty()) PlanCard(advice)
-        advice.points.forEach { point -> Text(text = "• $point", style = MaterialTheme.typography.bodyLarge) }
-        WeightsCard(data = data, today = today)
-    }
-}
-
-@Composable
-private fun PlanCard(advice: Advice) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(ScreenPadding), verticalArrangement = Arrangement.spacedBy(Gap)) {
-            Text(text = advice.plan.first(), style = MaterialTheme.typography.titleMedium)
-            advice.plan.drop(1).forEachIndexed { index, line -> Text("${index + 1}. $line") }
-            if (advice.warmUp.isNotEmpty()) {
-                Text(
-                    text = stringResource(R.string.today_plan_warm_up, advice.warmUp.joinToString { it.label }),
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
+        Text(text = plan.title, style = MaterialTheme.typography.titleMedium)
+        plan.note?.let { Text(text = it, style = MaterialTheme.typography.bodySmall) }
+        plan.items.forEachIndexed { index, item ->
+            PlanItemCard(
+                item = item,
+                recorded = item.recordedIn(entries),
+                ticked = index in ticked,
+                onTick = { ticked = if (index in ticked) ticked - index else ticked + index },
+            )
+        }
+        if (advice.points.isNotEmpty()) {
+            Text(text = stringResource(R.string.today_tips), style = MaterialTheme.typography.titleMedium)
+            advice.points.forEach { point -> Text(text = "• $point", style = MaterialTheme.typography.bodyMedium) }
         }
     }
 }
 
 @Composable
-private fun WeightsCard(data: AppData, today: Long) {
-    val lifts = Exercise.entries
-        .filter { it.isMainLift }
-        .mapNotNull { lift -> data.currentMax(lift, today)?.let { lift to it } }
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(ScreenPadding), verticalArrangement = Arrangement.spacedBy(Gap)) {
-            Text(text = stringResource(R.string.today_weights), style = MaterialTheme.typography.titleMedium)
-            if (lifts.isEmpty()) {
-                Text(stringResource(R.string.today_no_maxes))
-            }
-            lifts.forEach { (lift, max) ->
-                val warmUp = WarmUp.sets(lift, Strength.percentOf(max, WarmUpPercent))
-                Text(
-                    text = "${lift.title}, ПМ ${Strength.roundToPlates(max).kg()}",
-                    style = MaterialTheme.typography.titleSmall,
-                )
-                Text(Percents.joinToString(" · ") { "$it % — ${Strength.percentOf(max, it).kg()}" })
-                Text(
-                    text = stringResource(R.string.today_warm_up, warmUp.joinToString { it.label }),
-                    style = MaterialTheme.typography.bodySmall,
-                )
+private fun PlanItemCard(item: PlanItem, recorded: List<ExerciseEntry>, ticked: Boolean, onTick: () -> Unit) {
+    val done = recorded.isNotEmpty() || ticked
+    val colors = if (item.part == PlanPart.Work) {
+        CardDefaults.cardColors()
+    } else {
+        CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+    }
+    Card(modifier = Modifier.fillMaxWidth(), colors = colors) {
+        Row(modifier = Modifier.padding(end = ScreenPadding, top = Gap, bottom = Gap)) {
+            Checkbox(checked = done, onCheckedChange = { onTick() }, enabled = recorded.isEmpty())
+            Column(modifier = Modifier.align(Alignment.CenterVertically)) {
+                Text(text = item.title, style = MaterialTheme.typography.titleSmall)
+                item.sets.forEach { Text(text = it.label, style = MaterialTheme.typography.bodyLarge) }
+                item.notes.forEach { Text(text = it, style = MaterialTheme.typography.bodySmall) }
+                if (recorded.isNotEmpty()) {
+                    Text(
+                        text = stringResource(R.string.today_done, recorded.joinToString { it.label() }),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
             }
         }
     }

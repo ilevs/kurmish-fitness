@@ -8,10 +8,8 @@
     <string name="tab_profile">Профиль</string>
 
     <string name="speak">Озвучить</string>
-    <string name="today_weights">Веса от ПМ</string>
-    <string name="today_warm_up">Подводящие к 80 %%: %1$s</string>
-    <string name="today_no_maxes">Запиши тренировку или введи ПМ в профиле, и здесь появятся рабочие веса.</string>
-    <string name="today_plan_warm_up">Разминка перед базовым движением: %1$s</string>
+    <string name="today_tips">Советы</string>
+    <string name="today_done">Записано: %1$s</string>
 
     <string name="log_hint">Например: присед 120 на 5 по 3, жим 90х5х4, подтягивания 3 по 10, было легко</string>
     <string name="log_voice">Сказать</string>
