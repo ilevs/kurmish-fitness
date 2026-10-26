@@ -369,6 +369,27 @@ enum class Exercise(
         level = 1,
         synonyms = listOf("приседания в гакк тренажере", "гакк присед", "гакк"),
     ),
+    Pullover(
+        "Пуловер",
+        bodyweight = false,
+        movement = Movement.VerticalPull,
+        level = 2,
+        synonyms = listOf("пуловер", "пулловер"),
+    ),
+    StandingCalfRaise(
+        "Подъём на носки стоя",
+        bodyweight = false,
+        movement = Movement.Squat,
+        level = 1,
+        synonyms = listOf("подъем на носки стоя", "подъемы на носки", "икры стоя", "икры"),
+    ),
+    SeatedCalfRaise(
+        "Подъём на носки сидя",
+        bodyweight = false,
+        movement = Movement.Squat,
+        level = 1,
+        synonyms = listOf("подъем на носки сидя", "икры сидя"),
+    ),
     ;
 
     /**
@@ -381,6 +402,14 @@ enum class Exercise(
             in light -> ISOLATION
             else -> COMPOUND
         }
+
+    /** Упражнение со штангой: вес округляется под блины и не бывает легче пустого грифа. */
+    val barbell: Boolean
+        get() = this in barbells
+
+    /** Упражнение с двумя гантелями: в плане указывается вес одной. */
+    val dumbbell: Boolean
+        get() = this in dumbbells
 
     /** Соревновательное движение, по которому ведётся предельный максимум (ПМ). */
     val isMainLift: Boolean
@@ -401,7 +430,15 @@ enum class Exercise(
             FrenchPress, BicepsCurl, PushUp, Abs, Hyperextension,
             LegExtension, LegCurl, GluteBridge, KneePushUp, LateralRaise,
             FacePull, ExternalRotation, ReverseFly, Plank, ReverseCrunch,
-            SidePlank,
+            SidePlank, Pullover, StandingCalfRaise, SeatedCalfRaise,
         )
+
+        private val barbells = setOf(
+            Squat, Bench, Deadlift, OverheadPress, MidGripBench, CloseGripBench,
+            FrenchPress, BicepsCurl, StiffLegDeadlift, BentOverRow, FrontSquat, GoodMorning,
+            InclineBench, PushPress, PowerClean,
+        )
+
+        private val dumbbells = setOf(DumbbellPress, DumbbellRow, LateralRaise, DumbbellShoulderPress, ReverseFly)
     }
 }

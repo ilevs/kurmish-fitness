@@ -30,12 +30,17 @@ object Strength {
     fun roundToPlates(weightKg: Double): Double =
         maxOf(EMPTY_BAR, (weightKg / PLATE_STEP).roundToInt() * PLATE_STEP)
 
-    /** Вес на заданный процент от ПМ, округлённый под блины. */
-    fun percentOf(maxKg: Double, percent: Int): Double = roundToPlates(maxKg * percent / PERCENT)
+    /** Округляет вес: штанга — под блины, гантели и тренажёры — до 2,5 кг, но не меньше 2,5 кг. */
+    fun round(weightKg: Double, barbell: Boolean): Double =
+        if (barbell) roundToPlates(weightKg) else maxOf(PLATE_STEP, (weightKg / PLATE_STEP).roundToInt() * PLATE_STEP)
 
-    /** Вес на [reps] повторов с запасом [reserve] повторов до отказа (формула Эпли наоборот). */
-    fun forReps(maxKg: Double, reps: Int, reserve: Int = RESERVE): Double =
-        roundToPlates(maxKg / (1 + (reps + reserve) / EPLEY_DIVISOR))
+    /** Вес на заданный процент от ПМ, округлённый под снаряд. */
+    fun percentOf(maxKg: Double, percent: Int, barbell: Boolean = true): Double =
+        round(maxKg * percent / PERCENT, barbell)
+
+    /** Вес на [reps] повторов с запасом [RESERVE] повторов до отказа (формула Эпли наоборот). */
+    fun forReps(maxKg: Double, reps: Int, barbell: Boolean = true): Double =
+        round(maxKg / (1 + (reps + RESERVE) / EPLEY_DIVISOR), barbell)
 
     /** Процент от ПМ, который составляет вес. */
     fun percentOfMax(weightKg: Double, maxKg: Double): Int = (weightKg / maxKg * PERCENT).roundToInt()

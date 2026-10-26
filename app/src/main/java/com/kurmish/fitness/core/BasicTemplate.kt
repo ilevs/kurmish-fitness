@@ -63,7 +63,8 @@ internal object BasicTemplate {
             exercise.bodyweight -> PlannedSets(scheme.sets, MAX_REPS, null)
             else -> {
                 val reps = if (exercise == Exercise.Deadlift) minOf(scheme.reps, DEADLIFT_MAX_REPS) else scheme.reps
-                PlannedSets(scheme.sets, reps.toString(), max?.let { Strength.percentOf(it.kg, scheme.percent) })
+                val weight = max?.let { Strength.percentOf(it.kg, scheme.percent, exercise.barbell) }
+                PlannedSets(scheme.sets, reps.toString(), weight)
             }
         }
         val note = when {

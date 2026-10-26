@@ -78,7 +78,7 @@ object Planner {
         val planned = when {
             sets == null || reps == null -> emptyList()
             guess != null -> listOf(PlannedSets(sets, reps, guess.first))
-            else -> byPercents(item, sets, reps, max)
+            else -> byPercents(item, sets, reps, max, exercise?.barbell != false)
         }
         val percents = item.percents.takeIf { it.isNotEmpty() }?.joinToString(", ") { "$it %" }
         val notes = listOfNotNull(
@@ -89,10 +89,16 @@ object Planner {
         return PlanItem(PlanPart.Work, item.name, exercise, planned, notes)
     }
 
-    private fun byPercents(item: ProgramItem, sets: Int, reps: String, max: WorkingMax?): List<PlannedSets> = when {
+    private fun byPercents(
+        item: ProgramItem,
+        sets: Int,
+        reps: String,
+        max: WorkingMax?,
+        barbell: Boolean,
+    ): List<PlannedSets> = when {
         item.percents.isEmpty() || max == null -> listOf(PlannedSets(sets, reps, null))
-        item.percents.size == 1 -> listOf(PlannedSets(sets, reps, item.weights(max.kg).single()))
-        else -> item.weights(max.kg).map { PlannedSets(1, reps, it) }
+        item.percents.size == 1 -> listOf(PlannedSets(sets, reps, item.weights(max.kg, barbell).single()))
+        else -> item.weights(max.kg, barbell).map { PlannedSets(1, reps, it) }
     }
 
     private fun exerciseIn(name: String): Exercise? {

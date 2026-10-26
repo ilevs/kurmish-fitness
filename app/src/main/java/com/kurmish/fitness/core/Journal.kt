@@ -48,7 +48,7 @@ data class AppData(
     fun workingMax(exercise: Exercise, today: Long): WorkingMax? {
         val estimated = estimatedMaxes(today)
         val own = { lift: Exercise -> profile.manualMaxes[lift] ?: estimated[lift]?.kg }
-        return own(exercise)?.let { WorkingMax(it) } ?: MaxRatios.estimate(exercise, own)
+        return own(exercise)?.let { WorkingMax(it) } ?: MaxRatios.estimate(exercise, own, profile.bodyweightKg)
     }
 
     /** Самый тяжёлый подход [exercise] с весом в последней тренировке до [today] включительно. */

@@ -10,7 +10,8 @@ package com.kurmish.fitness.core
  */
 data class ProgramItem(val name: String, val scheme: String?, val maxOf: Exercise?, val percents: List<Int>) {
     /** Рабочие веса по ПМ, округлённые под блины; пустой список, если веса не задаются процентами. */
-    fun weights(maxKg: Double): List<Double> = percents.map { Strength.percentOf(maxKg, it) }
+    fun weights(maxKg: Double, barbell: Boolean = true): List<Double> =
+        percents.map { Strength.percentOf(maxKg, it, barbell) }
 
     /** «Жим лёжа 10×10 по 50 кг (50 %)» или «Присед 4×6: 135, 140, 147,5, 155 кг». */
     fun describe(maxKg: Double?): String {
