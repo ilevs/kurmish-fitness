@@ -34,14 +34,13 @@
     <string name="journal_edit">Исправить запись</string>
     <string name="journal_edit_hint">Нажми на запись, чтобы исправить дату, упражнения, вес, повторы, подходы или самочувствие.</string>
 
-    <string name="editor_title">Исправить запись</string>
     <string name="editor_title_new">Новая запись</string>
     <string name="editor_prev_day">Предыдущий день</string>
     <string name="editor_next_day">Следующий день</string>
     <string name="editor_pick_date">Выбрать дату</string>
-    <string name="editor_feeling_easy">Легко</string>
+    <string name="editor_feeling_easy">Было легко</string>
     <string name="editor_feeling_normal">Нормально</string>
-    <string name="editor_feeling_hard">Тяжело</string>
+    <string name="editor_feeling_hard">Было тяжело</string>
     <string name="editor_custom">Своё упражнение</string>
     <string name="editor_custom_name">Название упражнения</string>
     <string name="editor_weight">Вес, кг</string>
@@ -56,7 +55,6 @@
     <string name="editor_text_hint">Можно исправить текст и разобрать его заново: упражнения и самочувствие заменятся разобранными.</string>
     <string name="editor_reparse">Разобрать текст заново</string>
     <string name="editor_invalid">Проверь поля, отмеченные красным: у каждого упражнения нужны название и хотя бы один подход с повторами.</string>
-    <string name="editor_save">Сохранить</string>
     <string name="editor_cancel">Отмена</string>
     <string name="editor_ok">Готово</string>
     <string name="editor_delete">Удалить</string>

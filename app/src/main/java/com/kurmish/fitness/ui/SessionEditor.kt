@@ -1,5 +1,6 @@
 package com.kurmish.fitness.ui
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -75,7 +76,7 @@ internal fun SessionEditor(
                     .padding(ScreenPadding),
                 verticalArrangement = Arrangement.spacedBy(Gap),
             ) {
-                val title = if (draft.id == 0L) R.string.editor_title_new else R.string.editor_title
+                val title = if (draft.id == 0L) R.string.editor_title_new else R.string.journal_edit
                 Text(text = stringResource(title), style = MaterialTheme.typography.titleLarge)
                 DateRow(epochDay = draft.epochDay, onChange = { draft = draft.copy(epochDay = it) })
                 FeelingRow(feeling = draft.feeling, onChange = { draft = draft.copy(feeling = it) })
@@ -142,7 +143,11 @@ private fun DayPicker(epochDay: Long, onPick: (Long) -> Unit, onDismiss: () -> U
 
 @Composable
 private fun FeelingRow(feeling: Feeling, onChange: (Feeling) -> Unit) {
-    Row(horizontalArrangement = Arrangement.spacedBy(Gap), verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        modifier = Modifier.horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(Gap),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         Feeling.entries.forEach { option ->
             val title = when (option) {
                 Feeling.Easy -> R.string.editor_feeling_easy
@@ -315,7 +320,7 @@ private fun EditorActions(
             Spacer(Modifier.weight(1f))
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.editor_cancel)) }
             Button(onClick = { draft.toSession()?.let(onSave) }, enabled = draft.valid) {
-                Text(stringResource(R.string.editor_save))
+                Text(stringResource(R.string.log_save))
             }
         }
     }
