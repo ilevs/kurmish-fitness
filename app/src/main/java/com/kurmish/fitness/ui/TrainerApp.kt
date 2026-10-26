@@ -67,6 +67,7 @@ fun TrainerApp(
                 data = data,
                 today = viewModel.today(),
                 onSpeak = speaker::speak,
+                onChoose = { slot, exercise -> viewModel.updateProfile(data.profile.choose(slot, exercise)) },
                 dietActions = viewModel.dietActions(),
                 modifier = content
             )

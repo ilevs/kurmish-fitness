@@ -1,60 +1,6 @@
 package com.kurmish.fitness.core
 
 /**
- * Тип движения: по нему считается баланс нагрузки.
- *
- * @property title название для экрана.
- */
-enum class Movement(val title: String) {
-    /** Присед и другие движения с упором на колени. */
-    Squat("Присед"),
-
-    /** Тяги с пола и наклоны: упор на таз и спину. */
-    Hinge("Тяги с пола, наклоны"),
-
-    /** Жимы от груди и отжимания. */
-    HorizontalPush("Жим от груди"),
-
-    /** Жимы вверх и брусья. */
-    VerticalPush("Жим вверх, брусья"),
-
-    /** Тяги к поясу. */
-    HorizontalPull("Тяга к поясу"),
-
-    /** Подтягивания и тяги сверху. */
-    VerticalPull("Подтягивания"),
-
-    /** Бицепс и трицепс отдельно. */
-    Arms("Руки"),
-
-    /** Пресс. */
-    Core("Пресс"),
-    ;
-
-    /** Жимовое движение. */
-    val isPush: Boolean
-        get() = this == HorizontalPush || this == VerticalPush
-
-    /** Тяговое движение верхом тела. */
-    val isPull: Boolean
-        get() = this == HorizontalPull || this == VerticalPull
-}
-
-/** Тип движения упражнения. Временное соответствие, пока в базе упражнений нет своих типов. */
-val Exercise.movement: Movement
-    get() = when (this) {
-        Exercise.Squat -> Movement.Squat
-        Exercise.Deadlift, Exercise.StiffLegDeadlift, Exercise.Hyperextension -> Movement.Hinge
-        Exercise.Bench, Exercise.MidGripBench, Exercise.CloseGripBench, Exercise.DumbbellPress, Exercise.PushUp ->
-            Movement.HorizontalPush
-        Exercise.OverheadPress, Exercise.Dips -> Movement.VerticalPush
-        Exercise.BentOverRow -> Movement.HorizontalPull
-        Exercise.PullUp -> Movement.VerticalPull
-        Exercise.FrenchPress, Exercise.BicepsCurl -> Movement.Arms
-        Exercise.Abs -> Movement.Core
-    }
-
-/**
  * Итоги одной календарной недели (с понедельника).
  *
  * @property weekStart понедельник недели в днях с 1970-01-01.

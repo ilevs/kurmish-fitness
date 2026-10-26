@@ -49,6 +49,7 @@ enum class Goal(val title: String) {
  * @property manualMaxes ПМ, введённые вручную, в кг.
  * @property programId выбранная программа из [Programs]; null — без программы.
  * @property programStartEpochDay с какого дня записи дневника считаются тренировками программы.
+ * @property pool упражнения, выбранные на цикл вместо предложенных: название пункта плана → упражнение.
  * @property diet питание: фаза, процент жира, активность, рефиды.
  */
 @Serializable
@@ -63,8 +64,13 @@ data class Profile(
     val manualMaxes: Map<Exercise, Double> = emptyMap(),
     val programId: String? = null,
     val programStartEpochDay: Long? = null,
+    val pool: Map<String, Exercise> = emptyMap(),
     val diet: DietSettings = DietSettings(),
 ) {
+    /** Запоминает на цикл [exercise] вместо пункта [slot]; null возвращает исходное упражнение. */
+    fun choose(slot: String, exercise: Exercise?): Profile =
+        copy(pool = if (exercise == null || exercise.title == slot) pool - slot else pool + (slot to exercise))
+
     /** Значения по умолчанию. */
     companion object {
         /** Три тренировки в неделю. */

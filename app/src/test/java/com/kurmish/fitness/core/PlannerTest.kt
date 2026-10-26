@@ -60,4 +60,38 @@ class PlannerTest {
         assertEquals(Exercise.PullUp, unknown.exercise)
         assertEquals(listOf(PlannedSets(3, "мах", null)), unknown.sets)
     }
+
+    @Test
+    fun poolReplacesTemplateExerciseForTheCycle() {
+        val profile = Profile(goal = Goal.Strength, manualMaxes = maxes).choose("Присед", Exercise.FrontSquat)
+        val entry = ExerciseEntry(Exercise.FrontSquat, sets = listOf(SetGroup(60.0, 5)))
+        val data = AppData(profile, listOf(WorkoutSession(1, 50, "", listOf(entry))))
+        val work = Planner.today(data, today = 50).items.first { it.part == PlanPart.Work }
+        assertEquals(Exercise.FrontSquat, work.exercise)
+        assertEquals("Присед", work.slot)
+        assertTrue(work.replaced)
+        // ПМ фронтального по Дневнику: 60 × (1 + 5/30) = 70 кг, 80 % — 55 кг.
+        assertEquals(55.0, work.sets.single().weightKg)
+        assertEquals(emptyMap<String, Exercise>(), profile.choose("Присед", null).pool)
+    }
+
+    @Test
+    fun poolReplacesProgramItemOnEveryDay() {
+        val profile = Profile(programId = "hypertrophy", programStartEpochDay = 0)
+            .choose("Приседания в гакк-тренажёре", Exercise.LegPress)
+        val plan = Planner.today(AppData(profile), today = 5)
+        val item = plan.items.first { it.slot == "Приседания в гакк-тренажёре" }
+        assertEquals("Жим ногами", item.title)
+        assertEquals(listOf(PlannedSets(4, "12", null)), item.sets)
+    }
+
+    @Test
+    fun catalogHasMovementsAndUniqueSynonyms() {
+        val synonyms = Exercise.entries.flatMap { it.synonyms }
+        assertEquals(synonyms.size, synonyms.toSet().size)
+        Movement.entries.forEach { movement -> assertTrue(Exercise.entries.any { it.movement == movement }) }
+        assertEquals(Exercise.LegPress, WorkoutParser.parse("жим ногами 100 на 10").entries.single().exercise)
+        val chinUps = WorkoutParser.parse("подтягивания обратным хватом 3 по 8")
+        assertEquals(Exercise.ChinUp, chinUps.entries.single().exercise)
+    }
 }

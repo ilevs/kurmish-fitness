@@ -20,12 +20,16 @@ internal object BasicTemplate {
     private const val CORE_SETS = 3
     private const val CORE_REPS = "15"
     private const val DEADLIFT_MAX_REPS = 6
+    private const val MAX_REPS = "мах"
     private const val CHOOSE_WEIGHT = "Вес подбери так, чтобы последний повтор давался с запасом. " +
         "После записи в Дневник приложение посчитает вес само"
 
     private val dayA =
         listOf(Exercise.Squat, Exercise.Bench, Exercise.BentOverRow, Exercise.Hyperextension, Exercise.Abs)
     private val dayB = listOf(Exercise.Deadlift, Exercise.OverheadPress, Exercise.PullUp, Exercise.Abs)
+
+    /** Типы движения, где хватает лёгкого веса и 3 × 15. */
+    private val accessory = setOf(Movement.Core, Movement.Rotation, Movement.Arms)
 
     /** Пока нет своего ПМ, вес вспомогательного движения считается от ПМ жима лёжа с этим коэффициентом. */
     private val fromBench = mapOf(Exercise.BentOverRow to 0.7, Exercise.OverheadPress to 0.6)
@@ -45,23 +49,28 @@ internal object BasicTemplate {
         val second = done % 2 == 1
         return DayPlan(
             title = "Общая тренировка ${if (second) "Б" else "А"}, цель «${goal.title}»",
-            items = (if (second) dayB else dayA).map { item(it, scheme) { lift -> data.currentMax(lift, today) } },
+            items = (if (second) dayB else dayA).map { base ->
+                val chosen = data.profile.pool[base.title] ?: base
+                item(chosen, scheme) { lift -> data.currentMax(lift, today) }.copy(slot = base.title)
+            },
             note = "Тренировки А и Б чередуются. Программу по микроциклам можно выбрать в профиле.",
         )
     }
 
     private fun item(exercise: Exercise, scheme: Scheme, maxOf: (Exercise) -> Double?): PlanItem {
+        val light = exercise.movement in accessory || exercise.loadFactor == Exercise.ISOLATION
         val sets = when {
-            exercise == Exercise.PullUp -> PlannedSets(scheme.sets, "мах", null)
-            exercise.bodyweight -> PlannedSets(CORE_SETS, CORE_REPS, null)
+            light -> PlannedSets(CORE_SETS, CORE_REPS, null)
+            exercise.bodyweight -> PlannedSets(scheme.sets, MAX_REPS, null)
             else -> {
                 val reps = if (exercise == Exercise.Deadlift) minOf(scheme.reps, DEADLIFT_MAX_REPS) else scheme.reps
                 PlannedSets(scheme.sets, reps.toString(), weight(exercise, scheme.percent, maxOf))
             }
         }
         val note = when {
-            exercise == Exercise.PullUp -> "Оставляй 1–2 повтора в запасе"
+            sets.reps == MAX_REPS -> "Оставляй 1–2 повтора в запасе"
             exercise.bodyweight -> null
+            light -> "Лёгкий вес, без отказа"
             sets.weightKg == null -> CHOOSE_WEIGHT
             else -> "${scheme.percent} % от ПМ"
         }
