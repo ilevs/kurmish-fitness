@@ -57,12 +57,13 @@ internal fun StatsScreen(data: AppData, today: Long, modifier: Modifier = Modifi
             MaxCard(data = data)
             WeeksCard(data = data, today = today)
             BalanceCard(data = data, today = today)
+            ChecksCard(data = data, today = today)
         }
     }
 }
 
 @Composable
-private fun Section(title: String, content: @Composable () -> Unit) {
+internal fun Section(title: String, content: @Composable () -> Unit) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(ScreenPadding), verticalArrangement = Arrangement.spacedBy(Gap)) {
             Text(text = title, style = MaterialTheme.typography.titleMedium)

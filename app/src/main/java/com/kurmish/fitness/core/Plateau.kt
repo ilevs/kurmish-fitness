@@ -1,7 +1,7 @@
 package com.kurmish.fitness.core
 
 /**
- * Застой в базовых движениях: оценка ПМ за последние 4 недели не выше, чем за 8 недель до них.
+ * Застой в упражнениях с весом: оценка ПМ за последние 4 недели не выше, чем за 8 недель до них.
  * Первое средство от застоя — частота: движение или его вариацию чаще в неделю, а не больше объёма за раз.
  */
 internal object Plateau {
@@ -9,10 +9,8 @@ internal object Plateau {
     private const val BEFORE_WINDOWS = 3
     private const val MIN_DAYS = 3
 
-    private val lifts = listOf(Exercise.Squat, Exercise.Bench, Exercise.Deadlift)
-
-    /** Советы по движениям, которые стоят на месте. */
-    fun lines(data: AppData, today: Long): List<String> = lifts.mapNotNull { lift ->
+    /** Советы по упражнениям, которые стоят на месте: сначала присед, жим и становая. */
+    fun lines(data: AppData, today: Long): List<String> = lifts(data).mapNotNull { lift ->
         val recentFrom = today - WINDOW + 1
         val recent = estimates(data, lift, recentFrom..today)
         val before = estimates(data, lift, (today - BEFORE_WINDOWS * WINDOW + 1) until recentFrom)
@@ -24,6 +22,14 @@ internal object Plateau {
             null
         }
     }
+
+    /** Упражнения, которые делали с весом; у гравитрона вес помогает, и оценка ПМ к нему не подходит. */
+    private fun lifts(data: AppData): List<Exercise> = data.sessions
+        .flatMap { it.entries }
+        .filter { entry -> entry.sets.any { it.weightKg != null } }
+        .mapNotNull { it.exercise?.takeUnless(BodyweightLoad::assisted) }
+        .distinct()
+        .sortedByDescending { it.isMainLift }
 
     /** Лучшая оценка ПМ [lift] по каждому дню из [days]. */
     private fun estimates(data: AppData, lift: Exercise, days: LongRange): List<Double> = data.sessions

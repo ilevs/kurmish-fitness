@@ -94,6 +94,27 @@ class StatsTest {
     }
 
     @Test
+    fun simpleExercisesWeighLessInPairs() {
+        val data = AppData(
+            sessions = listOf(
+                session(
+                    1,
+                    monday,
+                    bench(SetGroup(80.0, 10, 3)),
+                    ExerciseEntry(Exercise.SeatedCableRow, sets = listOf(SetGroup(50.0, 10, 3))),
+                    ExerciseEntry(Exercise.FacePull, sets = listOf(SetGroup(10.0, 10, 3))),
+                ),
+            ),
+        )
+        val balance = Stats.balance(data, today = monday)
+        assertEquals(30, balance[Movement.HorizontalPush])
+        // Тяга в тренажёре считается с коэффициентом 0,6: 30 повторов не уравновешивают 30 жимов штанги.
+        assertEquals(18, balance[Movement.HorizontalPull])
+        // Вращатели вне пар считаются как есть.
+        assertEquals(30, balance[Movement.Rotation])
+    }
+
+    @Test
     fun balanceIssuesFollowOppositePairs() {
         val balance = Movement.entries.associateWith { 0 } + mapOf(
             Movement.HorizontalPush to 30,

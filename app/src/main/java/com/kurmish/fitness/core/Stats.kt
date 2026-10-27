@@ -1,5 +1,7 @@
 package com.kurmish.fitness.core
 
+import kotlin.math.roundToInt
+
 /**
  * Итоги одной календарной недели (с понедельника).
  *
@@ -85,6 +87,12 @@ object Stats {
     /** Сколько тренировок за 4 недели нужно, чтобы судить о балансе: по одной-двум записям рано. */
     const val BALANCE_MIN_SESSIONS = 3
 
+    /** Во сколько раз простое упражнение «легче» сложного в балансе пар: в 1,5–2 раза, берём середину. */
+    const val SIMPLE_FACTOR = 0.6
+
+    /** Уровни сложности до этого включительно считаются простыми. */
+    const val SIMPLE_LEVEL = 2
+
     private const val DAYS_IN_WEEK = 7
     private const val EXCESS = 1.5
 
@@ -151,17 +159,25 @@ object Stats {
         .sortedWith(compareByDescending<Pair<Exercise, Int>> { it.first.isMainLift }.thenByDescending { it.second })
         .map { it.first }
 
-    /** Повторы по типам движений за последние [days] дней; неузнанные упражнения не учитываются. */
+    /**
+     * Повторы по типам движений за последние [days] дней; неузнанные упражнения не учитываются. В парах
+     * противоположностей простые упражнения (тренажёры, изоляция, уровни 1–2) считаются с коэффициентом
+     * [SIMPLE_FACTOR]: чтобы уравновесить сложное упражнение, простого нужно в 1,5–2 раза больше повторов.
+     */
     fun balance(data: AppData, today: Long, days: Int = RECENT_DAYS): Map<Movement, Int> {
+        val paired = opposites.flatMap { it.toList() }.toSet()
         val reps = data.sessions
             .filter { today - it.epochDay in 0 until days }
             .flatMap { it.entries }
             .filter { it.exercise !in calves }
             .mapNotNull { entry ->
-                entry.exercise?.let { it.movement to entry.sets.sumOf { set -> set.reps * set.sets } }
+                entry.exercise?.let {
+                    val factor = if (it.movement in paired && it.level <= SIMPLE_LEVEL) SIMPLE_FACTOR else 1.0
+                    it.movement to entry.reps() * factor
+                }
             }
             .groupBy({ it.first }, { it.second })
-            .mapValues { (_, values) -> values.sum() }
+            .mapValues { (_, values) -> values.sum().roundToInt() }
         return Movement.entries.associateWith { reps[it] ?: 0 }
     }
 
@@ -216,3 +232,6 @@ object Stats {
         return { maxes[it] }
     }
 }
+
+/** Все повторы строки упражнения: повторы × подходы. */
+internal fun ExerciseEntry.reps(): Int = sets.sumOf { it.reps * it.sets }

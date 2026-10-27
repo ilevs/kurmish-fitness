@@ -33,5 +33,8 @@
   <string name="stats_scales_hint">Весы противоположностей: полоса уходит в сторону, где повторов больше. Цветная зона — норма: правая сторона может перевешивать до двух раз, левая — не больше чем в 1,5 раза.</string>
   <string name="stats_scale_side">%1$s: %2$d</string>
   <string name="stats_scale_chart">%1$s против %2$s</string>
+  <string name="stats_checks_title">Проверки</string>
+  <string name="stats_checks_early">Проверки появятся, когда за 4 недели наберётся хотя бы %1$d тренировки.</string>
+  <string name="stats_checks_ok">Всё в норме: плечи вращаются в обе стороны, объём базы по порядку, вес растёт без рывков, разгрузки вовремя, плоскости не забыты, тренировки не длинные, застоя нет.</string>
   <string name="stats_balance_ok">Плоскости в равновесии: жимы и тяги, колено и таз, есть вращение плеча наружу и кор.</string>
 </resources>
