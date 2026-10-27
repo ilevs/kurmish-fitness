@@ -146,6 +146,7 @@ private fun BalanceCard(data: AppData, today: Long) {
             Hint(stringResource(R.string.stats_balance_empty))
             return@Section
         }
+        BalanceScales(remember(balance) { Stats.pairs(balance) })
         val bar = MaterialTheme.colorScheme.primary
         val track = MaterialTheme.colorScheme.surfaceVariant
         balance.forEach { (movement, reps) ->
@@ -165,9 +166,13 @@ private fun BalanceCard(data: AppData, today: Long) {
                 Text(reps.toString(), style = MaterialTheme.typography.bodySmall)
             }
         }
+        val enough = remember(data, today) { Stats.enoughForBalance(data, today) }
         val issues = remember(balance) { Stats.balanceIssues(balance) }
-        if (issues.isEmpty()) Hint(stringResource(R.string.stats_balance_ok))
-        issues.forEach { Hint(balanceAdvice(it)) }
+        when {
+            !enough -> Hint(stringResource(R.string.stats_balance_early, Stats.BALANCE_MIN_SESSIONS))
+            issues.isEmpty() -> Hint(stringResource(R.string.stats_balance_ok))
+            else -> issues.forEach { Hint(balanceAdvice(it)) }
+        }
     }
 }
 

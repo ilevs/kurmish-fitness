@@ -1,6 +1,7 @@
 package com.kurmish.fitness.core
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -113,6 +114,32 @@ class StatsTest {
         )
         // Больше вертикальных жимов, чем тяг, — допустимый перекос, о нём не предупреждаем.
         assertTrue(issues.none { it is BalanceIssue.Excess && it.more == Movement.VerticalPush })
+    }
+
+    @Test
+    fun pairsShowShiftAndNorm() {
+        val balance = mapOf(
+            Movement.HorizontalPush to 30,
+            Movement.HorizontalPull to 15,
+            Movement.VerticalPull to 20,
+            Movement.Squat to 10,
+            Movement.Hinge to 20,
+        )
+        val (horizontal, vertical, legs) = Stats.pairs(balance)
+        assertEquals(-1.0 / 3, horizontal.shift!!, 1e-9)
+        assertFalse(horizontal.balanced)
+        assertFalse(vertical.balanced)
+        assertEquals(Movement.VerticalPush, vertical.right)
+        assertTrue(legs.balanced)
+        assertNull(OppositePair(Movement.Squat, Movement.Hinge, 0, 0).shift)
+    }
+
+    @Test
+    fun balanceAdviceWaitsForThreeWorkouts() {
+        val sessions = (1L..3L).map { WorkoutSession(it, epochDay = 100 + it, rawText = "", entries = emptyList()) }
+        assertFalse(Stats.enoughForBalance(AppData(sessions = sessions.take(2)), today = 110))
+        assertTrue(Stats.enoughForBalance(AppData(sessions = sessions), today = 110))
+        assertFalse(Stats.enoughForBalance(AppData(sessions = sessions), today = 140))
     }
 
     @Test
