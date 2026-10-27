@@ -96,9 +96,6 @@ object Stats {
     private const val DAYS_IN_WEEK = 7
     private const val EXCESS = 1.5
 
-    /** Икры почти не влияют на баланс плоскостей и не считаются в приседе. */
-    private val calves = setOf(Exercise.StandingCalfRaise, Exercise.SeatedCalfRaise)
-
     /**
      * Противоположные типы движения: повторов в паре должно быть поровну. Перекос в сторону второго
      * (горизонтальных тяг, вертикальных жимов, таза) допустим и даже полезен, в сторону первого — нет.
@@ -169,7 +166,6 @@ object Stats {
         val reps = data.sessions
             .filter { today - it.epochDay in 0 until days }
             .flatMap { it.entries }
-            .filter { it.exercise !in calves }
             .mapNotNull { entry ->
                 entry.exercise?.let {
                     val factor = if (it.movement in paired && it.level <= SIMPLE_LEVEL) SIMPLE_FACTOR else 1.0

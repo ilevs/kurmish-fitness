@@ -37,7 +37,8 @@ import java.util.Collections
 
 /**
  * Циклы: макроцикл из блоков-программ, программы и свои циклы с редактором, расписание текущего блока
- * и годовой план. Открывается из Профиля, [onBack] возвращает туда.
+ * и годовой план, внизу справочник упражнений по плоскостям. Открывается из Профиля, [onBack] возвращает
+ * туда.
  */
 @Composable
 internal fun CyclesScreen(
@@ -45,6 +46,23 @@ internal fun CyclesScreen(
     today: Long,
     onProfileChange: (Profile) -> Unit,
     onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var planes by remember { mutableStateOf(false) }
+    if (planes) {
+        PlanesScreen(onBack = { planes = false }, modifier = modifier)
+    } else {
+        CyclesContent(data, today, onProfileChange, onBack, { planes = true }, modifier)
+    }
+}
+
+@Composable
+private fun CyclesContent(
+    data: AppData,
+    today: Long,
+    onProfileChange: (Profile) -> Unit,
+    onBack: () -> Unit,
+    onPlanes: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     BackHandler(onBack = onBack)
@@ -67,6 +85,7 @@ internal fun CyclesScreen(
         )
         position?.let { Schedule(program = it.program, next = it.progress.next) }
         YearPlanCard(profile = profile, today = today, onProfileChange = onProfileChange)
+        PlanesCard(onOpen = onPlanes)
     }
     editing?.let { design ->
         CycleEditor(
@@ -280,3 +299,14 @@ private fun YearPlanCard(profile: Profile, today: Long, onProfileChange: (Profil
 
 private fun List<String>.swapped(from: Int, to: Int): List<String> =
     toMutableList().apply { Collections.swap(this, from, to) }
+
+@Composable
+private fun PlanesCard(onOpen: () -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(ScreenPadding), verticalArrangement = Arrangement.spacedBy(Gap)) {
+            Text(text = stringResource(R.string.planes_open), style = MaterialTheme.typography.titleMedium)
+            Text(text = stringResource(R.string.planes_card_hint), style = MaterialTheme.typography.bodySmall)
+            OutlinedButton(onClick = onOpen) { Text(stringResource(R.string.planes_open)) }
+        }
+    }
+}
