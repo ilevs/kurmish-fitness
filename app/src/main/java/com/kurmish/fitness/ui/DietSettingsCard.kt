@@ -15,11 +15,10 @@ import com.kurmish.fitness.core.DietPhase
 import com.kurmish.fitness.core.DietSettings
 import com.kurmish.fitness.core.Lifestyle
 import com.kurmish.fitness.core.Profile
-import com.kurmish.fitness.core.Sex
 import com.kurmish.fitness.core.activityLevel
 import com.kurmish.fitness.core.withPhase
 
-/** Настройки питания в профиле: фаза, пол, активность, дефицит, процент жира или рост и возраст. */
+/** Настройки питания в профиле: фаза, образ жизни и активность, дефицит. Вес, пол и жир — в карточке «Тело». */
 @Composable
 internal fun DietSettingsCard(
     profile: Profile,
@@ -40,12 +39,6 @@ internal fun DietSettingsCard(
                 onSelect = { change(diet.withPhase(it, today)) },
             )
             if (diet.phase != DietPhase.Off) {
-                ChoiceRow(
-                    title = stringResource(R.string.diet_sex),
-                    options = Sex.entries.map { it to it.title },
-                    selected = diet.sex,
-                    onSelect = { change(diet.copy(sex = it)) },
-                )
                 ChoiceRow(
                     title = stringResource(R.string.diet_lifestyle),
                     options = Lifestyle.entries.map { it to it.title },
@@ -74,32 +67,8 @@ internal fun DietSettingsCard(
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
-                BodyFields(diet = diet, onChange = change)
             }
         }
-    }
-}
-
-@Composable
-private fun BodyFields(diet: DietSettings, onChange: (DietSettings) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(Gap)) {
-        NumberField(
-            label = stringResource(R.string.diet_fat),
-            value = diet.bodyFatPercent,
-            onValueChange = { onChange(diet.copy(bodyFatPercent = it)) },
-        )
-        // Рост и возраст нужны только для оценки процента жира, когда его не ввели.
-        if (diet.bodyFatPercent != null) return@Column
-        NumberField(
-            label = stringResource(R.string.diet_height),
-            value = diet.heightCm,
-            onValueChange = { onChange(diet.copy(heightCm = it)) },
-        )
-        NumberField(
-            label = stringResource(R.string.diet_age),
-            value = diet.age?.toDouble(),
-            onValueChange = { onChange(diet.copy(age = it?.toInt())) },
-        )
     }
 }
 

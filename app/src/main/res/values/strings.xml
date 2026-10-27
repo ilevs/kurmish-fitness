@@ -3,7 +3,10 @@
     <string name="app_name">Курмыш Фитнес</string>
 
     <string name="cycles_title">Циклы</string>
-    <string name="cycles_back">Назад</string>
+    <string name="nav_back">Назад</string>
+    <string name="backup_screen_title">Резервная копия</string>
+    <string name="backup_screen_hint">Яндекс Диск, Google Диск, файл или Telegram</string>
+    <string name="backup_screen_open">Открыть</string>
     <string name="profile_cycles_open">Открыть циклы</string>
     <string name="cycles_schedule">Расписание блока «%1$s»</string>
     <string name="cycles_microcycle">Микроцикл %1$d из %2$d</string>
@@ -85,6 +88,8 @@
     <string name="editor_more">Ещё</string>
     <string name="editor_add_set">Добавить подход</string>
     <string name="editor_remove_set">Удалить подход</string>
+    <string name="editor_sets_edit">Изменить</string>
+    <string name="editor_set_removed">Подход %1$d удалён</string>
     <string name="editor_remove_exercise">Удалить упражнение</string>
     <string name="editor_add_exercise">Добавить упражнение</string>
     <string name="editor_text">Текст записи</string>
@@ -104,6 +109,13 @@
     <string name="profile_bodyweight">Собственный вес, кг</string>
     <string name="profile_days">Тренировок в неделю</string>
     <string name="profile_goal">Задача</string>
+    <string name="profile_goal_section">Цель и график</string>
+    <string name="profile_body">Тело</string>
+    <string name="profile_body_hint">Процент жира уточняет стартовые веса и питание; рост и возраст нужны, только чтобы его оценить.</string>
+    <string name="profile_weight">Вес</string>
+    <string name="profile_weight_hint">Введённый вес записывается как взвешивание за сегодня: по нему считаются питание и нагрузка в упражнениях со своим весом.</string>
+    <string name="profile_strength">Сила</string>
+    <string name="profile_strength_hint">ПМ можно не вводить: в пустом поле подсказкой видна оценка по Дневнику.</string>
     <string name="profile_max">ПМ: %1$s, кг</string>
     <string name="profile_program_mismatch">Не совпадает с профилем: %1$s</string>
     <string name="profile_program_progress">Сделано тренировок: %1$d из %2$d</string>

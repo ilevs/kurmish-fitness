@@ -153,3 +153,18 @@ private fun statusText(state: BackupUi): String? = when (state.status) {
         stringResource(R.string.backup_last, time)
     }
 }
+
+/**
+ * Что делает с бэкапом на Яндекс Диск экран резервной копии.
+ *
+ * @property onConnect подключить диск по логину и паролю приложения.
+ * @property onBackup сохранить копию сейчас.
+ * @property onRestore восстановить Дневник с диска.
+ * @property onDisconnect отключить диск.
+ */
+internal class YandexActions(
+    val onConnect: (String, String) -> Unit,
+    val onBackup: () -> Unit,
+    val onRestore: () -> Unit,
+    val onDisconnect: () -> Unit,
+)
