@@ -70,15 +70,15 @@ fun TrainerApp(
         when (tab) {
             Tab.Journal -> JournalScreen(
                 data = data,
-                today = viewModel.today(),
+                today = viewModel.today,
                 actions = viewModel.journalActions(data, speaker),
                 modifier = content,
             )
-            Tab.Cycles -> CyclesScreen(data, viewModel.today(), viewModel::updateProfile, modifier = content)
-            Tab.Stats -> StatsScreen(data = data, today = viewModel.today(), modifier = content)
+            Tab.Cycles -> CyclesScreen(data, viewModel.today, viewModel::updateProfile, modifier = content)
+            Tab.Stats -> StatsScreen(data = data, today = viewModel.today, modifier = content)
             Tab.Profile -> ProfileScreen(
                 data = data,
-                today = viewModel.today(),
+                today = viewModel.today,
                 backup = backup,
                 onProfileChange = viewModel::updateProfile,
                 onBackupConnect = backupViewModel::connect,
@@ -94,7 +94,7 @@ fun TrainerApp(
         }
     }
     if (testing || needsTest(data, loaded)) {
-        FirstTest(data, viewModel.today(), viewModel::updateProfile) { testing = false }
+        FirstTest(data, viewModel.today, viewModel::updateProfile) { testing = false }
     }
 }
 

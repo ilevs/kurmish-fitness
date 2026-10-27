@@ -92,22 +92,32 @@ internal fun JournalScreen(
             )
         }
     }
-    editing?.let { draft ->
-        SessionEditor(
-            initial = draft,
-            suggest = suggest,
-            previous = { entry, epochDay -> data.previousSets(entry, epochDay, draft.id) },
-            onSave = { session ->
-                actions.onSave(session)
-                editing = null
-            },
-            onDelete = {
-                actions.onDelete(draft.id)
-                editing = null
-            }.takeIf { draft.id != 0L },
-            onDismiss = { editing = null },
-        )
-    }
+    editing?.let { draft -> PastEditor(draft, data, suggest, actions) { editing = null } }
+}
+
+/** Редактор прошлой записи [draft]; [onClose] закрывает его после сохранения, удаления или отмены. */
+@Composable
+private fun PastEditor(
+    draft: SessionDraft,
+    data: AppData,
+    suggest: (String) -> List<String>,
+    actions: JournalActions,
+    onClose: () -> Unit,
+) {
+    SessionEditor(
+        initial = draft,
+        suggest = suggest,
+        previous = { entry, epochDay -> data.previousSets(entry, epochDay, draft.id) },
+        onSave = { session ->
+            actions.onSave(session)
+            onClose()
+        },
+        onDelete = {
+            actions.onDelete(draft.id)
+            onClose()
+        }.takeIf { draft.id != 0L },
+        onDismiss = onClose,
+    )
 }
 
 /**

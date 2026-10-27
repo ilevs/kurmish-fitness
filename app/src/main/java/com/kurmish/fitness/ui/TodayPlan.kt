@@ -189,8 +189,7 @@ private class TodayWorkout(
     initial: SessionDraft,
     synced: WorkoutSession?,
     shape: List<Pair<Exercise?, String>>,
-    private val nextId: () -> Long,
-    private val previousOf: (EntryDraft, Long) -> List<SetGroup>,
+    private val data: () -> AppData,
     private val onSave: (WorkoutSession) -> Unit,
     private val onDelete: (Long) -> Unit,
 ) {
@@ -214,7 +213,7 @@ private class TodayWorkout(
     }
 
     /** Подходы упражнения [index] в прошлый раз. */
-    fun previous(index: Int): List<SetGroup> = previousOf(draft.entries[index], draft.id)
+    fun previous(index: Int): List<SetGroup> = data().previousSets(draft.entries[index], draft.epochDay, draft.id)
 
     /** Заменить упражнение [index] и сохранить. */
     fun change(index: Int, entry: EntryDraft) {
@@ -232,7 +231,7 @@ private class TodayWorkout(
     }
 
     private fun commit(changed: SessionDraft) {
-        val id = if (changed.id == 0L) nextId() else changed.id
+        val id = if (changed.id == 0L) data().nextId else changed.id
         val session = changed.toSession()?.copy(id = id)
         draft = changed
         if (session != null) {
@@ -264,8 +263,7 @@ private fun rememberTodayWorkout(
             initial = SessionDraft.fromPlan(plan, today, existing).withoutBlank(),
             synced = existing,
             shape = plan.shape(),
-            nextId = { currentData.nextId },
-            previousOf = { entry, id -> currentData.previousSets(entry, today, id) },
+            data = { currentData },
             onSave = { save(it) },
             onDelete = { delete(it) },
         )

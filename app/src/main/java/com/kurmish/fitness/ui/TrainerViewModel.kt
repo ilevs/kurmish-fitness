@@ -64,7 +64,7 @@ class TrainerViewModel(
     }
 
     /** Сегодняшняя дата в днях с 1970-01-01. */
-    fun today(): Long = LocalDate.now().toEpochDay()
+    val today: Long get() = LocalDate.now().toEpochDay()
 
     /** Сохраняет запись: новую (с номером 0) добавляет, исправленную заменяет. */
     fun saveWorkout(session: WorkoutSession) {
@@ -73,7 +73,7 @@ class TrainerViewModel(
 
     /** Записывает разобранный текст: за день, где уже есть тренировка, дописывает в неё. */
     fun recordWorkout(text: String, parsed: ParsedWorkout) {
-        change { data -> data.withRecorded(parsed, text, today()) }
+        change { data -> data.withRecorded(parsed, text, today) }
     }
 
     /** Удаляет запись дневника. */
@@ -93,22 +93,22 @@ class TrainerViewModel(
 
     /** Записывает вес за сегодня. */
     fun logWeight(kg: Double) {
-        change { data -> data.withWeight(today(), kg) }
+        change { data -> data.withWeight(today, kg) }
     }
 
     /** Отмечает рефид сегодня. */
     fun markRefeed() {
-        change { data -> data.withRefeed(today()) }
+        change { data -> data.withRefeed(today) }
     }
 
     /** Принимает поправку калорий в процентах. */
     fun applyCalorieCorrection(percent: Int) {
-        change { data -> data.withCalorieCorrection(percent, today()) }
+        change { data -> data.withCalorieCorrection(percent, today) }
     }
 
     /** Меняет фазу питания с сегодняшнего дня. */
     fun changeDietPhase(phase: DietPhase) {
-        change { data -> data.copy(profile = data.profile.copy(diet = data.profile.diet.withPhase(phase, today()))) }
+        change { data -> data.copy(profile = data.profile.copy(diet = data.profile.diet.withPhase(phase, today))) }
     }
 
     private fun change(transform: (AppData) -> AppData) {
