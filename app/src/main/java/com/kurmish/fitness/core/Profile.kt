@@ -54,6 +54,7 @@ enum class Goal(val title: String) {
  * @property shoulders тесты подвижности плеч из первичного тестирования.
  * @property onboarded первичное тестирование пройдено или пропущено: анкета больше не открывается сама.
  * @property yearPlanStartEpochDay с какого дня идёт годовой план по периодам; null — план выключен.
+ * @property testEpochDay день, на который тестовую тренировку назначили вручную; null — не назначали.
  */
 @Serializable
 data class Profile(
@@ -72,6 +73,7 @@ data class Profile(
     val shoulders: ShoulderTests = ShoulderTests(),
     val onboarded: Boolean = false,
     val yearPlanStartEpochDay: Long? = null,
+    val testEpochDay: Long? = null,
 ) {
     /** Встроенные программы и свои циклы. */
     val programs: List<TrainingProgram>

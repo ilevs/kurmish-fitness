@@ -74,6 +74,7 @@ internal fun JournalScreen(
                 suggest = suggest,
                 onSpeak = actions.onSpeak,
                 onChoose = actions.onChoose,
+                onTest = actions.onTest,
                 onSave = actions.onSave,
                 onDelete = actions.onDelete,
             )
@@ -135,6 +136,7 @@ internal class JournalActions(
     val onDelete: (Long) -> Unit,
     val onSpeak: (String) -> Unit,
     val onChoose: (slot: String, exercise: Exercise?) -> Unit,
+    val onTest: (Boolean) -> Unit,
 )
 
 @Composable

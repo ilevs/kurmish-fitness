@@ -43,6 +43,8 @@
     <string name="journal_history">Прошлые записи</string>
     <string name="today_replace">Заменить</string>
     <string name="today_restore">Вернуть</string>
+    <string name="today_test_start">Пройти тестовую тренировку сегодня</string>
+    <string name="today_test_cancel">Вернуть обычный план</string>
     <string name="today_instead">Вместо «%1$s» на весь цикл</string>
     <string name="picker_title">Чем заменить «%1$s»</string>
     <string name="picker_hint">Выбор запомнится на цикл: во всех тренировках, где стоит это упражнение.</string>

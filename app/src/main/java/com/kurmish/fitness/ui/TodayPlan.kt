@@ -36,6 +36,7 @@ import com.kurmish.fitness.core.Coach
 import com.kurmish.fitness.core.DayPlan
 import com.kurmish.fitness.core.EntryDraft
 import com.kurmish.fitness.core.Exercise
+import com.kurmish.fitness.core.FitnessTest
 import com.kurmish.fitness.core.PlanItem
 import com.kurmish.fitness.core.PlanPart
 import com.kurmish.fitness.core.Planner
@@ -52,6 +53,7 @@ import com.kurmish.fitness.core.previousSets
  * @param suggest подсказки названий для упражнений сверх плана.
  * @param onSave сохранить сегодняшнюю запись.
  * @param onDelete удалить сегодняшнюю запись, когда в ней не осталось отмеченных подходов.
+ * @param onTest назначить тестовую тренировку на сегодня или вернуть обычный план.
  */
 @Composable
 internal fun TodayPlan(
@@ -62,6 +64,7 @@ internal fun TodayPlan(
     onChoose: (slot: String, exercise: Exercise?) -> Unit,
     onSave: (WorkoutSession) -> Unit,
     onDelete: (Long) -> Unit,
+    onTest: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val headline = remember(data, today) { Coach.advise(data, today).headline }
@@ -77,6 +80,7 @@ internal fun TodayPlan(
             }
         }
         plan.note?.let { Text(text = it, style = MaterialTheme.typography.bodySmall) }
+        TestSwitch(data = data, today = today, onTest = onTest)
         val matched = workout.draft.matchPlan(plan)
         plan.items.forEachIndexed { index, item ->
             if (item.part == PlanPart.Work) {
@@ -104,6 +108,20 @@ internal fun TodayPlan(
                 onDismiss = { choosing = null },
             )
         }
+    }
+}
+
+/**
+ * Тестовая тренировка по кнопке: заново определить рабочие веса, например после перерыва. Назначенную вручную
+ * можно отменить; в самом начале тест в плане и так.
+ */
+@Composable
+private fun TestSwitch(data: AppData, today: Long, onTest: (Boolean) -> Unit) {
+    when {
+        data.profile.testEpochDay == today ->
+            TextButton(onClick = { onTest(false) }) { Text(stringResource(R.string.today_test_cancel)) }
+        !FitnessTest.first(data, today) ->
+            TextButton(onClick = { onTest(true) }) { Text(stringResource(R.string.today_test_start)) }
     }
 }
 

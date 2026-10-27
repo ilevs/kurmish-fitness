@@ -40,6 +40,14 @@ class FitnessTestTest {
     }
 
     @Test
+    fun testWorkoutCanBeScheduledForToday() {
+        val started = AppData(Profile(manualMaxes = maxes, testEpochDay = 10))
+        assertTrue(FitnessTest.needed(started, today = 10))
+        assertEquals("Тестовая тренировка", Planner.today(started, today = 10).title)
+        assertFalse(FitnessTest.needed(started, today = 11))
+    }
+
+    @Test
     fun strengthBalanceComesFromDiary() {
         val entries = listOf(
             ExerciseEntry(Exercise.Bench, sets = listOf(SetGroup(100.0, 1))),

@@ -157,6 +157,7 @@ private fun TrainerViewModel.journalActions(data: AppData, speaker: Speaker) = J
     onDelete = ::deleteWorkout,
     onSpeak = speaker::speak,
     onChoose = { slot, exercise -> updateProfile(data.profile.choose(slot, exercise)) },
+    onTest = { on -> updateProfile(data.profile.copy(testEpochDay = today.takeIf { on })) },
 )
 
 private fun TrainerViewModel.dietActions() = DietActions(
