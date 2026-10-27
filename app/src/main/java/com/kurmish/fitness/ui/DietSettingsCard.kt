@@ -88,6 +88,8 @@ private fun BodyFields(diet: DietSettings, onChange: (DietSettings) -> Unit) {
             value = diet.bodyFatPercent,
             onValueChange = { onChange(diet.copy(bodyFatPercent = it)) },
         )
+        // Рост и возраст нужны только для оценки процента жира, когда его не ввели.
+        if (diet.bodyFatPercent != null) return@Column
         NumberField(
             label = stringResource(R.string.diet_height),
             value = diet.heightCm,

@@ -103,10 +103,10 @@ class DietTest {
     }
 
     @Test
-    fun deficitCapsCorrectionPercent() {
+    fun deficitKeepsWeightsWhenEasy() {
         val easy = WorkoutSession(1, start, "", emptyList(), Feeling.Easy)
         val advice = Coach.advise(data(sessions = listOf(easy)), start + 2)
-        assertTrue(advice.points.any { "сброс жира" in it && "0,5 %" in it })
+        assertTrue(advice.points.any { "сброс жира" in it && "не поднимай" in it })
     }
 
     @Test

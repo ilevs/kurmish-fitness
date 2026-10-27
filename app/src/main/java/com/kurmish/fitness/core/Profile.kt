@@ -44,8 +44,6 @@ enum class Goal(val title: String) {
  * @property rank уровень подготовки.
  * @property goal задача периода.
  * @property daysPerWeek сколько тренировок в неделю атлет может себе позволить.
- * @property correctionPercent процент корректировки: на сколько растёт расчётный ПМ от недели к неделе.
- * @property natural тренируется без фармакологии.
  * @property manualMaxes ПМ, введённые вручную, в кг.
  * @property programId первый блок макроцикла: встроенная программа из [Programs] или свой цикл; null — без программы.
  * @property programStartEpochDay с какого дня записи дневника считаются тренировками макроцикла.
@@ -61,8 +59,6 @@ data class Profile(
     val rank: Rank = Rank.Second,
     val goal: Goal = Goal.Strength,
     val daysPerWeek: Int = DEFAULT_DAYS,
-    val correctionPercent: Double = DEFAULT_CORRECTION,
-    val natural: Boolean = true,
     val manualMaxes: Map<Exercise, Double> = emptyMap(),
     val programId: String? = null,
     val programStartEpochDay: Long? = null,
@@ -121,8 +117,5 @@ data class Profile(
     companion object {
         /** Три тренировки в неделю. */
         const val DEFAULT_DAYS = 3
-
-        /** Рекомендованный процент корректировки для натурального атлета. */
-        const val DEFAULT_CORRECTION = 0.5
     }
 }

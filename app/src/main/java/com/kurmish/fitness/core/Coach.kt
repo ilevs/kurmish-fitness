@@ -1,7 +1,5 @@
 package com.kurmish.fitness.core
 
-import kotlin.math.abs
-
 /**
  * Совет тренера на сегодня.
  *
@@ -15,13 +13,11 @@ data class Advice(val headline: String, val points: List<String>)
 /**
  * Даёт совет «что и как тренировать» по профилю и дневнику.
  *
- * Правила взяты из инструкций к циклам: отдых между тренировками, процент корректировки по самочувствию,
+ * Правила взяты из инструкций к циклам: отдых между тренировками, нагрузка по самочувствию,
  * разминка от пустого грифа, ограничения по повторам, лёгкая заминка. Все правила перечислены
  * в docs/explanation/methodology.md.
  */
 object Coach {
-    private const val EASY_STEP = 2.0
-    private const val NATURAL_CEILING = 1.0
     private const val MIN_DIFFERENCE_KG = 2.5
     private const val COOL_DOWN_FROM = 40
     private const val COOL_DOWN_TO = 70
@@ -29,8 +25,9 @@ object Coach {
     private const val STRENGTH_REPS = 6
     private const val ENDURANCE_REPS = 8
     private const val MAX_DAYS_WITH_REST = 3
-    private const val EPSILON = 0.001
-    private const val DEFICIT_CEILING = 0.5
+    private const val HARD_FEELING =
+        "Прошлая тренировка далась тяжело: сегодня сними с рабочих весов 5–10 %, а если самочувствие плохое, отдохни."
+    private const val EASY_ON_DEFICIT = "Было легко, но идёт сброс жира: веса не поднимай, задача — сохранить силу."
 
     /** Совет на день [today] (дни с 1970-01-01). */
     fun advise(data: AppData, today: Long): Advice {
@@ -44,7 +41,7 @@ object Coach {
             if (program == null) cycle?.let { add("Цикл методики под твой профиль: ${it.id}. ${it.note}") }
             addAll(maxLines(data, today))
             addAll(Plateau.lines(data, today))
-            if (program == null) correctionLine(last, profile, cycle, diet?.phase == DietPhase.Deficit)?.let(::add)
+            feelingLine(last, diet?.phase == DietPhase.Deficit)?.let(::add)
             addAll(if (program == null) techniqueLines(cycle?.strengthMode != false) else programTechniqueLines())
         }
         return Advice(headline(last, profile, today), points)
@@ -77,33 +74,10 @@ object Coach {
         }
     }
 
-    private fun correctionLine(
-        last: WorkoutSession?,
-        profile: Profile,
-        cycle: TrainingCycle?,
-        deficit: Boolean,
-    ): String? {
-        val ceiling = listOfNotNull(cycle?.maxCorrectionPercent, DEFICIT_CEILING.takeIf { deficit }).minOrNull()
-        val current = profile.correctionPercent
-        return when (last?.feeling) {
-            Feeling.Hard -> "Прошлая тренировка далась тяжело: поставь процент корректировки 0 %."
-            Feeling.Easy -> {
-                val raised = (current + EASY_STEP).let { if (ceiling != null) minOf(it, ceiling) else it }
-                when {
-                    deficit && raised < current + EPSILON ->
-                        "Было легко, но идёт сброс жира: процент корректировки выше 0,5 % не поднимай."
-                    abs(raised - current) < EPSILON ->
-                        "Было легко, но процент корректировки уже на максимуме для цикла: замедли темп."
-                    else ->
-                        "Было легко: процент корректировки можно поднять до ${raised.percent()}."
-                }
-            }
-            else -> if (profile.natural && current > NATURAL_CEILING) {
-                "Для натурального атлета процент корректировки обычно 0,5–1 %, сейчас ${current.percent()}."
-            } else {
-                null
-            }
-        }
+    private fun feelingLine(last: WorkoutSession?, deficit: Boolean): String? = when (last?.feeling) {
+        Feeling.Hard -> HARD_FEELING
+        Feeling.Easy -> EASY_ON_DEFICIT.takeIf { deficit }
+        else -> null
     }
 
     private fun programTechniqueLines(): List<String> = listOf(

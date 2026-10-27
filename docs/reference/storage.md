@@ -15,8 +15,6 @@
     "rank": "Second",
     "goal": "Peak",
     "daysPerWeek": 2,
-    "correctionPercent": 0.5,
-    "natural": true,
     "manualMaxes": { "Bench": 110.0 },
     "programId": "maximum",
     "programStartEpochDay": 20387,

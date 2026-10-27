@@ -101,14 +101,13 @@
 
     <string name="profile_bodyweight">Собственный вес, кг</string>
     <string name="profile_days">Тренировок в неделю</string>
-    <string name="profile_correction">Процент корректировки</string>
-    <string name="profile_natural">Без фармакологии</string>
     <string name="profile_discipline">Направление</string>
     <string name="profile_rank">Уровень</string>
     <string name="profile_goal">Задача</string>
     <string name="profile_max">ПМ: %1$s, кг</string>
-    <string name="profile_cycles">Циклы методики под твой профиль</string>
-    <string name="profile_cycles_hint">Справочно: эти циклы в приложении не расписаны. План в Дневнике строится по макроциклу выше.</string>
+    <string name="profile_cycles">Справочные циклы методики</string>
+    <string name="profile_cycles_hint">Эти циклы в приложении не расписаны, план в Дневнике строится по макроциклу выше. Направление и уровень нужны только для их подбора; без программы тренер подскажет подходящий цикл.</string>
+    <string name="profile_cycles_none">Под это направление и уровень с вашей задачей и числом тренировок подходящих циклов нет.</string>
     <string name="profile_program_mismatch">Не совпадает с профилем: %1$s</string>
     <string name="profile_program_progress">Сделано тренировок: %1$d из %2$d</string>
     <string name="profile_program_restart">Начать макроцикл заново с сегодня</string>
