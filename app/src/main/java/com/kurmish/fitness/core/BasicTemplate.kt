@@ -6,7 +6,9 @@ package com.kurmish.fitness.core
  * В каждой тренировке по одному упражнению каждого типа: жим, тяга, колено, таз, вращение плеча наружу
  * и кор, всего шесть. Две тренировки чередуются через раз и уравновешивают друг друга по плоскостям:
  * в А присед, горизонтальный жим и горизонтальная тяга, в Б становая, вертикальный жим, вертикальная тяга
- * и сплит-присед. Подходы, повторы и процент от ПМ основных упражнений зависят от цели в профиле.
+ * и сплит-присед. Подходы, повторы и процент от ПМ основных упражнений зависят от цели в профиле, а если
+ * включён годовой план, — от текущего периода. Раз в две недели порядок упражнений меняется: первым идёт
+ * другое движение, и привыкание к одной последовательности не тормозит прогресс.
  */
 internal object BasicTemplate {
     /**
@@ -25,6 +27,7 @@ internal object BasicTemplate {
     private const val CHOOSE_WEIGHT = "Вес подбери так, чтобы последний повтор давался с запасом. " +
         "После записи в Дневник приложение посчитает вес само"
 
+    private const val ROTATED = 4
     private const val SECOND_SETS = 3
     private const val SECOND_REPS = "10"
 
@@ -64,6 +67,16 @@ internal object BasicTemplate {
     /** Типы движения, где хватает лёгкого веса и 3 × 15. */
     private val accessory = setOf(Movement.Core, Movement.Rotation, Movement.Arms)
 
+    private fun schemeFor(period: Period): Scheme = when (period) {
+        Period.Preparatory -> Scheme(sets = 3, reps = 12, percent = 55)
+        Period.Hypertrophy -> Scheme(sets = 4, reps = 10, percent = 65)
+        Period.Deload -> Scheme(sets = 2, reps = 8, percent = 50)
+        Period.Strength -> Scheme(sets = 5, reps = 4, percent = 82)
+        Period.Power -> Scheme(sets = 5, reps = 3, percent = 60)
+        Period.Metabolic -> Scheme(sets = 3, reps = 15, percent = 50)
+        Period.Recovery -> Scheme(sets = 2, reps = 12, percent = 50)
+    }
+
     private fun schemeFor(goal: Goal): Scheme = when (goal) {
         Goal.Strength -> Scheme(sets = 5, reps = 5, percent = 80)
         Goal.Endurance -> Scheme(sets = 3, reps = 12, percent = 60)
@@ -74,21 +87,36 @@ internal object BasicTemplate {
 
     /** План общей тренировки; [done] — сколько тренировок уже записано до сегодня. */
     fun plan(data: AppData, today: Long, done: Int): DayPlan {
-        val goal = data.profile.goal
-        val scheme = schemeFor(goal)
+        val profile = data.profile
+        val year = YearPlan.position(profile.yearPlanStartEpochDay, today)
+        val scheme = year?.let { schemeFor(it.period) } ?: schemeFor(profile.goal)
         val second = done % 2 == 1
+        val rotated = done / (profile.daysPerWeek * 2) % 2 == 1
+        val day = (if (second) dayB else dayA).let { if (rotated) it.rotated() else it }
+        val stretch = profile.shoulders.chest?.weak == true
+        val task = year?.label ?: "цель «${profile.goal.title}»"
         return DayPlan(
-            title = "Общая тренировка ${if (second) "Б" else "А"}, цель «${goal.title}»",
-            items = (if (second) dayB else dayA).map { base ->
-                val chosen = data.profile.pool[base.title] ?: base
+            title = "Общая тренировка ${if (second) "Б" else "А"}, $task",
+            items = day.map { base ->
+                val chosen = profile.pool[base.title] ?: base
                 val max = data.workingMax(chosen, today)
                 val last = data.lastSet(chosen, today)
                 val item = if (base in secondLegs) secondItem(chosen, max, last) else item(chosen, scheme, max, last)
-                item.copy(slot = base.title)
+                val pull = chosen.movement == Movement.HorizontalPull || chosen.movement == Movement.VerticalPull
+                val notes = if (stretch && pull) item.notes + FitnessTest.STRETCH else item.notes
+                item.copy(slot = base.title, notes = notes)
             },
-            note = "Тренировки А и Б чередуются. Программу по микроциклам можно выбрать в профиле.",
+            note = listOfNotNull(
+                year?.let { "${it.period.task}." },
+                "Тренировки А и Б чередуются, порядок упражнений меняется раз в две недели.",
+                "Программу по микроциклам можно выбрать во вкладке «Циклы».",
+            ).joinToString(" "),
         )
     }
+
+    /** Другой порядок: первым идёт второе движение, третье и четвёртое меняются местами. */
+    private fun List<Exercise>.rotated(): List<Exercise> =
+        take(ROTATED).chunked(2).flatMap { it.reversed() } + drop(ROTATED)
 
     private fun heavy(exercise: Exercise, scheme: Scheme, max: WorkingMax?): PlannedSets {
         val reps = if (exercise == Exercise.Deadlift) minOf(scheme.reps, DEADLIFT_MAX_REPS) else scheme.reps

@@ -51,6 +51,9 @@ enum class Goal(val title: String) {
  * @property designs свои циклы.
  * @property pool упражнения, выбранные на цикл вместо предложенных: название пункта плана → упражнение.
  * @property diet питание: фаза, процент жира, активность, рефиды.
+ * @property shoulders тесты подвижности плеч из первичного тестирования.
+ * @property onboarded первичное тестирование пройдено или пропущено: анкета больше не открывается сама.
+ * @property yearPlanStartEpochDay с какого дня идёт годовой план по периодам; null — план выключен.
  */
 @Serializable
 data class Profile(
@@ -66,6 +69,9 @@ data class Profile(
     val diet: DietSettings = DietSettings(),
     val nextProgramIds: List<String> = emptyList(),
     val designs: List<CycleDesign> = emptyList(),
+    val shoulders: ShoulderTests = ShoulderTests(),
+    val onboarded: Boolean = false,
+    val yearPlanStartEpochDay: Long? = null,
 ) {
     /** Встроенные программы и свои циклы. */
     val programs: List<TrainingProgram>

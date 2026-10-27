@@ -33,6 +33,7 @@ import com.kurmish.fitness.core.Profile
 import com.kurmish.fitness.core.ProgramSession
 import com.kurmish.fitness.core.Rank
 import com.kurmish.fitness.core.TrainingProgram
+import com.kurmish.fitness.core.YearPlan
 import com.kurmish.fitness.core.kg
 import java.util.Collections
 
@@ -66,6 +67,7 @@ internal fun CyclesScreen(
             onEdit = { editing = it },
         )
         position?.let { Schedule(program = it.program, next = it.progress.next) }
+        YearPlanCard(profile = profile, today = today, onProfileChange = onProfileChange)
         CyclesCard(profile, onProfileChange)
     }
     editing?.let { design ->
@@ -243,6 +245,37 @@ private fun SessionLines(session: ProgramSession, next: Boolean) {
                 text = listOfNotNull(item.name, item.scheme, item.kg?.kg()).joinToString(" · "),
                 style = MaterialTheme.typography.bodySmall,
             )
+        }
+    }
+}
+
+@Composable
+private fun YearPlanCard(profile: Profile, today: Long, onProfileChange: (Profile) -> Unit) {
+    val now = YearPlan.position(profile.yearPlanStartEpochDay, today)
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(ScreenPadding), verticalArrangement = Arrangement.spacedBy(Gap)) {
+            Text(text = stringResource(R.string.year_title), style = MaterialTheme.typography.titleMedium)
+            Text(text = stringResource(R.string.year_hint), style = MaterialTheme.typography.bodySmall)
+            if (now == null) {
+                OutlinedButton(onClick = { onProfileChange(profile.copy(yearPlanStartEpochDay = today)) }) {
+                    Text(stringResource(R.string.year_start))
+                }
+            } else {
+                Text(stringResource(R.string.year_now, now.label, now.period.task))
+                YearPlan.order.forEachIndexed { index, period ->
+                    Text(
+                        text = stringResource(R.string.year_period, period.title, period.weeks),
+                        style = if (index == now.index) {
+                            MaterialTheme.typography.titleSmall
+                        } else {
+                            MaterialTheme.typography.bodyMedium
+                        },
+                    )
+                }
+                TextButton(onClick = { onProfileChange(profile.copy(yearPlanStartEpochDay = null)) }) {
+                    Text(stringResource(R.string.year_stop))
+                }
+            }
         }
     }
 }

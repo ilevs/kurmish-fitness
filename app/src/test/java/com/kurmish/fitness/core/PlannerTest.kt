@@ -150,7 +150,7 @@ class PlannerTest {
         val plan = Planner.today(data, today = 0)
         val item = plan.items.first { it.exercise == Exercise.LegExtension }
         assertEquals(listOf(PlannedSets(3, "12", 40.0)), item.sets)
-        assertTrue(item.notes.last().startsWith("Вес из последней записи"))
+        assertTrue(item.notes.any { it.startsWith("Вес из последней записи") })
         assertEquals(Exercise.HackSquat, plan.items.first { it.title.contains("гакк") }.exercise)
         assertEquals(Exercise.Abs, plan.items.first { it.title.contains("закреплён") }.exercise)
     }
@@ -189,7 +189,7 @@ class PlannerTest {
         val item = Planner.today(AppData(profile), today = 0).items.first { it.exercise == Exercise.DumbbellPress }
         // Жим гантелей ≈ 0,3 × 80 = 24 кг; на 10 повторов с запасом 2: 24 / 1,4 ≈ 17,1 → 17,5 кг.
         assertEquals(PlannedSets(4, "мах", 17.5), item.sets.single())
-        assertTrue(item.notes.last().endsWith("Вес одной гантели"))
+        assertTrue(item.notes.any { it.endsWith("Вес одной гантели") })
         assertEquals(Exercise.Pullover, WorkoutParser.parse("пуловер 20 на 12").entries.single().exercise)
     }
 

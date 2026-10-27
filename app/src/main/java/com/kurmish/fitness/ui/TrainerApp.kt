@@ -24,7 +24,10 @@ import com.kurmish.fitness.backup.BackupViewModel
 import com.kurmish.fitness.backup.DriveBackupViewModel
 import com.kurmish.fitness.backup.FileBackupViewModel
 import com.kurmish.fitness.core.AppData
+import com.kurmish.fitness.core.Profile
+import com.kurmish.fitness.core.WorkoutSession
 import com.kurmish.fitness.core.toSession
+import com.kurmish.fitness.ui.voice.Speaker
 import com.kurmish.fitness.ui.voice.rememberSpeaker
 
 /** Вкладки нижней панели. */
@@ -46,7 +49,9 @@ fun TrainerApp(
 ) {
     val data by viewModel.data.collectAsState()
     val backup by backupViewModel.ui.collectAsState()
+    val loaded by viewModel.loaded.collectAsState()
     var tab by rememberSaveable { mutableStateOf(Tab.Journal) }
+    var testing by rememberSaveable { mutableStateOf(false) }
     val speaker = rememberSpeaker()
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -68,17 +73,7 @@ fun TrainerApp(
             Tab.Journal -> JournalScreen(
                 data = data,
                 today = viewModel.today(),
-                actions = JournalActions(
-                    onRecord = { text, parsed ->
-                        viewModel.saveWorkout(parsed.toSession(text, viewModel.today()))
-                        speaker.speak(parsed.summary())
-                    },
-                    onSave = viewModel::saveWorkout,
-                    onDelete = viewModel::deleteWorkout,
-                    onSpeak = speaker::speak,
-                    onChoose = { slot, exercise -> viewModel.updateProfile(data.profile.choose(slot, exercise)) },
-                    diet = viewModel.dietActions(),
-                ),
+                actions = viewModel.journalActions(data, speaker),
                 modifier = content,
             )
             Tab.Cycles -> CyclesScreen(data, viewModel.today(), viewModel::updateProfile, modifier = content)
@@ -93,11 +88,42 @@ fun TrainerApp(
                 onRestore = { backupViewModel.restore(viewModel::restore) },
                 onBackupDisconnect = backupViewModel::disconnect,
                 files = fileBackups(driveViewModel, fileViewModel, viewModel::restore),
+                onTest = { testing = true },
                 modifier = content,
             )
         }
     }
+    if (testing || needsTest(data, loaded)) {
+        FirstTest(data, viewModel.today(), viewModel::updateProfile, viewModel::saveWorkout) { testing = false }
+    }
 }
+
+@Composable
+private fun FirstTest(
+    data: AppData,
+    today: Long,
+    onProfile: (Profile) -> Unit,
+    onRecord: (WorkoutSession) -> Unit,
+    onClose: () -> Unit,
+) {
+    FirstTestDialog(
+        profile = data.profile,
+        today = today,
+        onFinish = { profile, session ->
+            onProfile(profile)
+            session?.let(onRecord)
+            onClose()
+        },
+        onSkip = {
+            onProfile(data.profile.copy(onboarded = true))
+            onClose()
+        },
+    )
+}
+
+/** Анкета открывается сама при первом запуске: Дневник прочитан, пуст, а тестирование не пройдено. */
+private fun needsTest(data: AppData, loaded: Boolean): Boolean =
+    loaded && !data.profile.onboarded && data.sessions.isEmpty()
 
 @Composable
 private fun fileBackups(
@@ -122,6 +148,18 @@ private fun FileBackupViewModel.actions(onRestored: (AppData) -> Unit) = FileAct
     onExport = ::exportTo,
     onImport = { importFrom(it, onRestored) },
     onShare = ::prepareShare,
+)
+
+private fun TrainerViewModel.journalActions(data: AppData, speaker: Speaker) = JournalActions(
+    onRecord = { text, parsed ->
+        saveWorkout(parsed.toSession(text, today()))
+        speaker.speak(parsed.summary())
+    },
+    onSave = ::saveWorkout,
+    onDelete = ::deleteWorkout,
+    onSpeak = speaker::speak,
+    onChoose = { slot, exercise -> updateProfile(data.profile.choose(slot, exercise)) },
+    diet = dietActions(),
 )
 
 private fun TrainerViewModel.dietActions() = DietActions(
