@@ -92,11 +92,7 @@ internal object BasicTemplate {
                 val chosen = profile.pool[slot.exercise.title] ?: slot.exercise
                 val max = data.workingMax(chosen, today)
                 val last = data.lastSet(chosen, today)
-                val item = when {
-                    split.load == DayLoad.Recovery -> recoveryItem(chosen)
-                    slot.second -> secondItem(chosen, max, last)
-                    else -> item(chosen, scheme, max, last)
-                }
+                val item = slotItem(chosen, slot, split.load, scheme, max, last)
                 val pull = chosen.movement == Movement.HorizontalPull || chosen.movement == Movement.VerticalPull
                 val notes = if (stretch && pull) item.notes + FitnessTest.STRETCH else item.notes
                 item.copy(slot = slot.exercise.title, notes = notes)
@@ -142,6 +138,20 @@ internal object BasicTemplate {
         val side = "${sets.reps} повторов на каждую сторону".takeIf { exercise in oneSide }
         val notes = listOfNotNull(side, hints[exercise], note)
         return PlanItem(PlanPart.Work, exercise.title, exercise, listOf(sets), notes)
+    }
+
+    @Suppress("LongParameterList")
+    private fun slotItem(
+        exercise: Exercise,
+        slot: SplitSlot,
+        load: DayLoad,
+        scheme: Scheme,
+        max: WorkingMax?,
+        last: SetGroup?,
+    ): PlanItem = when {
+        load == DayLoad.Recovery -> recoveryItem(exercise)
+        slot.second -> secondItem(exercise, max, last)
+        else -> item(exercise, scheme, max, last)
     }
 
     private fun recoveryItem(exercise: Exercise): PlanItem {
