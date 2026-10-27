@@ -39,4 +39,20 @@ class LoadTest {
         // 5 подходов × 1,1 × 6 минут + 30 минут.
         assertEquals(63, load.minutes)
     }
+
+    @Test
+    fun assistedPullUpCountsBodyweightMinusCounterweight() {
+        val sets = listOf(SetGroup(40.0, 20))
+        val withBody = LoadCalculator.session(session(ExerciseEntry(Exercise.AssistedPullUp, sets = sets)), 80.0) { null }
+        assertEquals(800.0, withBody.tonnageKg, 0.0)
+        assertEquals(40.0, withBody.averageKg, 0.0)
+        val pullUps = LoadCalculator.session(
+            session(ExerciseEntry(Exercise.PullUp, sets = listOf(SetGroup(null, 10), SetGroup(10.0, 5)))),
+            80.0,
+        ) { 100.0 }
+        assertEquals(1250.0, pullUps.tonnageKg, 0.0)
+        assertEquals(0.8333, pullUps.relativeIntensity!!, 1e-3)
+        val unknownBody = session(ExerciseEntry(Exercise.AssistedPullUp, sets = sets))
+        assertEquals(20.0, LoadCalculator.session(unknownBody) { null }.tonnageKg, 0.0)
+    }
 }

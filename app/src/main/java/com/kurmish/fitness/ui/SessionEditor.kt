@@ -1,7 +1,10 @@
 package com.kurmish.fitness.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,8 +18,10 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -29,19 +34,27 @@ import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.kurmish.fitness.R
@@ -49,21 +62,28 @@ import com.kurmish.fitness.core.EntryDraft
 import com.kurmish.fitness.core.Feeling
 import com.kurmish.fitness.core.SessionDraft
 import com.kurmish.fitness.core.SetDraft
+import com.kurmish.fitness.core.SetGroup
 import com.kurmish.fitness.core.WorkoutParser
 import com.kurmish.fitness.core.WorkoutSession
 
 private const val MillisInDay = 86_400_000L
+private val NumberWidth = 28.dp
+private val SmallGap = 8.dp
+private const val PreviousWeight = 1.3f
 
 /**
- * Полноэкранный редактор записи Дневника: дата, упражнения, подходы, самочувствие и исходный текст.
+ * Полноэкранный редактор записи Дневника. Как в современных трекерах: упражнение и его подходы — одна
+ * карточка, каждый подход — строка «вес · повторы · ✓», из плана строки уже заполнены и ждут отметки.
  *
  * @param suggest подсказки названий упражнений к введённому тексту.
+ * @param previous подходы упражнения в прошлый раз до дня записи, по одному.
  * @param onDelete удаление записи; null для новой записи.
  */
 @Composable
 internal fun SessionEditor(
     initial: SessionDraft,
     suggest: (String) -> List<String>,
+    previous: (EntryDraft, Long) -> List<SetGroup>,
     onSave: (WorkoutSession) -> Unit,
     onDelete: (() -> Unit)?,
     onDismiss: () -> Unit,
@@ -78,13 +98,16 @@ internal fun SessionEditor(
                     .padding(ScreenPadding),
                 verticalArrangement = Arrangement.spacedBy(Gap),
             ) {
-                val title = if (draft.id == 0L) R.string.editor_title_new else R.string.journal_edit
-                Text(text = stringResource(title), style = MaterialTheme.typography.titleLarge)
+                TopActions(draft = draft, onSave = onSave, onDismiss = onDismiss)
                 DateRow(epochDay = draft.epochDay, onChange = { draft = draft.copy(epochDay = it) })
                 FeelingRow(feeling = draft.feeling, onChange = { draft = draft.copy(feeling = it) })
                 draft.entries.forEachIndexed { index, entry ->
+                    val before = remember(entry.exercise, entry.customName, draft.epochDay) {
+                        previous(entry, draft.epochDay)
+                    }
                     EntryCard(
                         entry = entry,
+                        previous = before,
                         suggest = suggest,
                         onChange = { changed ->
                             val entries = draft.entries.mapIndexed { i, e -> if (i == index) changed else e }
@@ -99,8 +122,44 @@ internal fun SessionEditor(
                     Text(stringResource(R.string.editor_add_exercise))
                 }
                 RawTextField(draft = draft, onChange = { draft = it })
-                EditorActions(draft = draft, onSave = onSave, onDelete = onDelete, onDismiss = onDismiss)
+                if (onDelete != null) DeleteButton(epochDay = draft.epochDay, onDelete = onDelete)
             }
+        }
+    }
+}
+
+/** Наверху: отмена, заголовок и «Сохранить», ниже — что мешает сохранить. */
+@Composable
+private fun TopActions(draft: SessionDraft, onSave: (WorkoutSession) -> Unit, onDismiss: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(Gap)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.editor_cancel)) }
+            val title = if (draft.id == 0L) R.string.editor_title_new else R.string.journal_edit
+            Text(
+                text = stringResource(title),
+                style = MaterialTheme.typography.titleMedium,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.weight(1f),
+            )
+            Button(onClick = { draft.toSession()?.let(onSave) }, enabled = draft.valid) {
+                Text(stringResource(R.string.log_save))
+            }
+        }
+        val problem = when {
+            draft.entries.any { it.broken } -> R.string.editor_invalid
+            draft.entries.all { it.skipped } -> R.string.editor_nothing_done
+            else -> null
+        }
+        problem?.let {
+            Text(
+                text = stringResource(it),
+                style = MaterialTheme.typography.bodySmall,
+                color = if (it == R.string.editor_invalid) {
+                    MaterialTheme.colorScheme.error
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+            )
         }
     }
 }
@@ -166,34 +225,62 @@ private fun FeelingRow(feeling: Feeling, onChange: (Feeling) -> Unit) {
     }
 }
 
+/** Карточка упражнения: название, меню и подходы строками. */
 @Composable
 private fun EntryCard(
     entry: EntryDraft,
+    previous: List<SetGroup>,
     suggest: (String) -> List<String>,
     onChange: (EntryDraft) -> Unit,
     onRemove: () -> Unit,
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(ScreenPadding), verticalArrangement = Arrangement.spacedBy(Gap)) {
+        Column(modifier = Modifier.padding(ScreenPadding), verticalArrangement = Arrangement.spacedBy(SmallGap)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 ExerciseField(entry = entry, suggest = suggest, onChange = onChange, modifier = Modifier.weight(1f))
-                IconButton(onClick = onRemove) {
-                    Icon(painterResource(R.drawable.ic_delete), stringResource(R.string.editor_remove_exercise))
+                EntryMenu(onRemove = onRemove)
+            }
+            SetHeader()
+            entry.sets.forEachIndexed { index, set ->
+                // Ключ меняется с числом подходов: после удаления свайпом строки не наследуют его состояние.
+                key(entry.sets.size, index) {
+                    SetRow(
+                        number = index + 1,
+                        set = set,
+                        previous = previous.getOrNull(index),
+                        onChange = { changed ->
+                            val sets = entry.sets.mapIndexed { i, old -> if (i == index) changed else old }
+                            onChange(entry.copy(sets = sets))
+                        },
+                        onRemove = { onChange(entry.copy(sets = entry.sets.filterIndexed { i, _ -> i != index })) },
+                    )
                 }
             }
-            entry.sets.forEachIndexed { index, set ->
-                SetRow(
-                    set = set,
-                    removable = entry.sets.size > 1,
-                    onChange = { changed ->
-                        onChange(entry.copy(sets = entry.sets.mapIndexed { i, s -> if (i == index) changed else s }))
-                    },
-                    onRemove = { onChange(entry.copy(sets = entry.sets.filterIndexed { i, _ -> i != index })) },
-                )
-            }
-            TextButton(onClick = { onChange(entry.copy(sets = entry.sets + entry.sets.last().copy(reps = ""))) }) {
+            TextButton(onClick = { onChange(entry.withSet()) }, modifier = Modifier.fillMaxWidth()) {
+                Icon(painterResource(R.drawable.ic_add), contentDescription = null)
+                Spacer(Modifier.width(SmallGap))
                 Text(stringResource(R.string.editor_add_set))
             }
+        }
+    }
+}
+
+@Composable
+private fun EntryMenu(onRemove: () -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    Box {
+        IconButton(onClick = { open = true }) {
+            Icon(painterResource(R.drawable.ic_more_vert), stringResource(R.string.editor_more))
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.editor_remove_exercise)) },
+                leadingIcon = { Icon(painterResource(R.drawable.ic_delete), contentDescription = null) },
+                onClick = {
+                    open = false
+                    onRemove()
+                },
+            )
         }
     }
 }
@@ -244,53 +331,152 @@ private fun ExerciseField(
 }
 
 @Composable
-private fun SetRow(set: SetDraft, removable: Boolean, onChange: (SetDraft) -> Unit, onRemove: () -> Unit) {
-    Row(horizontalArrangement = Arrangement.spacedBy(Gap), verticalAlignment = Alignment.CenterVertically) {
-        NumberField(
-            value = set.weight,
-            label = stringResource(R.string.editor_weight),
-            placeholder = stringResource(R.string.editor_weight_own),
-            error = set.weightInvalid,
-            decimal = true,
-            onChange = { onChange(set.copy(weight = it)) },
-            modifier = Modifier.weight(1f),
+private fun SetHeader() {
+    val style = MaterialTheme.typography.labelMedium
+    val color = MaterialTheme.colorScheme.onSurfaceVariant
+    Row(horizontalArrangement = Arrangement.spacedBy(SmallGap), verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text = stringResource(R.string.editor_set_number),
+            modifier = Modifier.width(NumberWidth),
+            color = color,
+            textAlign = TextAlign.Center,
+            style = style,
         )
-        NumberField(
-            value = set.reps,
-            label = stringResource(R.string.editor_reps),
-            error = !set.blank && set.repsInvalid,
-            onChange = { onChange(set.copy(reps = it)) },
-            modifier = Modifier.weight(1f),
+        Text(
+            text = stringResource(R.string.editor_previous),
+            modifier = Modifier.weight(PreviousWeight),
+            color = color,
+            style = style,
         )
-        NumberField(
-            value = set.sets,
-            label = stringResource(R.string.editor_sets),
-            error = set.setsInvalid,
-            onChange = { onChange(set.copy(sets = it)) },
+        Text(
+            text = stringResource(R.string.editor_weight),
             modifier = Modifier.weight(1f),
+            color = color,
+            textAlign = TextAlign.Center,
+            style = style,
         )
-        IconButton(onClick = onRemove, enabled = removable) {
-            Icon(painterResource(R.drawable.ic_delete), stringResource(R.string.editor_remove_set))
+        Text(
+            text = stringResource(R.string.editor_reps),
+            modifier = Modifier.weight(1f),
+            color = color,
+            textAlign = TextAlign.Center,
+            style = style,
+        )
+        Text(
+            text = "✓",
+            modifier = Modifier.minimumInteractiveComponentSize(),
+            color = color,
+            textAlign = TextAlign.Center,
+            style = style,
+        )
+    }
+}
+
+/**
+ * Подход строкой: номер, прошлый раз (нажатие переносит его в поля), вес, повторы и отметка «сделан».
+ * Свайп в сторону удаляет подход.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SetRow(
+    number: Int,
+    set: SetDraft,
+    previous: SetGroup?,
+    onChange: (SetDraft) -> Unit,
+    onRemove: () -> Unit,
+) {
+    val swipe = rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            if (value != SwipeToDismissBoxValue.Settled) onRemove()
+            value != SwipeToDismissBoxValue.Settled
+        },
+    )
+    SwipeToDismissBox(state = swipe, backgroundContent = { RemoveBackground() }) {
+        val background = if (set.done) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(background, MaterialTheme.shapes.small),
+            horizontalArrangement = Arrangement.spacedBy(SmallGap),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = number.toString(),
+                modifier = Modifier.width(NumberWidth),
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.titleSmall,
+            )
+            PreviousCell(previous = previous, onUse = onChange, modifier = Modifier.weight(PreviousWeight))
+            NumberField(
+                value = set.weight,
+                placeholder = stringResource(R.string.editor_weight_own),
+                error = set.done && set.weightInvalid,
+                decimal = true,
+                onChange = { onChange(set.edited(weight = it)) },
+                modifier = Modifier.weight(1f),
+            )
+            NumberField(
+                value = set.reps,
+                placeholder = previous?.reps?.toString().orEmpty(),
+                error = set.broken && set.repsInvalid,
+                onChange = { onChange(set.edited(reps = it)) },
+                modifier = Modifier.weight(1f),
+            )
+            Checkbox(checked = set.done, onCheckedChange = { onChange(set.copy(done = it)) })
         }
+    }
+}
+
+@Composable
+private fun PreviousCell(previous: SetGroup?, onUse: (SetDraft) -> Unit, modifier: Modifier = Modifier) {
+    val text = previous?.label() ?: "—"
+    Text(
+        text = text,
+        modifier = modifier.clickable(enabled = previous != null) {
+            previous?.let {
+                val weight = it.weightKg?.let(SetDraft::formatWeight).orEmpty()
+                onUse(SetDraft(weight = weight, reps = it.reps.toString(), done = true))
+            }
+        },
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        maxLines = 1,
+    )
+}
+
+@Composable
+private fun RemoveBackground() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.errorContainer, MaterialTheme.shapes.small)
+            .padding(horizontal = Gap),
+        contentAlignment = Alignment.CenterEnd,
+    ) {
+        Icon(
+            painter = painterResource(R.drawable.ic_delete),
+            contentDescription = stringResource(R.string.editor_remove_set),
+            tint = MaterialTheme.colorScheme.onErrorContainer,
+        )
     }
 }
 
 @Composable
 private fun NumberField(
     value: String,
-    label: String,
     error: Boolean,
     onChange: (String) -> Unit,
     modifier: Modifier = Modifier,
     placeholder: String = "",
     decimal: Boolean = false,
 ) {
+    val centered = MaterialTheme.typography.bodyLarge.copy(textAlign = TextAlign.Center)
     OutlinedTextField(
         value = value,
         onValueChange = onChange,
         modifier = modifier,
-        label = { Text(label) },
-        placeholder = { Text(placeholder) },
+        textStyle = centered,
+        placeholder = { Text(placeholder, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
         isError = error,
         singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = if (decimal) KeyboardType.Decimal else KeyboardType.Number),
@@ -299,47 +485,34 @@ private fun NumberField(
 
 @Composable
 private fun RawTextField(draft: SessionDraft, onChange: (SessionDraft) -> Unit) {
+    var shown by rememberSaveable { mutableStateOf(false) }
     val understood = remember(draft.rawText) { WorkoutParser.parse(draft.rawText).entries.isNotEmpty() }
     Column(verticalArrangement = Arrangement.spacedBy(Gap)) {
-        OutlinedTextField(
-            value = draft.rawText,
-            onValueChange = { onChange(draft.copy(rawText = it)) },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text(stringResource(R.string.editor_text)) },
-            supportingText = { Text(stringResource(R.string.editor_text_hint)) },
-        )
-        TextButton(onClick = { onChange(draft.reparsed()) }, enabled = understood) {
-            Text(stringResource(R.string.editor_reparse))
+        TextButton(onClick = { shown = !shown }) {
+            Text(stringResource(if (shown) R.string.editor_text_hide else R.string.editor_text_show))
+        }
+        if (shown) {
+            OutlinedTextField(
+                value = draft.rawText,
+                onValueChange = { onChange(draft.copy(rawText = it)) },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text(stringResource(R.string.editor_text)) },
+                supportingText = { Text(stringResource(R.string.editor_text_hint)) },
+            )
+            TextButton(onClick = { onChange(draft.reparsed()) }, enabled = understood) {
+                Text(stringResource(R.string.editor_reparse))
+            }
         }
     }
 }
 
 @Composable
-private fun EditorActions(
-    draft: SessionDraft,
-    onSave: (WorkoutSession) -> Unit,
-    onDelete: (() -> Unit)?,
-    onDismiss: () -> Unit,
-) {
+private fun DeleteButton(epochDay: Long, onDelete: () -> Unit) {
     var confirming by remember { mutableStateOf(false) }
-    Column(verticalArrangement = Arrangement.spacedBy(Gap)) {
-        if (!draft.valid) {
-            Text(text = stringResource(R.string.editor_invalid), color = MaterialTheme.colorScheme.error)
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(Gap), verticalAlignment = Alignment.CenterVertically) {
-            if (onDelete != null) {
-                TextButton(onClick = { confirming = true }) {
-                    Text(stringResource(R.string.journal_delete), color = MaterialTheme.colorScheme.error)
-                }
-            }
-            Spacer(Modifier.weight(1f))
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.editor_cancel)) }
-            Button(onClick = { draft.toSession()?.let(onSave) }, enabled = draft.valid) {
-                Text(stringResource(R.string.log_save))
-            }
-        }
+    TextButton(onClick = { confirming = true }) {
+        Text(stringResource(R.string.journal_delete), color = MaterialTheme.colorScheme.error)
     }
-    if (confirming && onDelete != null) {
-        ConfirmDelete(epochDay = draft.epochDay, onConfirm = onDelete, onDismiss = { confirming = false })
+    if (confirming) {
+        ConfirmDelete(epochDay = epochDay, onConfirm = onDelete, onDismiss = { confirming = false })
     }
 }

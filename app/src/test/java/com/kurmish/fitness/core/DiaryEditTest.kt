@@ -26,20 +26,60 @@ class DiaryEditTest {
 
     @Test
     fun setFieldsAcceptCommaAndBodyweight() {
-        assertEquals(SetGroup(102.5, 3, 2), SetDraft("102,5", "3", "2").toSetGroup())
-        assertEquals(SetGroup(null, 10, 1), SetDraft("", "10", "").toSetGroup())
+        assertEquals(SetGroup(102.5, 3), SetDraft("102,5", "3").toSetGroup())
+        assertEquals(SetGroup(null, 10), SetDraft("", "10").toSetGroup())
         assertTrue(SetDraft("сто", "5").weightInvalid)
         assertNull(SetDraft("100", "0").toSetGroup())
-        assertNull(SetDraft("100", "5", "0").toSetGroup())
     }
 
     @Test
-    fun blankRowsAreSkippedButBrokenRowsBlockSaving() {
-        val entry = EntryDraft(Exercise.Squat, sets = listOf(SetDraft("120", "5"), SetDraft()))
-        assertEquals(listOf(SetGroup(120.0, 5)), entry.toEntry()?.sets)
-        assertNull(entry.copy(sets = listOf(SetDraft("120", "5"), SetDraft("130", ""))).toEntry())
-        assertNull(EntryDraft(null, " ", listOf(SetDraft("", "10"))).toEntry())
+    fun onlyDoneSetsAreSavedAndSameSetsMerge() {
+        val entry = EntryDraft(
+            Exercise.Squat,
+            sets = listOf(
+                SetDraft("120", "5", done = true),
+                SetDraft("120", "5", done = true),
+                SetDraft("125", "3", done = true),
+                SetDraft("130", "3"),
+                SetDraft(),
+            ),
+        )
+        assertEquals(listOf(SetGroup(120.0, 5, 2), SetGroup(125.0, 3)), entry.toEntry()?.sets)
+    }
+
+    @Test
+    fun brokenDoneSetBlocksSavingButUndoneExerciseIsSkipped() {
+        val broken = EntryDraft(Exercise.Squat, sets = listOf(SetDraft("120", "", done = true)))
+        assertTrue(broken.broken)
+        assertTrue(EntryDraft(null, " ", listOf(SetDraft("", "10", done = true))).broken)
+        val untouched = EntryDraft(Exercise.Deadlift, sets = listOf(SetDraft("150", "5")))
+        val draft = SessionDraft.of(bench).copy(entries = SessionDraft.of(bench).entries + untouched)
+        assertEquals(bench, draft.toSession())
+        assertFalse(draft.copy(entries = listOf(untouched)).valid)
         assertFalse(SessionDraft.of(bench).copy(entries = emptyList()).valid)
+    }
+
+    @Test
+    fun recordedSetsOpenOneByOneAndDone() {
+        val sets = SessionDraft.of(bench).entries.single().sets
+        assertEquals(List(3) { SetDraft("100", "5", done = true) }, sets)
+    }
+
+    @Test
+    fun editingRepsMarksSetDoneAndNewSetCopiesLast() {
+        assertTrue(SetDraft("100", "").edited(reps = "5").done)
+        assertFalse(SetDraft("100", "5", done = true).edited(reps = "").done)
+        val entry = EntryDraft(Exercise.Bench, sets = listOf(SetDraft("100", "5", done = true))).withSet()
+        assertEquals(SetDraft("100", "5"), entry.sets.last())
+    }
+
+    @Test
+    fun previousSetsComeFromLastSessionBeforeDay() {
+        val earlier = bench.copy(id = 1, epochDay = bench.epochDay - 7)
+        val data = AppData(sessions = listOf(earlier, bench))
+        val entry = EntryDraft(Exercise.Bench, sets = emptyList())
+        assertEquals(List(3) { SetGroup(100.0, 5) }, data.previousSets(entry, bench.epochDay, excludeId = 3))
+        assertEquals(emptyList<SetGroup>(), data.previousSets(entry, bench.epochDay - 8, excludeId = 0))
     }
 
     @Test

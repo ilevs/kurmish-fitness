@@ -46,6 +46,10 @@ data class AppData(
     fun currentMax(exercise: Exercise, today: Long): Double? =
         profile.manualMaxes[exercise] ?: estimatedMaxes(today)[exercise]?.kg
 
+    /** ПМ для показателей нагрузки: у подтягиваний, брусьев и гравитрона — ПМ полной нагрузки. */
+    fun loadMax(exercise: Exercise, today: Long): Double? =
+        BodyweightLoad.base(exercise)?.let { bodyweightMax(it, today) } ?: currentMax(exercise, today)
+
     /**
      * ПМ для расчёта весов: свой, а если его нет, то оценка по ПМ близкого упражнения. У подтягиваний,
      * брусьев и гравитрона — ПМ полной нагрузки по Дневнику и собственному весу.
