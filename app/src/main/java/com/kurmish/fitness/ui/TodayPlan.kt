@@ -276,10 +276,10 @@ private fun rememberTodayWorkout(
 }
 
 /** Упражнения плана без весов: веса меняются от записанных подходов, а состав — только при замене. */
-private fun DayPlan.shape(): List<Pair<Exercise?, String>> = items.map { it.exercise to it.title }
+internal fun DayPlan.shape(): List<Pair<Exercise?, String>> = items.map { it.exercise to it.title }
 
 /** Без пустого упражнения-заготовки: в день без плана список начинается пустым. */
-private fun SessionDraft.withoutBlank(): SessionDraft =
+internal fun SessionDraft.withoutBlank(): SessionDraft =
     copy(entries = entries.filterNot { it.nameMissing && it.sets.all { set -> set.blank } })
 
 private val SmallGap = 8.dp
