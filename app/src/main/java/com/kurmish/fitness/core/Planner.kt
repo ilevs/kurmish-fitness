@@ -10,7 +10,6 @@ package com.kurmish.fitness.core
 object Planner {
     private val schemePattern = Regex("""^(\d+)(?:-\d+)?×([^\s,]+)[,\s]*(.*)$""")
     private val wordPattern = Regex("[^а-яa-z]+")
-    private val legsFirst = setOf(Exercise.Squat, Exercise.Deadlift, Exercise.StiffLegDeadlift)
     private const val SCHEME_REST = 3
 
     /** План на день [today] (дни с 1970-01-01). */
@@ -116,13 +115,11 @@ object Planner {
 
     private fun warmUp(first: PlanItem): PlanItem {
         val lift = first.exercise
-        val weight = first.sets.firstOrNull()?.weightKg
-        val special = if (lift != null && weight != null) WarmUp.sets(lift, weight) else emptyList()
-        val steps = listOfNotNull(
-            "3–5 минут лёгкого кардио".takeIf { lift in legsFirst },
-            "Суставная разминка: от мелких суставов к крупным",
-            "Круг без веса по 8–10 повторов: приседания, отжимания, гиперэкстензия, скручивания",
-            "Растяжка и мобильность под первое упражнение",
+        val work = first.sets.firstOrNull()
+        val weight = work?.weightKg
+        val reps = work?.reps?.substringBefore('-')?.toIntOrNull()
+        val special = if (lift != null && weight != null) WarmUp.sets(lift, weight, reps) else emptyList()
+        val steps = WarmUp.routine(lift) + listOfNotNull(
             weight?.let { "Подводящие подходы к первому рабочему весу: ${first.title}, ${it.kg()}" }
                 ?.takeIf { special.isNotEmpty() },
         )

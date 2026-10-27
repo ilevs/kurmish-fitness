@@ -3,9 +3,10 @@ package com.kurmish.fitness.core
 /**
  * Общая тренировка на всё тело, когда программа не выбрана.
  *
- * Две тренировки чередуются через раз и уравновешивают друг друга по плоскостям: в А присед,
- * горизонтальный жим и горизонтальная тяга, в Б становая, вертикальный жим и вертикальная тяга.
- * Подходы, повторы и процент от ПМ зависят от цели в профиле.
+ * В каждой тренировке по одному упражнению каждого типа: жим, тяга, колено, таз, вращение плеча наружу
+ * и кор, всего шесть. Две тренировки чередуются через раз и уравновешивают друг друга по плоскостям:
+ * в А присед, горизонтальный жим и горизонтальная тяга, в Б становая, вертикальный жим, вертикальная тяга
+ * и сплит-присед. Подходы, повторы и процент от ПМ основных упражнений зависят от цели в профиле.
  */
 internal object BasicTemplate {
     /**
@@ -24,9 +25,41 @@ internal object BasicTemplate {
     private const val CHOOSE_WEIGHT = "Вес подбери так, чтобы последний повтор давался с запасом. " +
         "После записи в Дневник приложение посчитает вес само"
 
-    private val dayA =
-        listOf(Exercise.Squat, Exercise.Bench, Exercise.BentOverRow, Exercise.Hyperextension, Exercise.Abs)
-    private val dayB = listOf(Exercise.Deadlift, Exercise.OverheadPress, Exercise.PullUp, Exercise.Abs)
+    private const val SECOND_SETS = 3
+    private const val SECOND_REPS = "10"
+
+    private val dayA = listOf(
+        Exercise.Squat,
+        Exercise.Bench,
+        Exercise.BentOverRow,
+        Exercise.Hyperextension,
+        Exercise.FacePull,
+        Exercise.Abs,
+    )
+    private val dayB = listOf(
+        Exercise.Deadlift,
+        Exercise.OverheadPress,
+        Exercise.PullUp,
+        Exercise.SplitSquat,
+        Exercise.ExternalRotation,
+        Exercise.SidePlank,
+    )
+
+    /** Второе упражнение на ноги в тренировке: 3 × 10 с запасом, а не схема основных. */
+    private val secondLegs = setOf(Exercise.SplitSquat)
+
+    /** Упражнения на одну ногу или руку: повторы на каждую сторону. */
+    private val oneSide = setOf(
+        Exercise.SplitSquat,
+        Exercise.Lunge,
+        Exercise.SingleLegDeadlift,
+        Exercise.PistolSquat,
+        Exercise.DumbbellRow,
+        Exercise.SidePlank,
+    )
+
+    /** Как выполнять, если по названию неочевидно. */
+    private val hints = mapOf(Exercise.SidePlank to "Опускай таз к полу и поднимай обратно")
 
     /** Типы движения, где хватает лёгкого веса и 3 × 15. */
     private val accessory = setOf(Movement.Core, Movement.Rotation, Movement.Arms)
@@ -49,7 +82,9 @@ internal object BasicTemplate {
             items = (if (second) dayB else dayA).map { base ->
                 val chosen = data.profile.pool[base.title] ?: base
                 val max = data.workingMax(chosen, today)
-                item(chosen, scheme, max, data.lastSet(chosen, today)).copy(slot = base.title)
+                val last = data.lastSet(chosen, today)
+                val item = if (base in secondLegs) secondItem(chosen, max, last) else item(chosen, scheme, max, last)
+                item.copy(slot = base.title)
             },
             note = "Тренировки А и Б чередуются. Программу по микроциклам можно выбрать в профиле.",
         )
@@ -80,6 +115,19 @@ internal object BasicTemplate {
             sets.weightKg == null -> CHOOSE_WEIGHT
             else -> WeightAdvice.percentNote("${scheme.percent} %", max, exercise)
         }
-        return PlanItem(PlanPart.Work, exercise.title, exercise, listOf(sets), listOfNotNull(note))
+        val side = "${sets.reps} повторов на каждую сторону".takeIf { exercise in oneSide }
+        val notes = listOfNotNull(side, hints[exercise], note)
+        return PlanItem(PlanPart.Work, exercise.title, exercise, listOf(sets), notes)
+    }
+
+    private fun secondItem(exercise: Exercise, max: WorkingMax?, last: SetGroup?): PlanItem {
+        val guess = WeightAdvice.byReps(exercise, SECOND_REPS, max, last)
+        val weight = guess?.first.takeUnless { exercise.bodyweight }
+        val notes = listOfNotNull(
+            "$SECOND_REPS повторов на каждую ногу".takeIf { exercise in oneSide },
+            guess?.second ?: CHOOSE_WEIGHT.takeUnless { exercise.bodyweight },
+        )
+        val sets = PlannedSets(SECOND_SETS, SECOND_REPS, weight)
+        return PlanItem(PlanPart.Work, exercise.title, exercise, listOf(sets), notes)
     }
 }

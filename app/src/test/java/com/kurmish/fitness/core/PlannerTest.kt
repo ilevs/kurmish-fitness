@@ -21,6 +21,38 @@ class PlannerTest {
     }
 
     @Test
+    fun everyGeneralWorkoutHasEachMovementType() {
+        val types = setOf(Movement.Rotation, Movement.Core, Movement.Squat, Movement.Hinge)
+        val dayA = Planner.today(AppData(Profile(manualMaxes = maxes)), today = 50)
+        val yesterday = WorkoutSession(1, epochDay = 49, rawText = "", entries = emptyList())
+        val dayB = Planner.today(AppData(Profile(manualMaxes = maxes), listOf(yesterday)), today = 50)
+        listOf(dayA, dayB).forEach { plan ->
+            val work = plan.items.filter { it.part == PlanPart.Work }.mapNotNull { it.exercise }
+            assertEquals(6, work.size)
+            assertTrue(work.map { it.movement }.containsAll(types))
+            assertTrue(work.any { it.movement.isPush } && work.any { it.movement.isPull })
+        }
+        val split = dayB.items.first { it.exercise == Exercise.SplitSquat }
+        assertEquals("3 × 10", split.sets.single().label.substringBefore(" по"))
+        assertTrue(split.notes.first().contains("каждую ногу"))
+    }
+
+    @Test
+    fun warmUpWithoutTableRampsToFirstWeight() {
+        val profile = Profile(
+            goal = Goal.Strength,
+            manualMaxes = maxes + (Exercise.GobletSquat to 50.0),
+            pool = mapOf("Присед" to Exercise.GobletSquat),
+        )
+        val warmUp = Planner.today(AppData(profile), today = 50).items.first()
+        assertEquals(PlanPart.WarmUp, warmUp.part)
+        assertTrue(warmUp.notes.first().contains("не бега"))
+        // Рабочий 40 кг на 5: шаги около 20 %, последний на 90 % на 1–2 повтора.
+        assertEquals(PlannedSets(1, "1-2", 35.0), warmUp.sets.last())
+        assertEquals(7.5, warmUp.sets.first().weightKg)
+    }
+
+    @Test
     fun daysAlternateAndDeadliftRepsAreCapped() {
         val yesterday = WorkoutSession(1, epochDay = 49, rawText = "", entries = emptyList())
         val data = AppData(Profile(goal = Goal.Endurance, manualMaxes = maxes), listOf(yesterday))

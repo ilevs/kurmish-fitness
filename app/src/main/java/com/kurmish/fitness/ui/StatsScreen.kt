@@ -30,6 +30,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.kurmish.fitness.R
 import com.kurmish.fitness.core.AppData
+import com.kurmish.fitness.core.BalanceIssue
 import com.kurmish.fitness.core.Exercise
 import com.kurmish.fitness.core.Movement
 import com.kurmish.fitness.core.Stats
@@ -37,7 +38,6 @@ import kotlin.math.roundToInt
 
 private val BalanceBarHeight = 12.dp
 private val LabelWidth = 132.dp
-private const val PushPullImbalance = 1.5
 private const val Tenths = 10.0
 
 /** Статистика Дневника: сводка, динамика ПМ, нагрузка по неделям и баланс движений. */
@@ -165,18 +165,19 @@ private fun BalanceCard(data: AppData, today: Long) {
                 Text(reps.toString(), style = MaterialTheme.typography.bodySmall)
             }
         }
-        Hint(balanceAdvice(balance))
+        val issues = remember(balance) { Stats.balanceIssues(balance) }
+        if (issues.isEmpty()) Hint(stringResource(R.string.stats_balance_ok))
+        issues.forEach { Hint(balanceAdvice(it)) }
     }
 }
 
 @Composable
-private fun balanceAdvice(balance: Map<Movement, Int>): String {
-    val push = balance.filterKeys { it.isPush }.values.sum()
-    val pull = balance.filterKeys { it.isPull }.values.sum()
-    return when {
-        push > pull * PushPullImbalance -> stringResource(R.string.stats_balance_more_push)
-        pull > push * PushPullImbalance -> stringResource(R.string.stats_balance_more_pull)
-        else -> stringResource(R.string.stats_balance_ok)
+private fun balanceAdvice(issue: BalanceIssue): String = when (issue) {
+    is BalanceIssue.Excess -> stringResource(R.string.stats_balance_excess, issue.more.title, issue.less.title)
+    is BalanceIssue.Missing -> when (issue.movement) {
+        Movement.Rotation -> stringResource(R.string.stats_balance_no_rotation)
+        Movement.Core -> stringResource(R.string.stats_balance_no_core)
+        else -> stringResource(R.string.stats_balance_missing, issue.movement.title)
     }
 }
 

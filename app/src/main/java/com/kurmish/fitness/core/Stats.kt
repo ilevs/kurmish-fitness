@@ -37,6 +37,15 @@ data class MaxPoint(val epochDay: Long, val kg: Double)
  */
 data class StatsSummary(val sessions: Int, val perWeek: Double, val tonnageKg: Double, val daysSinceLast: Long?)
 
+/** Перекос по плоскостям, который стоит исправить. */
+sealed interface BalanceIssue {
+    /** Повторов в [more] заметно больше, чем в противоположном [less]. */
+    data class Excess(val more: Movement, val less: Movement) : BalanceIssue
+
+    /** Упражнений типа [movement] за период не было совсем. */
+    data class Missing(val movement: Movement) : BalanceIssue
+}
+
 /** Статистика по Дневнику для графиков. Всё считается на устройстве. */
 object Stats {
     /** Сколько недель показывают графики нагрузки. */
@@ -46,6 +55,20 @@ object Stats {
     const val RECENT_DAYS = 28
 
     private const val DAYS_IN_WEEK = 7
+    private const val EXCESS = 1.5
+
+    /** Икры почти не влияют на баланс плоскостей и не считаются в приседе. */
+    private val calves = setOf(Exercise.StandingCalfRaise, Exercise.SeatedCalfRaise)
+
+    /**
+     * Противоположные типы движения: повторов в паре должно быть поровну. Перекос в сторону второго
+     * (горизонтальных тяг, вертикальных жимов, таза) допустим и даже полезен, в сторону первого — нет.
+     */
+    private val opposites = listOf(
+        Movement.HorizontalPush to Movement.HorizontalPull,
+        Movement.VerticalPull to Movement.VerticalPush,
+        Movement.Squat to Movement.Hinge,
+    )
     private const val MONDAY_SHIFT = 3
 
     /** Понедельник недели, в которую входит день (1970-01-01 был четвергом). */
@@ -102,12 +125,36 @@ object Stats {
         val reps = data.sessions
             .filter { today - it.epochDay in 0 until days }
             .flatMap { it.entries }
+            .filter { it.exercise !in calves }
             .mapNotNull { entry ->
                 entry.exercise?.let { it.movement to entry.sets.sumOf { set -> set.reps * set.sets } }
             }
             .groupBy({ it.first }, { it.second })
             .mapValues { (_, values) -> values.sum() }
         return Movement.entries.associateWith { reps[it] ?: 0 }
+    }
+
+    /**
+     * Что поправить в балансе [balance]: противоположные типы движения уравниваются по числу повторов,
+     * вращение плеча наружу уравновешивает жимы и тяги, кор нужен всегда. Пусто, если всё в порядке.
+     */
+    fun balanceIssues(balance: Map<Movement, Int>): List<BalanceIssue> {
+        fun reps(movement: Movement) = balance[movement] ?: 0
+        if (balance.values.sum() == 0) return emptyList()
+        val pairs = opposites.mapNotNull { (front, back) ->
+            val a = reps(front)
+            val b = reps(back)
+            when {
+                a > 0 && b == 0 -> BalanceIssue.Missing(back)
+                b > 0 && a == 0 -> BalanceIssue.Missing(front)
+                a > b * EXCESS -> BalanceIssue.Excess(front, back)
+                else -> null
+            }
+        }
+        val upper = Movement.entries.filter { it.isPush || it.isPull }.sumOf(::reps)
+        val rotation = BalanceIssue.Missing(Movement.Rotation).takeIf { upper > 0 && reps(Movement.Rotation) == 0 }
+        val core = BalanceIssue.Missing(Movement.Core).takeIf { reps(Movement.Core) == 0 }
+        return pairs + listOfNotNull(rotation, core)
     }
 
     /** Сводка за последние [days] дней. */
