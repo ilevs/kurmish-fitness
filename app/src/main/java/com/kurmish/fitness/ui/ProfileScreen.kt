@@ -10,10 +10,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -30,13 +32,14 @@ import com.kurmish.fitness.core.DietPhase
 import com.kurmish.fitness.core.Exercise
 import com.kurmish.fitness.core.FlexibleDiet
 import com.kurmish.fitness.core.Goal
+import com.kurmish.fitness.core.Macrocycle
 import com.kurmish.fitness.core.Profile
 import com.kurmish.fitness.core.Strength
 
 private val DayOptions = (1..7).toList()
 private val MaxLifts = listOf(Exercise.Squat, Exercise.Bench, Exercise.Deadlift, Exercise.OverheadPress)
 
-/** Профиль атлета: данные, ПМ, питание и бэкап Дневника. */
+/** Профиль атлета: данные, циклы, ПМ, питание и бэкап Дневника. Циклы открываются отдельным экраном. */
 @Composable
 internal fun ProfileScreen(
     data: AppData,
@@ -53,6 +56,11 @@ internal fun ProfileScreen(
     diet: DietActions,
     modifier: Modifier = Modifier
 ) {
+    var cycles by rememberSaveable { mutableStateOf(false) }
+    if (cycles) {
+        CyclesScreen(data, today, onProfileChange, onBack = { cycles = false }, modifier = modifier)
+        return
+    }
     val profile = data.profile
     Column(
         modifier = modifier
@@ -81,6 +89,7 @@ internal fun ProfileScreen(
                 if (kg != null && kg > 0) onWeight(kg) else onProfileChange(profile.copy(bodyweightKg = null))
             },
         )
+        CyclesCard(data = data, today = today, onOpen = { cycles = true })
         TestCard(data = data, today = today, onAgain = onTest)
         DietSection(data = data, today = today, diet = diet, onProfileChange = onProfileChange)
         MaxFields(data = data, today = today, onProfileChange = onProfileChange)
@@ -110,6 +119,31 @@ private fun MaxFields(data: AppData, today: Long, onProfileChange: (Profile) -> 
                 onProfileChange(data.profile.copy(manualMaxes = maxes))
             },
         )
+    }
+}
+
+/** Коротко о макроцикле: текущий блок и сколько в нём сделано; по нажатию открываются циклы. */
+@Composable
+private fun CyclesCard(data: AppData, today: Long, onOpen: () -> Unit) {
+    val position = remember(data, today) { Macrocycle.position(data.profile, data.sessions, today) }
+    Card(onClick = onOpen, modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(ScreenPadding), verticalArrangement = Arrangement.spacedBy(Gap)) {
+            Text(text = stringResource(R.string.cycles_title), style = MaterialTheme.typography.titleMedium)
+            if (position == null) {
+                Text(text = stringResource(R.string.cycles_macro_empty), style = MaterialTheme.typography.bodySmall)
+            } else {
+                Text(stringResource(R.string.cycles_block, position.index + 1, position.program.title))
+                Text(
+                    text = stringResource(
+                        R.string.profile_program_progress,
+                        position.progress.done,
+                        position.program.sessions.size,
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+            TextButton(onClick = onOpen) { Text(stringResource(R.string.profile_cycles_open)) }
+        }
     }
 }
 
