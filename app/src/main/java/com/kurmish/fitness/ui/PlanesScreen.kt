@@ -44,7 +44,7 @@ internal fun PlanesScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
             IconButton(onClick = onBack) {
                 Icon(painterResource(R.drawable.ic_chevron_left), stringResource(R.string.cycles_back))
             }
-            Text(text = stringResource(R.string.planes_title), style = MaterialTheme.typography.titleLarge)
+            Text(text = stringResource(R.string.planes_open), style = MaterialTheme.typography.titleLarge)
         }
         Text(text = stringResource(R.string.planes_hint), style = MaterialTheme.typography.bodySmall)
         Movement.entries.forEach { PlaneCard(it) }
