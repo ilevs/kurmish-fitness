@@ -55,4 +55,13 @@ class LoadTest {
         assertEquals(0.8333, pullUps.relativeIntensity!!, 1e-3)
         assertEquals(20.0, LoadCalculator.session(assisted) { null }.tonnageKg, 0.0)
     }
+
+    @Test
+    fun startingWeightsUseLeanMassWhenBodyFatIsKnown() {
+        val lean = AppData(Profile(bodyweightKg = 80.0, diet = DietSettings(bodyFatPercent = 30.0)))
+        // 80 × 0,70 / 0,85 ≈ 65,9 кг: при 30 % жира сила как у 66 кг с обычным составом тела.
+        assertEquals(65.88, lean.strengthBodyweight()!!, 0.01)
+        assertEquals(80.0, AppData(Profile(bodyweightKg = 80.0)).strengthBodyweight()!!, 0.0)
+        assertNull(AppData().strengthBodyweight())
+    }
 }

@@ -59,7 +59,18 @@ data class AppData(
         if (base != null) return bodyweightMax(base, today)?.let { WorkingMax(it, bodyweightKg = profile.bodyweightKg) }
         val estimated = estimatedMaxes(today)
         val own = { lift: Exercise -> profile.manualMaxes[lift] ?: estimated[lift]?.kg }
-        return own(exercise)?.let { WorkingMax(it) } ?: MaxRatios.estimate(exercise, own, profile.bodyweightKg)
+        return own(exercise)?.let { WorkingMax(it) } ?: MaxRatios.estimate(exercise, own, strengthBodyweight())
+    }
+
+    /**
+     * Вес для стартовых весов без статистики. Нормы новичка в долях веса рассчитаны на обычный состав тела,
+     * а сила зависит от мышц, поэтому при введённом проценте жира вес приводится к [REFERENCE_FAT]
+     * по сухой массе: при 80 кг и 30 % жира это 80 × 0,70 / 0,85 ≈ 66 кг. Тоннаж и нагрузка в подтягиваниях
+     * и гравитроне считаются по полному весу: жир поднимается вместе с телом.
+     */
+    fun strengthBodyweight(): Double? = profile.bodyweightKg?.let { weight ->
+        val fat = profile.diet.bodyFatPercent?.takeIf { it in 0.0..MAX_FAT }
+        if (fat == null) weight else weight * (1 - fat / PERCENT) / (1 - REFERENCE_FAT)
     }
 
     /** ПМ полной нагрузки движения [base] за последние дни: подтягивания, с весом и в гравитроне вместе. */
@@ -97,6 +108,12 @@ data class AppData(
     companion object {
         /** За сколько дней дневник учитывается при оценке ПМ. */
         const val RECENT_DAYS = 60
+
+        /** Доля жира, на которую рассчитаны нормы новичка в долях собственного веса. */
+        const val REFERENCE_FAT = 0.15
+
+        private const val PERCENT = 100.0
+        private const val MAX_FAT = 60.0
     }
 }
 
