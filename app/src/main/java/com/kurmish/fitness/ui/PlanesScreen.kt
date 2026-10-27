@@ -42,7 +42,7 @@ internal fun PlanesScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) {
-                Icon(painterResource(R.drawable.ic_chevron_left), stringResource(R.string.cycles_back))
+                Icon(painterResource(R.drawable.ic_chevron_left), stringResource(R.string.nav_back))
             }
             Text(text = stringResource(R.string.planes_open), style = MaterialTheme.typography.titleLarge)
         }
