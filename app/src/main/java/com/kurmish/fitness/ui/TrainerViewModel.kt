@@ -14,10 +14,12 @@ import com.kurmish.fitness.backup.DriveSettings
 import com.kurmish.fitness.core.AppData
 import com.kurmish.fitness.core.DietPhase
 import com.kurmish.fitness.core.JournalStore
+import com.kurmish.fitness.core.ParsedWorkout
 import com.kurmish.fitness.core.Profile
 import com.kurmish.fitness.core.WorkoutSession
 import com.kurmish.fitness.core.withCalorieCorrection
 import com.kurmish.fitness.core.withPhase
+import com.kurmish.fitness.core.withRecorded
 import com.kurmish.fitness.core.withRefeed
 import com.kurmish.fitness.core.withSaved
 import com.kurmish.fitness.core.withWeight
@@ -67,6 +69,11 @@ class TrainerViewModel(
     /** Сохраняет запись: новую (с номером 0) добавляет, исправленную заменяет. */
     fun saveWorkout(session: WorkoutSession) {
         change { data -> data.withSaved(session) }
+    }
+
+    /** Записывает разобранный текст: за день, где уже есть тренировка, дописывает в неё. */
+    fun recordWorkout(text: String, parsed: ParsedWorkout) {
+        change { data -> data.withRecorded(parsed, text, today()) }
     }
 
     /** Удаляет запись дневника. */

@@ -35,7 +35,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -215,7 +214,7 @@ private fun FeelingRow(feeling: Feeling, onChange: (Feeling) -> Unit) {
 
 /** Карточка упражнения: название, меню и подходы строками. */
 @Composable
-private fun EntryCard(
+internal fun EntryCard(
     entry: EntryDraft,
     previous: List<SetGroup>,
     suggest: (String) -> List<String>,
@@ -228,27 +227,7 @@ private fun EntryCard(
                 ExerciseField(entry = entry, suggest = suggest, onChange = onChange, modifier = Modifier.weight(1f))
                 EntryMenu(onRemove = onRemove)
             }
-            SetHeader()
-            entry.sets.forEachIndexed { index, set ->
-                // Ключ меняется с числом подходов: после удаления свайпом строки не наследуют его состояние.
-                key(entry.sets.size, index) {
-                    SetRow(
-                        number = index + 1,
-                        set = set,
-                        previous = previous.getOrNull(index),
-                        onChange = { changed ->
-                            val sets = entry.sets.mapIndexed { i, old -> if (i == index) changed else old }
-                            onChange(entry.copy(sets = sets))
-                        },
-                        onRemove = { onChange(entry.copy(sets = entry.sets.filterIndexed { i, _ -> i != index })) },
-                    )
-                }
-            }
-            TextButton(onClick = { onChange(entry.withSet()) }, modifier = Modifier.fillMaxWidth()) {
-                Icon(painterResource(R.drawable.ic_add), contentDescription = null)
-                Spacer(Modifier.width(SmallGap))
-                Text(stringResource(R.string.editor_add_set))
-            }
+            SetTable(entry = entry, previous = previous, onChange = onChange)
         }
     }
 }

@@ -29,7 +29,7 @@ import kotlin.math.roundToInt
 private const val BreakDays = 14L
 
 /**
- * Питание на сегодня: калории и БЖУ, рефид, поправка калорий и взвешивание.
+ * Питание на сегодня: калории и БЖУ, рефид и поправка калорий. Вес вводится в профиле.
  *
  * @param day расчёт на сегодня; null, если данных не хватает, тогда показывается [missing].
  */
@@ -46,7 +46,6 @@ internal fun DietCard(
             Text(stringResource(R.string.diet_title, phase.title), style = MaterialTheme.typography.titleMedium)
             missing?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             if (day != null) DietNumbers(day = day, actions = actions)
-            WeightRow(onSave = actions.onLogWeight)
         }
     }
 }
@@ -54,13 +53,11 @@ internal fun DietCard(
 /**
  * Что можно сделать в карточке питания.
  *
- * @property onLogWeight записать вес за сегодня.
  * @property onRefeedDone отметить рефид сегодня.
  * @property onApplyCorrection принять поправку калорий, в процентах.
  * @property onPhaseChange сменить фазу питания.
  */
 internal class DietActions(
-    val onLogWeight: (Double) -> Unit,
     val onRefeedDone: () -> Unit,
     val onApplyCorrection: (Int) -> Unit,
     val onPhaseChange: (DietPhase) -> Unit,
@@ -101,31 +98,6 @@ private fun DietNumbers(day: DietDay, actions: DietActions) {
             OutlinedButton(onClick = { actions.onPhaseChange(DietPhase.Deficit) }) {
                 Text(stringResource(R.string.diet_back_to_deficit))
             }
-        }
-    }
-}
-
-@Composable
-private fun WeightRow(onSave: (Double) -> Unit) {
-    var text by rememberSaveable { mutableStateOf("") }
-    val weight = text.replace(',', '.').toDoubleOrNull()?.takeIf { it > 0 }
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Gap)) {
-        OutlinedTextField(
-            value = text,
-            onValueChange = { text = it },
-            modifier = Modifier.weight(1f),
-            label = { Text(stringResource(R.string.diet_weight)) },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-        )
-        Button(
-            onClick = {
-                weight?.let(onSave)
-                text = ""
-            },
-            enabled = weight != null,
-        ) {
-            Text(stringResource(R.string.diet_weight_save))
         }
     }
 }

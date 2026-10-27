@@ -50,10 +50,12 @@ object FitnessTest {
     )
 
     /**
-     * Тестовая тренировка нужна только в самом начале: в Дневнике ещё нет ни одной записи и ПМ не введены.
-     * Как только она записана, веса считаются по Дневнику.
+     * Тестовая тренировка нужна только в самом начале: до дня [today] в Дневнике нет ни одной записи и ПМ
+     * не введены. В сам день теста план не меняется, пока его записываешь; со следующего дня веса считаются
+     * по Дневнику.
      */
-    fun needed(data: AppData): Boolean = data.sessions.isEmpty() && data.profile.manualMaxes.isEmpty()
+    fun needed(data: AppData, today: Long): Boolean =
+        data.sessions.none { it.epochDay < today } && data.profile.manualMaxes.isEmpty()
 
     /** План тестовой тренировки: упражнения с учётом замен по тестам плеч, у каждого свои подводящие. */
     fun plan(profile: Profile): DayPlan = DayPlan(

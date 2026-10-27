@@ -4,7 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -18,9 +20,11 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -29,6 +33,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.kurmish.fitness.R
+import com.kurmish.fitness.core.EntryDraft
 import com.kurmish.fitness.core.SetDraft
 import com.kurmish.fitness.core.SetGroup
 
@@ -36,9 +41,37 @@ private val NumberWidth = 28.dp
 private val RowGap = 8.dp
 private const val PreviousWeight = 1.3f
 
+/** Подходы упражнения [entry] строками: подписи столбцов, строки и «Добавить подход». */
+@Composable
+internal fun SetTable(entry: EntryDraft, previous: List<SetGroup>, onChange: (EntryDraft) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(RowGap)) {
+        SetHeader()
+        entry.sets.forEachIndexed { index, set ->
+            // Ключ меняется с числом подходов: после удаления свайпом строки не наследуют его состояние.
+            key(entry.sets.size, index) {
+                SetRow(
+                    number = index + 1,
+                    set = set,
+                    previous = previous.getOrNull(index),
+                    onChange = { changed ->
+                        val sets = entry.sets.mapIndexed { i, old -> if (i == index) changed else old }
+                        onChange(entry.copy(sets = sets))
+                    },
+                    onRemove = { onChange(entry.copy(sets = entry.sets.filterIndexed { i, _ -> i != index })) },
+                )
+            }
+        }
+        TextButton(onClick = { onChange(entry.withSet()) }, modifier = Modifier.fillMaxWidth()) {
+            Icon(painterResource(R.drawable.ic_add), contentDescription = null)
+            Spacer(Modifier.width(RowGap))
+            Text(stringResource(R.string.editor_add_set))
+        }
+    }
+}
+
 /** Подписи столбцов под строками подходов: №, прошлый раз, кг, повторы, отметка. */
 @Composable
-internal fun SetHeader() {
+private fun SetHeader() {
     val style = MaterialTheme.typography.labelMedium
     val color = MaterialTheme.colorScheme.onSurfaceVariant
     Row(horizontalArrangement = Arrangement.spacedBy(RowGap), verticalAlignment = Alignment.CenterVertically) {
@@ -85,7 +118,7 @@ internal fun SetHeader() {
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun SetRow(
+private fun SetRow(
     number: Int,
     set: SetDraft,
     previous: SetGroup?,

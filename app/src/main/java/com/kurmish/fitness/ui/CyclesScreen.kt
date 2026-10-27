@@ -23,25 +23,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.kurmish.fitness.R
 import com.kurmish.fitness.core.AppData
-import com.kurmish.fitness.core.CycleCatalog
 import com.kurmish.fitness.core.CycleDesign
-import com.kurmish.fitness.core.Discipline
 import com.kurmish.fitness.core.MacroBlock
 import com.kurmish.fitness.core.MacroPosition
 import com.kurmish.fitness.core.Macrocycle
 import com.kurmish.fitness.core.Profile
 import com.kurmish.fitness.core.ProgramSession
-import com.kurmish.fitness.core.Rank
 import com.kurmish.fitness.core.TrainingProgram
 import com.kurmish.fitness.core.YearPlan
 import com.kurmish.fitness.core.kg
 import java.util.Collections
 
-private const val ShownCycles = 5
-
 /**
  * Циклы: макроцикл из блоков-программ, программы и свои циклы с редактором, расписание текущего блока
- * и справочные циклы методики.
+ * и годовой план.
  */
 @Composable
 internal fun CyclesScreen(
@@ -68,7 +63,6 @@ internal fun CyclesScreen(
         )
         position?.let { Schedule(program = it.program, next = it.progress.next) }
         YearPlanCard(profile = profile, today = today, onProfileChange = onProfileChange)
-        CyclesCard(profile, onProfileChange)
     }
     editing?.let { design ->
         CycleEditor(
@@ -275,37 +269,6 @@ private fun YearPlanCard(profile: Profile, today: Long, onProfileChange: (Profil
                 TextButton(onClick = { onProfileChange(profile.copy(yearPlanStartEpochDay = null)) }) {
                     Text(stringResource(R.string.year_stop))
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun CyclesCard(profile: Profile, onProfileChange: (Profile) -> Unit) {
-    val matches = remember(profile) { CycleCatalog.select(profile).filter { it.fits }.take(ShownCycles) }
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(ScreenPadding), verticalArrangement = Arrangement.spacedBy(Gap)) {
-            Text(text = stringResource(R.string.profile_cycles), style = MaterialTheme.typography.titleMedium)
-            Text(text = stringResource(R.string.profile_cycles_hint), style = MaterialTheme.typography.bodySmall)
-            ChoiceRow(
-                title = stringResource(R.string.profile_discipline),
-                options = Discipline.entries.map { it to it.title },
-                selected = profile.discipline,
-                onSelect = { onProfileChange(profile.copy(discipline = it)) },
-            )
-            ChoiceRow(
-                title = stringResource(R.string.profile_rank),
-                options = Rank.entries.map { it to it.title },
-                selected = profile.rank,
-                onSelect = { onProfileChange(profile.copy(rank = it)) },
-            )
-            if (matches.isEmpty()) Text(stringResource(R.string.profile_cycles_none))
-            matches.forEach { match ->
-                Text(
-                    text = "${match.cycle.id} · ${match.cycle.kind.title}",
-                    style = MaterialTheme.typography.titleSmall
-                )
-                Text(match.cycle.note)
             }
         }
     }

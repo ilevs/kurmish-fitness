@@ -26,7 +26,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import com.kurmish.fitness.R
 import com.kurmish.fitness.backup.BackupUi
 import com.kurmish.fitness.core.AppData
+import com.kurmish.fitness.core.DietPhase
 import com.kurmish.fitness.core.Exercise
+import com.kurmish.fitness.core.FlexibleDiet
 import com.kurmish.fitness.core.Goal
 import com.kurmish.fitness.core.Profile
 import com.kurmish.fitness.core.Strength
@@ -47,6 +49,8 @@ internal fun ProfileScreen(
     onBackupDisconnect: () -> Unit,
     files: FileBackups,
     onTest: () -> Unit,
+    onWeight: (Double) -> Unit,
+    diet: DietActions,
     modifier: Modifier = Modifier
 ) {
     val profile = data.profile
@@ -72,10 +76,13 @@ internal fun ProfileScreen(
         NumberField(
             label = stringResource(R.string.profile_bodyweight),
             value = profile.bodyweightKg,
-            onValueChange = { onProfileChange(profile.copy(bodyweightKg = it)) },
+            // Вес из профиля — это и взвешивание за сегодня: по нему считается питание.
+            onValueChange = { kg ->
+                if (kg != null && kg > 0) onWeight(kg) else onProfileChange(profile.copy(bodyweightKg = null))
+            },
         )
         TestCard(data = data, today = today, onAgain = onTest)
-        DietSettingsCard(profile = profile, today = today, onProfileChange = onProfileChange)
+        DietSection(data = data, today = today, diet = diet, onProfileChange = onProfileChange)
         MaxFields(data = data, today = today, onProfileChange = onProfileChange)
         BackupCard(
             state = backup,
@@ -103,6 +110,23 @@ private fun MaxFields(data: AppData, today: Long, onProfileChange: (Profile) -> 
                 onProfileChange(data.profile.copy(manualMaxes = maxes))
             },
         )
+    }
+}
+
+/** Настройки питания и, если питание включено, расчёт на сегодня. */
+@Composable
+private fun DietSection(data: AppData, today: Long, diet: DietActions, onProfileChange: (Profile) -> Unit) {
+    val profile = data.profile
+    Column(verticalArrangement = Arrangement.spacedBy(Gap)) {
+        DietSettingsCard(profile = profile, today = today, onProfileChange = onProfileChange)
+        if (profile.diet.phase != DietPhase.Off) {
+            DietCard(
+                phase = profile.diet.phase,
+                day = remember(data, today) { FlexibleDiet.day(data, today) },
+                missing = FlexibleDiet.missing(data),
+                actions = diet,
+            )
+        }
     }
 }
 

@@ -40,10 +40,7 @@
     <string name="tab_profile">Профиль</string>
 
     <string name="speak">Озвучить</string>
-    <string name="today_tips">Показать советы</string>
-    <string name="today_tips_hide">Скрыть советы</string>
-    <string name="today_record_plan">Записать по плану</string>
-    <string name="today_done">Записано: %1$s</string>
+    <string name="journal_history">Прошлые записи</string>
     <string name="today_replace">Заменить</string>
     <string name="today_restore">Вернуть</string>
     <string name="today_instead">Вместо «%1$s» на весь цикл</string>
@@ -65,11 +62,8 @@
     <string name="log_voice_failed">Не получилось включить микрофон. Закрой другие приложения, которые его используют, и попробуй ещё раз.</string>
     <string name="log_voice_denied">Без доступа к микрофону голосовой ввод не работает. Разреши его в настройках приложения или вводи текстом.</string>
 
-    <string name="journal_empty">Записей пока нет</string>
     <string name="journal_delete">Удалить запись</string>
-    <string name="journal_add">Добавить запись</string>
     <string name="journal_edit">Исправить запись</string>
-    <string name="journal_edit_hint">Нажми на запись, чтобы исправить её.</string>
 
     <string name="editor_title_new">Новая запись</string>
     <string name="editor_prev_day">Предыдущий день</string>
@@ -105,13 +99,8 @@
 
     <string name="profile_bodyweight">Собственный вес, кг</string>
     <string name="profile_days">Тренировок в неделю</string>
-    <string name="profile_discipline">Направление</string>
-    <string name="profile_rank">Уровень</string>
     <string name="profile_goal">Задача</string>
     <string name="profile_max">ПМ: %1$s, кг</string>
-    <string name="profile_cycles">Справочные циклы методики</string>
-    <string name="profile_cycles_hint">Эти циклы в приложении не расписаны, план в Дневнике строится по макроциклу выше. Направление и уровень нужны только для их подбора; без программы тренер подскажет подходящий цикл.</string>
-    <string name="profile_cycles_none">Под это направление и уровень с вашей задачей и числом тренировок подходящих циклов нет.</string>
     <string name="profile_program_mismatch">Не совпадает с профилем: %1$s</string>
     <string name="profile_program_progress">Сделано тренировок: %1$d из %2$d</string>
     <string name="profile_program_restart">Начать макроцикл заново с сегодня</string>
