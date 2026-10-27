@@ -79,10 +79,7 @@ fun TrainerApp(
                 today = viewModel.today,
                 backup = backup,
                 onProfileChange = viewModel::updateProfile,
-                onBackupConnect = backupViewModel::connect,
-                onBackupNow = backupViewModel::backupNow,
-                onRestore = { backupViewModel.restore(viewModel::restore) },
-                onBackupDisconnect = backupViewModel::disconnect,
+                yandex = backupViewModel.actions(viewModel::restore),
                 files = fileBackups(driveViewModel, fileViewModel, viewModel::restore),
                 onTest = { testing = true },
                 onWeight = viewModel::logWeight,
@@ -138,6 +135,13 @@ private fun DriveBackupViewModel.actions(onRestored: (AppData) -> Unit) = DriveA
     onBackup = ::backupNow,
     onRestore = { restore(onRestored) },
     onUnlink = ::unlink,
+)
+
+private fun BackupViewModel.actions(onRestored: (AppData) -> Unit) = YandexActions(
+    onConnect = ::connect,
+    onBackup = ::backupNow,
+    onRestore = { restore(onRestored) },
+    onDisconnect = ::disconnect,
 )
 
 private fun FileBackupViewModel.actions(onRestored: (AppData) -> Unit) = FileActions(

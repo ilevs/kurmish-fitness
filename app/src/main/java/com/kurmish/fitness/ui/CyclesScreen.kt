@@ -11,8 +11,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -22,9 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import com.kurmish.fitness.R
 import com.kurmish.fitness.core.AppData
@@ -62,12 +58,7 @@ internal fun CyclesScreen(
             .padding(ScreenPadding),
         verticalArrangement = Arrangement.spacedBy(Gap),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) {
-                Icon(painterResource(R.drawable.ic_chevron_left), stringResource(R.string.cycles_back))
-            }
-            Text(text = stringResource(R.string.cycles_title), style = MaterialTheme.typography.titleLarge)
-        }
+        SubScreenHeader(title = stringResource(R.string.cycles_title), onBack = onBack)
         MacroCard(profile = profile, position = position, today = today, onProfileChange = onProfileChange)
         ProgramsCard(
             profile = profile,

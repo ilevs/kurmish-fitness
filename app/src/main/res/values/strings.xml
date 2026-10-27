@@ -3,7 +3,10 @@
     <string name="app_name">Курмыш Фитнес</string>
 
     <string name="cycles_title">Циклы</string>
-    <string name="cycles_back">Назад</string>
+    <string name="nav_back">Назад</string>
+    <string name="backup_screen_title">Резервная копия</string>
+    <string name="backup_screen_hint">Яндекс Диск, Google Диск, файл или Telegram</string>
+    <string name="backup_screen_open">Открыть</string>
     <string name="profile_cycles_open">Открыть циклы</string>
     <string name="cycles_schedule">Расписание блока «%1$s»</string>
     <string name="cycles_microcycle">Микроцикл %1$d из %2$d</string>

@@ -39,28 +39,52 @@ import com.kurmish.fitness.core.Strength
 private val DayOptions = (1..7).toList()
 private val MaxLifts = listOf(Exercise.Squat, Exercise.Bench, Exercise.Deadlift, Exercise.OverheadPress)
 
-/** Профиль атлета: данные, циклы, ПМ, питание и бэкап Дневника. Циклы открываются отдельным экраном. */
+/** Экраны, которые открываются из Профиля. */
+private enum class ProfilePage { Main, Cycles, Backup }
+
+/** Профиль атлета: данные, ПМ и питание. Циклы и резервная копия открываются отдельными экранами. */
 @Composable
 internal fun ProfileScreen(
     data: AppData,
     today: Long,
     backup: BackupUi,
     onProfileChange: (Profile) -> Unit,
-    onBackupConnect: (String, String) -> Unit,
-    onBackupNow: () -> Unit,
-    onRestore: () -> Unit,
-    onBackupDisconnect: () -> Unit,
+    yandex: YandexActions,
     files: FileBackups,
     onTest: () -> Unit,
     onWeight: (Double) -> Unit,
     diet: DietActions,
     modifier: Modifier = Modifier
 ) {
-    var cycles by rememberSaveable { mutableStateOf(false) }
-    if (cycles) {
-        CyclesScreen(data, today, onProfileChange, onBack = { cycles = false }, modifier = modifier)
-        return
+    var page by rememberSaveable { mutableStateOf(ProfilePage.Main) }
+    val back = { page = ProfilePage.Main }
+    when (page) {
+        ProfilePage.Cycles -> CyclesScreen(data, today, onProfileChange, onBack = back, modifier = modifier)
+        ProfilePage.Backup -> BackupScreen(backup, yandex, files, onBack = back, modifier = modifier)
+        ProfilePage.Main -> ProfileContent(
+            data = data,
+            today = today,
+            onProfileChange = onProfileChange,
+            onTest = onTest,
+            onWeight = onWeight,
+            diet = diet,
+            onOpen = { page = it },
+            modifier = modifier,
+        )
     }
+}
+
+@Composable
+private fun ProfileContent(
+    data: AppData,
+    today: Long,
+    onProfileChange: (Profile) -> Unit,
+    onTest: () -> Unit,
+    onWeight: (Double) -> Unit,
+    diet: DietActions,
+    onOpen: (ProfilePage) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val profile = data.profile
     Column(
         modifier = modifier
@@ -89,19 +113,23 @@ internal fun ProfileScreen(
                 if (kg != null && kg > 0) onWeight(kg) else onProfileChange(profile.copy(bodyweightKg = null))
             },
         )
-        CyclesCard(data = data, today = today, onOpen = { cycles = true })
+        CyclesCard(data = data, today = today, onOpen = { onOpen(ProfilePage.Cycles) })
         TestCard(data = data, today = today, onAgain = onTest)
         DietSection(data = data, today = today, diet = diet, onProfileChange = onProfileChange)
         MaxFields(data = data, today = today, onProfileChange = onProfileChange)
-        BackupCard(
-            state = backup,
-            onConnect = onBackupConnect,
-            onBackup = onBackupNow,
-            onRestore = onRestore,
-            onDisconnect = onBackupDisconnect,
-        )
-        DriveBackupCard(state = files.drive, actions = files.driveActions)
-        FileBackupCard(status = files.status, actions = files.actions)
+        BackupEntryCard(onOpen = { onOpen(ProfilePage.Backup) })
+    }
+}
+
+/** Вход в резервную копию Дневника. */
+@Composable
+private fun BackupEntryCard(onOpen: () -> Unit) {
+    Card(onClick = onOpen, modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(ScreenPadding), verticalArrangement = Arrangement.spacedBy(Gap)) {
+            Text(text = stringResource(R.string.backup_screen_title), style = MaterialTheme.typography.titleMedium)
+            Text(text = stringResource(R.string.backup_screen_hint), style = MaterialTheme.typography.bodySmall)
+            TextButton(onClick = onOpen) { Text(stringResource(R.string.backup_screen_open)) }
+        }
     }
 }
 
