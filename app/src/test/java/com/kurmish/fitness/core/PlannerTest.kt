@@ -1,6 +1,7 @@
 package com.kurmish.fitness.core
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -200,8 +201,9 @@ class PlannerTest {
         val draft = SessionDraft.fromPlan(plan, epochDay = 50, existing = null)
         assertEquals(0L, draft.id)
         assertEquals(Exercise.Squat, draft.entries.first().exercise)
-        assertEquals(SetDraft(weight = "80", reps = "5", sets = "5"), draft.entries.first().sets.single())
-        assertTrue(draft.valid)
+        assertEquals(List(5) { SetDraft(weight = "80", reps = "5") }, draft.entries.first().sets)
+        // Из плана ничего не отмечено: сохранять пока нечего.
+        assertFalse(draft.valid)
         val squat = ExerciseEntry(Exercise.Squat, sets = listOf(SetGroup(80.0, 5, 5)))
         val existing = WorkoutSession(7, 50, "присед 80 на 5 по 5", listOf(squat))
         val continued = SessionDraft.fromPlan(plan, epochDay = 50, existing = existing)

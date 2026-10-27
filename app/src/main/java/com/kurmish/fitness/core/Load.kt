@@ -5,7 +5,9 @@ import kotlin.math.roundToInt
 /**
  * Показатели нагрузки тренировки, как в тренировочном дневнике.
  *
- * @property tonnageKg тоннаж: сумма вес × повторы × подходы (для собственного веса вес считается за 1).
+ * @property tonnageKg тоннаж: сумма вес × повторы × подходы. В подтягиваниях, брусьях и гравитроне вес —
+ *   полная нагрузка: свой вес плюс отягощение или минус противовес; без своего веса и в других упражнениях
+ *   без снаряда вес считается за 1.
  * @property lifts КПШ — количество подъёмов штанги, то есть всех повторов.
  * @property averageKg средний вес: тоннаж / КПШ.
  * @property relativeIntensity относительная интенсивность: средний % от ПМ, взвешенный по повторам,
@@ -51,8 +53,11 @@ object LoadCalculator {
     private const val MEDIUM_MINUTES = 3.0
     private const val LIGHT_MINUTES = 1.5
 
-    /** Показатели тренировки; [maxOf] даёт ПМ упражнения или null. */
-    fun session(session: WorkoutSession, maxOf: (Exercise) -> Double?): LoadMetrics {
+    /**
+     * Показатели тренировки; [maxOf] даёт ПМ упражнения или null, у движений своим телом — ПМ полной нагрузки.
+     * [bodyweightKg] — собственный вес для подтягиваний, брусьев и гравитрона.
+     */
+    fun session(session: WorkoutSession, bodyweightKg: Double? = null, maxOf: (Exercise) -> Double?): LoadMetrics {
         var tonnage = 0.0
         var lifts = 0
         var weighted = 0.0
@@ -64,7 +69,7 @@ object LoadCalculator {
             val max = entry.exercise?.let(maxOf)
             entry.sets.forEach { set ->
                 val reps = set.reps * set.sets
-                val weightKg = set.weightKg.takeUnless { entry.exercise?.let(BodyweightLoad::assisted) == true }
+                val weightKg = loadKg(entry.exercise, set.weightKg, bodyweightKg)
                 val weight = weightKg ?: 1.0
                 val share = if (max != null && weightKg != null) share(weightKg, max) else 0.0
                 tonnage += weight * reps
@@ -85,6 +90,14 @@ object LoadCalculator {
             weightedIntensity = weighted,
             minutes = if (lifts == 0) 0 else (minutes + BASE_MINUTES).roundToInt(),
         )
+    }
+
+    /** Вес подхода для тоннажа: полная нагрузка движений своим телом, противовес без своего веса не считается. */
+    private fun loadKg(exercise: Exercise?, weightKg: Double?, bodyweightKg: Double?): Double? = when {
+        exercise == null || BodyweightLoad.base(exercise) == null -> weightKg
+        bodyweightKg != null -> BodyweightLoad.effective(exercise, weightKg, bodyweightKg)
+        BodyweightLoad.assisted(exercise) -> null
+        else -> weightKg
     }
 
     /** Доля от ПМ, округлённая до процента, как в дневнике. */

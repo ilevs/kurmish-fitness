@@ -39,4 +39,29 @@ class LoadTest {
         // 5 подходов × 1,1 × 6 минут + 30 минут.
         assertEquals(63, load.minutes)
     }
+
+    @Test
+    fun assistedPullUpCountsBodyweightMinusCounterweight() {
+        val sets = listOf(SetGroup(40.0, 20))
+        val assisted = session(ExerciseEntry(Exercise.AssistedPullUp, sets = sets))
+        val withBody = LoadCalculator.session(assisted, 80.0) { null }
+        assertEquals(800.0, withBody.tonnageKg, 0.0)
+        assertEquals(40.0, withBody.averageKg, 0.0)
+        val pullUps = LoadCalculator.session(
+            session(ExerciseEntry(Exercise.PullUp, sets = listOf(SetGroup(null, 10), SetGroup(10.0, 5)))),
+            80.0,
+        ) { 100.0 }
+        assertEquals(1250.0, pullUps.tonnageKg, 0.0)
+        assertEquals(0.8333, pullUps.relativeIntensity!!, 1e-3)
+        assertEquals(20.0, LoadCalculator.session(assisted) { null }.tonnageKg, 0.0)
+    }
+
+    @Test
+    fun startingWeightsUseLeanMassWhenBodyFatIsKnown() {
+        val lean = AppData(Profile(bodyweightKg = 80.0, diet = DietSettings(bodyFatPercent = 30.0)))
+        // 80 × 0,70 / 0,85 ≈ 65,9 кг: при 30 % жира сила как у 66 кг с обычным составом тела.
+        assertEquals(65.88, lean.strengthBodyweight()!!, 0.01)
+        assertEquals(80.0, AppData(Profile(bodyweightKg = 80.0)).strengthBodyweight()!!, 0.0)
+        assertNull(AppData().strengthBodyweight())
+    }
 }

@@ -51,16 +51,16 @@
     <string name="picker_hint">Выбор запомнится на цикл: во всех тренировках, где стоит это упражнение.</string>
 
     <string name="log_hint">Например: присед 120 на 5 по 3, жим 90х5х4, подтягивания 3 по 10, было легко</string>
-    <string name="log_voice">Сказать</string>
+    <string name="log_voice">Надиктовать</string>
     <string name="log_save">Сохранить</string>
     <string name="log_preview">Распознано</string>
     <string name="log_nothing">Пока ничего не распознано</string>
     <string name="log_saved">Записал</string>
     <string name="log_voice_stop">Стоп</string>
     <string name="log_voice_downloading">Первый запуск: скачиваю модель распознавания речи (225 МБ, один раз), готово %1$d %%. Лучше через Wi-Fi.</string>
-    <string name="log_voice_download_failed">Не получилось скачать модель распознавания речи. Нужен интернет только на первый раз: подключись и нажми «Сказать» ещё раз.</string>
+    <string name="log_voice_download_failed">Не получилось скачать модель распознавания речи. Нужен интернет только на первый раз: подключись и нажми микрофон ещё раз.</string>
     <string name="log_voice_preparing">Загружаю распознавание речи…</string>
-    <string name="log_voice_listening">Слушаю. Говори, например: «присед сто двадцать на пять, три подхода». Фразы появятся в поле после короткой паузы. Закончил — нажми «Стоп».</string>
+    <string name="log_voice_listening">Слушаю. Говори, например: «присед сто двадцать на пять, три подхода». Фразы появятся в поле после короткой паузы. Закончил — нажми ■.</string>
     <string name="log_voice_finishing">Распознаю последнюю фразу…</string>
     <string name="log_voice_failed">Не получилось включить микрофон. Закрой другие приложения, которые его используют, и попробуй ещё раз.</string>
     <string name="log_voice_denied">Без доступа к микрофону голосовой ввод не работает. Разреши его в настройках приложения или вводи текстом.</string>
@@ -69,7 +69,7 @@
     <string name="journal_delete">Удалить запись</string>
     <string name="journal_add">Добавить запись</string>
     <string name="journal_edit">Исправить запись</string>
-    <string name="journal_edit_hint">Нажми на запись, чтобы исправить дату, упражнения, вес, повторы, подходы или самочувствие.</string>
+    <string name="journal_edit_hint">Нажми на запись, чтобы исправить её.</string>
 
     <string name="editor_title_new">Новая запись</string>
     <string name="editor_prev_day">Предыдущий день</string>
@@ -80,18 +80,22 @@
     <string name="editor_feeling_hard">Было тяжело</string>
     <string name="editor_exercise">Упражнение</string>
     <string name="editor_custom_hint">Нет в базе: запишется как своё упражнение</string>
-    <string name="editor_weight">Вес</string>
     <string name="editor_weight_own">свой</string>
     <string name="editor_reps">Повт.</string>
-    <string name="editor_sets">Подх.</string>
+    <string name="editor_set_number">№</string>
+    <string name="editor_previous">Прошлый</string>
+    <string name="editor_more">Ещё</string>
     <string name="editor_add_set">Добавить подход</string>
     <string name="editor_remove_set">Удалить подход</string>
     <string name="editor_remove_exercise">Удалить упражнение</string>
     <string name="editor_add_exercise">Добавить упражнение</string>
     <string name="editor_text">Текст записи</string>
+    <string name="editor_text_show">Показать текст записи</string>
+    <string name="editor_text_hide">Скрыть текст записи</string>
     <string name="editor_text_hint">Можно исправить текст и разобрать его заново: упражнения и самочувствие заменятся разобранными.</string>
     <string name="editor_reparse">Разобрать текст заново</string>
-    <string name="editor_invalid">Проверь поля, отмеченные красным: у каждого упражнения нужны название и хотя бы один подход с повторами.</string>
+    <string name="editor_invalid">Проверь поля, отмеченные красным: у отмеченных подходов нужны повторы, у упражнения — название.</string>
+    <string name="editor_nothing_done">Отметь ✓ сделанные подходы: в Дневник попадут только они.</string>
     <string name="editor_cancel">Отмена</string>
     <string name="editor_ok">Готово</string>
     <string name="editor_delete">Удалить</string>

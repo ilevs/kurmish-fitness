@@ -112,7 +112,7 @@ object Stats {
         val byWeek = data.sessions.groupBy { weekStart(it.epochDay) }
         return (count - 1 downTo 0).map { back ->
             val start = current - back * DAYS_IN_WEEK
-            val loads = byWeek[start].orEmpty().map { LoadCalculator.session(it, maxes) }
+            val loads = byWeek[start].orEmpty().map { LoadCalculator.session(it, data.profile.bodyweightKg, maxes) }
             val intensityLoads = loads.filter { it.relativeIntensity != null && it.lifts > 0 }
             val intensityLifts = intensityLoads.sumOf { it.lifts }
             WeekStats(
@@ -205,14 +205,14 @@ object Stats {
         return StatsSummary(
             sessions = recent.size,
             perWeek = recent.size * DAYS_IN_WEEK / days.toDouble(),
-            tonnageKg = recent.sumOf { LoadCalculator.session(it, maxes).tonnageKg },
+            tonnageKg = recent.sumOf { LoadCalculator.session(it, data.profile.bodyweightKg, maxes).tonnageKg },
             daysSinceLast = last?.let { today - it },
         )
     }
 
     /** ПМ каждого упражнения считается один раз, а не на каждый подход. */
     private fun maxLookup(data: AppData, today: Long): (Exercise) -> Double? {
-        val maxes = Exercise.entries.associateWith { data.currentMax(it, today) }
+        val maxes = Exercise.entries.associateWith { data.loadMax(it, today) }
         return { maxes[it] }
     }
 }

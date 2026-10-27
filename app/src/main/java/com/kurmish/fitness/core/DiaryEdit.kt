@@ -1,13 +1,13 @@
 package com.kurmish.fitness.core
 
 /**
- * Строка подходов в редакторе: поля в том виде, как их ввели, пока не проверены.
+ * Один подход в редакторе: поля в том виде, как их ввели, пока не проверены.
  *
  * @property weight вес в кг, допускается запятая; пусто — собственный вес.
- * @property reps повторы в подходе.
- * @property sets сколько подходов; пусто — один.
+ * @property reps повторы.
+ * @property done подход сделан: в Дневник попадают только отмеченные подходы.
  */
-data class SetDraft(val weight: String = "", val reps: String = "", val sets: String = "1") {
+data class SetDraft(val weight: String = "", val reps: String = "", val done: Boolean = false) {
     /** Ничего не введено: такая строка при сохранении пропускается. */
     val blank: Boolean
         get() = weight.isBlank() && reps.isBlank()
@@ -20,25 +20,22 @@ data class SetDraft(val weight: String = "", val reps: String = "", val sets: St
     val repsInvalid: Boolean
         get() = reps.trim().toIntOrNull()?.takeIf { it in 1..MAX_REPS } == null
 
-    /** Подходы вне 1..[MAX_SETS]. */
-    val setsInvalid: Boolean
-        get() = parsedSets == null
+    /** Новые вес и повторы: подход с правильными повторами сразу считается сделанным. */
+    fun edited(weight: String = this.weight, reps: String = this.reps): SetDraft {
+        val changed = copy(weight = weight, reps = reps)
+        return changed.copy(done = !changed.repsInvalid)
+    }
+
+    /** Подход отмечен, но записать его нельзя. */
+    val broken: Boolean
+        get() = done && !blank && (weightInvalid || repsInvalid)
 
     private val parsedWeight: Double?
         get() = weight.trim().replace(',', '.').toDoubleOrNull()?.takeIf { it in 0.0..MAX_WEIGHT_KG }
 
-    private val parsedSets: Int?
-        get() = sets.trim().ifEmpty { "1" }.toIntOrNull()?.takeIf { it in 1..MAX_SETS }
-
-    /** Подходы для Дневника; null, если что-то введено неправильно. */
-    fun toSetGroup(): SetGroup? {
-        val count = parsedSets
-        return if (weightInvalid || repsInvalid || count == null) {
-            null
-        } else {
-            SetGroup(weightKg = parsedWeight, reps = reps.trim().toInt(), sets = count)
-        }
-    }
+    /** Подход для Дневника; null, если что-то введено неправильно. */
+    fun toSetGroup(): SetGroup? =
+        if (weightInvalid || repsInvalid) null else SetGroup(weightKg = parsedWeight, reps = reps.trim().toInt())
 
     /** Пределы полей. */
     companion object {
@@ -48,34 +45,34 @@ data class SetDraft(val weight: String = "", val reps: String = "", val sets: St
         /** Повторов в одном подходе. */
         const val MAX_REPS = 999
 
-        /** Подходов с одним весом. */
-        const val MAX_SETS = 99
+        /** Подходов с одним весом в одной строке Дневника. */
+        private const val MAX_SETS = 99
 
-        /** Черновик из записанных подходов. */
-        fun of(group: SetGroup): SetDraft = SetDraft(
-            weight = group.weightKg?.let(::formatWeight).orEmpty(),
-            reps = group.reps.toString(),
-            sets = group.sets.toString(),
-        )
+        /** Сделанные подходы из записанной строки: каждый подход отдельно. */
+        fun of(group: SetGroup): List<SetDraft> = List(group.sets.coerceIn(1, MAX_SETS)) {
+            SetDraft(weight = group.weightKg?.let(::formatWeight).orEmpty(), reps = group.reps.toString(), done = true)
+        }
 
-        /** Черновик из подходов плана: «мах» и диапазон повторов оставляют повторы пустыми или берут нижнюю границу. */
-        fun planned(group: PlannedSets): SetDraft = SetDraft(
-            weight = group.weightKg?.let(::formatWeight).orEmpty(),
-            reps = group.reps.substringBefore('-').toIntOrNull()?.toString().orEmpty(),
-            sets = group.sets.toString(),
-        )
+        /** Подходы плана, ещё не сделанные: «мах» оставляет повторы пустыми, диапазон берёт нижнюю границу. */
+        fun planned(group: PlannedSets): List<SetDraft> = List(group.sets.coerceIn(1, MAX_SETS)) {
+            SetDraft(
+                weight = group.weightKg?.let(::formatWeight).orEmpty(),
+                reps = group.reps.substringBefore('-').toIntOrNull()?.toString().orEmpty(),
+            )
+        }
 
-        private fun formatWeight(kg: Double): String =
+        /** Вес для поля ввода: без «,0», с запятой. */
+        fun formatWeight(kg: Double): String =
             if (kg == Math.floor(kg)) kg.toLong().toString() else kg.toString().replace('.', ',')
     }
 }
 
 /**
- * Упражнение в редакторе.
+ * Упражнение в редакторе: название и подходы одной карточкой.
  *
  * @property exercise упражнение из каталога; null — своё название.
  * @property customName название, как его ввели; пусто — название упражнения из каталога.
- * @property sets строки подходов.
+ * @property sets подходы по одному.
  */
 data class EntryDraft(val exercise: Exercise?, val customName: String = "", val sets: List<SetDraft>) {
     /** Название в поле ввода. */
@@ -89,32 +86,57 @@ data class EntryDraft(val exercise: Exercise?, val customName: String = "", val 
     val nameMissing: Boolean
         get() = exercise == null && customName.isBlank()
 
-    /** Упражнение для Дневника; null, если нет названия, подходов или какая-то строка с ошибкой. */
+    /** Сделанные подходы, которые попадут в Дневник. */
+    private val doneSets: List<SetDraft>
+        get() = sets.filter { it.done && !it.blank }
+
+    /** Нет ни одного отмеченного подхода: упражнение не записывается. */
+    val skipped: Boolean
+        get() = doneSets.isEmpty()
+
+    /** Упражнение записать нельзя: есть отмеченные подходы, но нет названия или подход с ошибкой. */
+    val broken: Boolean
+        get() = !skipped && (nameMissing || sets.any { it.broken })
+
+    /** Подход с весом и повторами прошлой строки: следующий подход обычно такой же. */
+    fun withSet(): EntryDraft = copy(sets = sets + (sets.lastOrNull()?.copy(done = false) ?: SetDraft()))
+
+    /**
+     * Упражнение для Дневника: подходы подряд с одинаковым весом и повторами сливаются в одну строку.
+     * Null, если отмеченных подходов нет или что-то введено неправильно.
+     */
     fun toEntry(): ExerciseEntry? {
-        val filled = sets.filterNot { it.blank }
-        val groups = filled.mapNotNull { it.toSetGroup() }
-        if (nameMissing || groups.isEmpty() || groups.size != filled.size) return null
+        val groups = doneSets.map { it.toSetGroup() }
+        if (nameMissing || groups.isEmpty() || null in groups) return null
+        val merged = groups.filterNotNull().fold(emptyList<SetGroup>()) { acc, group ->
+            val last = acc.lastOrNull()
+            if (last != null && last.weightKg == group.weightKg && last.reps == group.reps) {
+                acc.dropLast(1) + last.copy(sets = last.sets + group.sets)
+            } else {
+                acc + group
+            }
+        }
         val custom = customName.trim().takeIf { exercise == null }
-        return ExerciseEntry(exercise = exercise, customName = custom, sets = groups)
+        return ExerciseEntry(exercise = exercise, customName = custom, sets = merged)
     }
 
     /** Значения по умолчанию. */
     companion object {
-        /** Пустое упражнение с одной строкой подходов. */
+        /** Пустое упражнение с одним подходом. */
         fun empty(): EntryDraft = EntryDraft(exercise = null, sets = listOf(SetDraft()))
 
-        /** Черновик из рабочего пункта плана: упражнение, подходы, повторы и вес как в плане. */
+        /** Черновик из рабочего пункта плана: подходы, повторы и вес как в плане, пока не отмечены. */
         fun planned(item: PlanItem): EntryDraft = EntryDraft(
             exercise = item.exercise,
             customName = if (item.exercise == null) item.title else "",
-            sets = item.sets.map(SetDraft::planned).ifEmpty { listOf(SetDraft()) },
+            sets = item.sets.flatMap(SetDraft::planned).ifEmpty { listOf(SetDraft()) },
         )
 
-        /** Черновик из записанного упражнения. */
+        /** Черновик из записанного упражнения: все подходы отмечены. */
         fun of(entry: ExerciseEntry): EntryDraft = EntryDraft(
             exercise = entry.exercise,
             customName = entry.customName.orEmpty(),
-            sets = entry.sets.map(SetDraft::of).ifEmpty { listOf(SetDraft()) },
+            sets = entry.sets.flatMap(SetDraft::of).ifEmpty { listOf(SetDraft()) },
         )
     }
 }
@@ -135,9 +157,9 @@ data class SessionDraft(
     val entries: List<EntryDraft>,
     val feeling: Feeling,
 ) {
-    /** Запись можно сохранить: есть упражнения и всё введено правильно. */
+    /** Запись можно сохранить: есть отмеченные подходы и всё отмеченное введено правильно. */
     val valid: Boolean
-        get() = entries.isNotEmpty() && entries.all { it.toEntry() != null }
+        get() = entries.any { !it.skipped } && entries.none { it.broken }
 
     /** Заменяет упражнения и самочувствие разбором [rawText], как при записи текстом. */
     fun reparsed(): SessionDraft {
@@ -145,10 +167,10 @@ data class SessionDraft(
         return copy(entries = parsed.entries.map(EntryDraft::of), feeling = parsed.feeling)
     }
 
-    /** Запись для Дневника; null, если [valid] ложно. */
+    /** Запись для Дневника без упражнений, где ничего не отмечено; null, если [valid] ложно. */
     fun toSession(): WorkoutSession? {
-        val parsed = entries.mapNotNull { it.toEntry() }
-        if (!valid || parsed.size != entries.size) return null
+        if (!valid) return null
+        val parsed = entries.filterNot { it.skipped }.mapNotNull { it.toEntry() }
         return WorkoutSession(
             id = id,
             epochDay = epochDay,
@@ -201,6 +223,27 @@ fun AppData.withSaved(edited: WorkoutSession): AppData {
         old.sameContent(edited) -> this
         else -> copy(sessions = sessions.map { if (it.id == old.id) edited else it })
     }
+}
+
+/**
+ * Подходы упражнения [entry] в последней тренировке до дня [epochDay], по одному, для подсказки «прошлый раз».
+ * Запись [excludeId] — та, что сейчас редактируется, — не считается.
+ */
+fun AppData.previousSets(entry: EntryDraft, epochDay: Long, excludeId: Long): List<SetGroup> {
+    val name = entry.customName.trim()
+    fun same(other: ExerciseEntry): Boolean = when {
+        entry.exercise != null -> other.exercise == entry.exercise
+        name.isEmpty() -> false
+        else -> other.exercise == null && other.customName.orEmpty().trim().equals(name, ignoreCase = true)
+    }
+    return sessions
+        .filter { it.id != excludeId && it.epochDay <= epochDay }
+        .sortedWith(compareBy({ it.epochDay }, { it.id }))
+        .asReversed()
+        .firstNotNullOfOrNull { session -> session.entries.firstOrNull(::same) }
+        ?.sets
+        ?.flatMap { group -> List(group.sets) { group.copy(sets = 1) } }
+        .orEmpty()
 }
 
 /** Удаляет запись. */

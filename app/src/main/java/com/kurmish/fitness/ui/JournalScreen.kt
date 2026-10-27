@@ -38,10 +38,12 @@ import com.kurmish.fitness.core.ParsedWorkout
 import com.kurmish.fitness.core.SessionDraft
 import com.kurmish.fitness.core.WorkoutSession
 import com.kurmish.fitness.core.customExerciseNames
+import com.kurmish.fitness.core.previousSets
 import kotlin.math.roundToInt
 
 /**
- * Дневник: сверху план на сегодня, под ним ввод тренировки, ниже записи, новые первыми.
+ * Дневник: сверху строка ввода тренировки текстом или голосом, под ней план на сегодня, ниже записи,
+ * новые первыми.
  * Запись и план открываются в редакторе.
  */
 @Composable
@@ -58,7 +60,7 @@ internal fun JournalScreen(
     val customNames = remember(data) { data.customExerciseNames() }
     val loads = remember(data, today) {
         data.sessions.associate { session ->
-            session.id to LoadCalculator.session(session) { data.currentMax(it, today) }
+            session.id to LoadCalculator.session(session, data.profile.bodyweightKg) { data.loadMax(it, today) }
         }
     }
     LazyColumn(
@@ -66,6 +68,7 @@ internal fun JournalScreen(
         contentPadding = PaddingValues(ScreenPadding),
         verticalArrangement = Arrangement.spacedBy(Gap),
     ) {
+        item(key = "record") { RecordForm(onSave = actions.onRecord) }
         item(key = "today") {
             TodayPlan(
                 data = data,
@@ -79,7 +82,6 @@ internal fun JournalScreen(
                 dietActions = actions.diet,
             )
         }
-        item(key = "record") { RecordForm(onSave = actions.onRecord) }
         item(key = "add") { AddButton(empty = sessions.isEmpty(), onClick = { editing = SessionDraft.new(today) }) }
         items(sessions, key = { it.id }) { session ->
             SessionCard(
@@ -94,6 +96,7 @@ internal fun JournalScreen(
         SessionEditor(
             initial = draft,
             suggest = { query -> ExerciseNames.suggest(query, customNames) },
+            previous = { entry, epochDay -> data.previousSets(entry, epochDay, draft.id) },
             onSave = { session ->
                 actions.onSave(session)
                 editing = null

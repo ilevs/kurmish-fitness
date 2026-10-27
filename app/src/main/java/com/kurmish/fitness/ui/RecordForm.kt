@@ -7,13 +7,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Button
-import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -23,11 +20,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.kurmish.fitness.R
 import com.kurmish.fitness.core.Feeling
@@ -38,9 +35,12 @@ import com.kurmish.fitness.ui.voice.VoiceFailure
 import com.kurmish.fitness.ui.voice.VoiceState
 import com.kurmish.fitness.ui.voice.rememberOfflineSpeech
 
-private val InputMinHeight = 160.dp
+private const val InputMaxLines = 4
 
-/** Ввод тренировки текстом или голосом с живым предпросмотром разбора: верх Дневника. */
+/**
+ * Ввод тренировки одной строкой на самом верху Дневника: текст, микрофон и «Сохранить» внутри поля,
+ * под ним живой предпросмотр разбора.
+ */
 @Composable
 internal fun RecordForm(onSave: (String, ParsedWorkout) -> Unit, modifier: Modifier = Modifier) {
     var text by rememberSaveable { mutableStateOf("") }
@@ -58,30 +58,32 @@ internal fun RecordForm(onSave: (String, ParsedWorkout) -> Unit, modifier: Modif
                 text = it
                 status = ""
             },
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = InputMinHeight),
-            placeholder = { Text(stringResource(R.string.log_hint)) },
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text(stringResource(R.string.log_hint), maxLines = 1) },
+            maxLines = InputMaxLines,
+            trailingIcon = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    VoiceButton(speech, onMessage = { status = it })
+                    IconButton(
+                        enabled = parsed.entries.isNotEmpty(),
+                        onClick = {
+                            onSave(text, parsed)
+                            text = ""
+                            status = saved
+                        },
+                    ) { Icon(painterResource(R.drawable.ic_send), stringResource(R.string.log_save)) }
+                }
+            },
         )
-        Row {
-            VoiceButton(speech, onMessage = { status = it })
-            Spacer(Modifier.width(Gap))
-            Button(
-                enabled = parsed.entries.isNotEmpty(),
-                onClick = {
-                    onSave(text, parsed)
-                    text = ""
-                    status = saved
-                },
-            ) { Text(stringResource(R.string.log_save)) }
+        voiceStatus(speech.state)?.let {
+            Text(text = it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
         }
-        voiceStatus(speech.state)?.let { Text(text = it, color = MaterialTheme.colorScheme.secondary) }
         if (status.isNotEmpty()) Text(text = status, color = MaterialTheme.colorScheme.primary)
         if (text.isNotBlank()) ParsedPreview(parsed)
     }
 }
 
-/** «Сказать» включает микрофон, «Стоп» выключает. Разрешение на микрофон спрашивается при первом нажатии. */
+/** Микрофон включает диктовку, квадрат выключает. Разрешение на микрофон спрашивается при первом нажатии. */
 @Composable
 private fun VoiceButton(speech: OfflineSpeech, onMessage: (String) -> Unit) {
     val context = LocalContext.current
@@ -91,21 +93,23 @@ private fun VoiceButton(speech: OfflineSpeech, onMessage: (String) -> Unit) {
     }
     val active = speech.state == VoiceState.Listening
     val idle = speech.state == VoiceState.Idle || speech.state is VoiceState.Failed
-    FilledTonalButton(
-        enabled = active || idle,
-        onClick = {
-            val allowed = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
-                PackageManager.PERMISSION_GRANTED
-            when {
-                active -> speech.stop()
-                allowed -> speech.start()
-                else -> permission.launch(Manifest.permission.RECORD_AUDIO)
-            }
-        },
-    ) {
-        Icon(painterResource(R.drawable.ic_mic), contentDescription = null)
-        Spacer(Modifier.width(Gap))
-        Text(stringResource(if (active) R.string.log_voice_stop else R.string.log_voice))
+    val onClick = {
+        val allowed = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
+            PackageManager.PERMISSION_GRANTED
+        when {
+            active -> speech.stop()
+            allowed -> speech.start()
+            else -> permission.launch(Manifest.permission.RECORD_AUDIO)
+        }
+    }
+    if (active) {
+        FilledTonalIconButton(onClick = onClick) {
+            Icon(painterResource(R.drawable.ic_stop), stringResource(R.string.log_voice_stop))
+        }
+    } else {
+        IconButton(onClick = onClick, enabled = idle) {
+            Icon(painterResource(R.drawable.ic_mic), stringResource(R.string.log_voice))
+        }
     }
 }
 

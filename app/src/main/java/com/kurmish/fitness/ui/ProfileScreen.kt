@@ -31,7 +31,7 @@ import com.kurmish.fitness.core.Goal
 import com.kurmish.fitness.core.Profile
 import com.kurmish.fitness.core.Strength
 
-private val DayOptions = listOf(2, 3, 4, 5)
+private val DayOptions = (1..7).toList()
 private val MaxLifts = listOf(Exercise.Squat, Exercise.Bench, Exercise.Deadlift, Exercise.OverheadPress)
 
 /** Профиль атлета: данные, ПМ, питание и бэкап Дневника. */
