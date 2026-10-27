@@ -2,7 +2,9 @@
 <resources>
     <string name="app_name">Курмыш Фитнес</string>
 
-    <string name="tab_cycles">Циклы</string>
+    <string name="cycles_title">Циклы</string>
+    <string name="cycles_back">Назад</string>
+    <string name="profile_cycles_open">Открыть циклы</string>
     <string name="cycles_schedule">Расписание блока «%1$s»</string>
     <string name="cycles_microcycle">Микроцикл %1$d из %2$d</string>
     <string name="cycles_next">%1$s — следующая</string>

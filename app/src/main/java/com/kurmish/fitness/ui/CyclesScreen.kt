@@ -1,5 +1,6 @@
 package com.kurmish.fitness.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,6 +11,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -19,7 +22,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import com.kurmish.fitness.R
 import com.kurmish.fitness.core.AppData
@@ -36,15 +41,17 @@ import java.util.Collections
 
 /**
  * Циклы: макроцикл из блоков-программ, программы и свои циклы с редактором, расписание текущего блока
- * и годовой план.
+ * и годовой план. Открывается из Профиля, [onBack] возвращает туда.
  */
 @Composable
 internal fun CyclesScreen(
     data: AppData,
     today: Long,
     onProfileChange: (Profile) -> Unit,
+    onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    BackHandler(onBack = onBack)
     val profile = data.profile
     val position = remember(data, today) { Macrocycle.position(profile, data.sessions, today) }
     var editing by remember { mutableStateOf<CycleDesign?>(null) }
@@ -55,6 +62,12 @@ internal fun CyclesScreen(
             .padding(ScreenPadding),
         verticalArrangement = Arrangement.spacedBy(Gap),
     ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onBack) {
+                Icon(painterResource(R.drawable.ic_chevron_left), stringResource(R.string.cycles_back))
+            }
+            Text(text = stringResource(R.string.cycles_title), style = MaterialTheme.typography.titleLarge)
+        }
         MacroCard(profile = profile, position = position, today = today, onProfileChange = onProfileChange)
         ProgramsCard(
             profile = profile,
