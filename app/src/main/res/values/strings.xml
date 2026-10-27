@@ -109,6 +109,11 @@
     <string name="profile_bodyweight">Собственный вес, кг</string>
     <string name="profile_days">Тренировок в неделю</string>
     <string name="profile_goal">Задача</string>
+    <string name="profile_goal_section">Цель и график</string>
+    <string name="profile_body">Тело</string>
+    <string name="profile_body_hint">По весу и проценту жира считаются нагрузка в упражнениях со своим весом и питание. Вес, введённый здесь, записывается как взвешивание за сегодня.</string>
+    <string name="profile_strength">Сила</string>
+    <string name="profile_strength_hint">ПМ можно не вводить: в пустом поле подсказкой видна оценка по Дневнику.</string>
     <string name="profile_max">ПМ: %1$s, кг</string>
     <string name="profile_program_mismatch">Не совпадает с профилем: %1$s</string>
     <string name="profile_program_progress">Сделано тренировок: %1$d из %2$d</string>
