@@ -13,6 +13,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -75,15 +76,29 @@ private fun StepRows(step: LadderStep) {
 @Composable
 private fun ExerciseRow(exercise: Exercise) {
     val zone = Planes.coreZone(exercise)
-    Text(
-        text = zone?.let { stringResource(R.string.planes_zone, exercise.title, it.title) } ?: exercise.title,
-        style = MaterialTheme.typography.bodyLarge,
-    )
-    Planes.discouraged[exercise]?.let {
+    Column {
         Text(
-            text = stringResource(R.string.planes_discouraged, it),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.error,
+            text = zone?.let { stringResource(R.string.planes_zone, exercise.title, it.title) } ?: exercise.title,
+            style = MaterialTheme.typography.bodyLarge,
         )
+        Planes.discouraged[exercise]?.let {
+            Text(
+                text = stringResource(R.string.planes_discouraged, it),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
+    }
+}
+
+/** Карточка в Циклах, открывающая справочник по плоскостям. */
+@Composable
+internal fun PlanesCard(onOpen: () -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(ScreenPadding), verticalArrangement = Arrangement.spacedBy(Gap)) {
+            Text(text = stringResource(R.string.planes_open), style = MaterialTheme.typography.titleMedium)
+            Text(text = stringResource(R.string.planes_card_hint), style = MaterialTheme.typography.bodySmall)
+            OutlinedButton(onClick = onOpen) { Text(stringResource(R.string.planes_open)) }
+        }
     }
 }

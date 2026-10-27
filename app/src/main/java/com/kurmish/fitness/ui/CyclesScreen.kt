@@ -299,14 +299,3 @@ private fun YearPlanCard(profile: Profile, today: Long, onProfileChange: (Profil
 
 private fun List<String>.swapped(from: Int, to: Int): List<String> =
     toMutableList().apply { Collections.swap(this, from, to) }
-
-@Composable
-private fun PlanesCard(onOpen: () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(ScreenPadding), verticalArrangement = Arrangement.spacedBy(Gap)) {
-            Text(text = stringResource(R.string.planes_open), style = MaterialTheme.typography.titleMedium)
-            Text(text = stringResource(R.string.planes_card_hint), style = MaterialTheme.typography.bodySmall)
-            OutlinedButton(onClick = onOpen) { Text(stringResource(R.string.planes_open)) }
-        }
-    }
-}
