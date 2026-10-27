@@ -50,12 +50,10 @@ private fun SectionCard(
     }
 }
 
-/** Тело: вес (он же взвешивание за сегодня), пол и процент жира или рост и возраст для его оценки. */
+/** Вес — его вводят чаще всего: это и взвешивание за сегодня. */
 @Composable
-internal fun BodyCard(profile: Profile, onWeight: (Double) -> Unit, onProfileChange: (Profile) -> Unit) {
-    val diet = profile.diet
-    val change = { settings: DietSettings -> onProfileChange(profile.copy(diet = settings)) }
-    SectionCard(title = stringResource(R.string.profile_body), hint = stringResource(R.string.profile_body_hint)) {
+internal fun WeightCard(profile: Profile, onWeight: (Double) -> Unit, onProfileChange: (Profile) -> Unit) {
+    SectionCard(title = stringResource(R.string.profile_weight), hint = stringResource(R.string.profile_weight_hint)) {
         NumberField(
             label = stringResource(R.string.profile_bodyweight),
             value = profile.bodyweightKg,
@@ -63,6 +61,15 @@ internal fun BodyCard(profile: Profile, onWeight: (Double) -> Unit, onProfileCha
                 if (kg != null && kg > 0) onWeight(kg) else onProfileChange(profile.copy(bodyweightKg = null))
             },
         )
+    }
+}
+
+/** Тело: пол и процент жира или рост и возраст для его оценки. */
+@Composable
+internal fun BodyCard(profile: Profile, onProfileChange: (Profile) -> Unit) {
+    val diet = profile.diet
+    val change = { settings: DietSettings -> onProfileChange(profile.copy(diet = settings)) }
+    SectionCard(title = stringResource(R.string.profile_body), hint = stringResource(R.string.profile_body_hint)) {
         ChoiceRow(
             title = stringResource(R.string.diet_sex),
             options = Sex.entries.map { it to it.title },
@@ -152,21 +159,17 @@ internal fun StrengthCard(data: AppData, today: Long, onProfileChange: (Profile)
     }
 }
 
-/** Настройки питания и, если питание включено, расчёт на сегодня. */
+/** Питание на сегодня, если оно включено; настройки питания ниже, среди редких. */
 @Composable
-internal fun DietSection(data: AppData, today: Long, diet: DietActions, onProfileChange: (Profile) -> Unit) {
-    val profile = data.profile
-    Column(verticalArrangement = Arrangement.spacedBy(Gap)) {
-        DietSettingsCard(profile = profile, today = today, onProfileChange = onProfileChange)
-        if (profile.diet.phase != DietPhase.Off) {
-            DietCard(
-                phase = profile.diet.phase,
-                day = remember(data, today) { FlexibleDiet.day(data, today) },
-                missing = FlexibleDiet.missing(data),
-                actions = diet,
-            )
-        }
-    }
+internal fun TodayDiet(data: AppData, today: Long, diet: DietActions) {
+    val phase = data.profile.diet.phase
+    if (phase == DietPhase.Off) return
+    DietCard(
+        phase = phase,
+        day = remember(data, today) { FlexibleDiet.day(data, today) },
+        missing = FlexibleDiet.missing(data),
+        actions = diet,
+    )
 }
 
 /** Вход в резервную копию Дневника. */

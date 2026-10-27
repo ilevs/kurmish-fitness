@@ -60,8 +60,8 @@ internal fun ProfileScreen(
 }
 
 /**
- * Профиль сверху вниз в порядке, в котором данные питают друг друга: тело → цель и график → программа →
- * сила → питание, а внизу резервная копия.
+ * Профиль сверху вниз по частоте: вес и питание на сегодня трогают почти каждый день, циклы и ПМ — раз в неделю
+ * или месяц, а цель, тело, настройки питания, тесты и резервную копию — редко.
  */
 @Composable
 private fun ProfileContent(
@@ -81,12 +81,14 @@ private fun ProfileContent(
             .padding(ScreenPadding),
         verticalArrangement = Arrangement.spacedBy(Gap),
     ) {
-        BodyCard(profile = data.profile, onWeight = onWeight, onProfileChange = onProfileChange)
-        GoalCard(profile = data.profile, onProfileChange = onProfileChange)
+        WeightCard(profile = data.profile, onWeight = onWeight, onProfileChange = onProfileChange)
+        TodayDiet(data = data, today = today, diet = diet)
         CyclesCard(data = data, today = today, onOpen = { onOpen(ProfilePage.Cycles) })
         StrengthCard(data = data, today = today, onProfileChange = onProfileChange)
+        GoalCard(profile = data.profile, onProfileChange = onProfileChange)
+        BodyCard(profile = data.profile, onProfileChange = onProfileChange)
+        DietSettingsCard(profile = data.profile, today = today, onProfileChange = onProfileChange)
         TestCard(data = data, today = today, onAgain = onTest)
-        DietSection(data = data, today = today, diet = diet, onProfileChange = onProfileChange)
         BackupEntryCard(onOpen = { onOpen(ProfilePage.Backup) })
     }
 }
