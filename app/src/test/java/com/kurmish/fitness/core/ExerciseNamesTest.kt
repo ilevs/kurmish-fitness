@@ -15,6 +15,31 @@ class ExerciseNamesTest {
     }
 
     @Test
+    fun bookExercisesResolveAndOldOnesKeepTheirPlace() {
+        assertEquals(Exercise.TBarRow, ExerciseNames.resolve("Тяга Т-грифа"))
+        assertEquals(Exercise.ZercherSquat, ExerciseNames.resolve("зерхер"))
+        assertEquals(Exercise.ReverseHyperextension, ExerciseNames.resolve("обратные гиперы"))
+        assertEquals(Exercise.OneArmDumbbellSnatch, ExerciseNames.resolve("рывок гантели"))
+        assertTrue(Exercise.PauseDeadlift.ordinal < Exercise.TPushUp.ordinal)
+        val parsed = WorkoutParser.parse("тяга штанги в наклоне обратным хватом 60 на 8, жим в смите сидя 40 на 10")
+        assertEquals(listOf(Exercise.UnderhandRow, Exercise.SmithShoulderPress), parsed.entries.map { it.exercise })
+        val old = WorkoutParser.parse("тяга штанги в наклоне 60 на 8, жим гантелей 20 на 10, мостик 3x15")
+        assertEquals(
+            listOf(Exercise.BentOverRow, Exercise.DumbbellPress, Exercise.GluteBridge),
+            old.entries.map { it.exercise },
+        )
+    }
+
+    @Test
+    fun everyMovementHasLadderOfSteps() {
+        val ladders = Movement.entries.filter { it != Movement.Arms }
+        ladders.forEach { movement ->
+            val levels = Exercise.entries.filter { it.movement == movement }.map { it.level }.toSet()
+            assertTrue("$movement", levels.size >= 4)
+        }
+    }
+
+    @Test
     fun suggestStartsWithTypedTextAndMatchesWords() {
         assertTrue(ExerciseNames.suggest("жим", emptyList()).contains("Жим лёжа"))
         assertTrue(ExerciseNames.suggest("лежа", emptyList()).contains("Жим лёжа"))
