@@ -24,7 +24,7 @@ class FitnessTestTest {
     @Test
     fun testWorkoutComesFirstAndDisappearsOnceDiaryHasWeights() {
         val fresh = AppData(FitnessTest.applyTo(Profile(), ShoulderTests(Grade.Poor, null)))
-        assertTrue(FitnessTest.needed(fresh))
+        assertTrue(FitnessTest.needed(fresh, today = 10))
         val plan = Planner.today(fresh, today = 10)
         assertEquals("Тестовая тренировка", plan.title)
         assertEquals(PlanPart.WarmUp, plan.items.first().part)
@@ -33,8 +33,18 @@ class FitnessTestTest {
         assertTrue(work.all { item -> item.notes.any { it.startsWith("Подводящие") } })
         val squat = ExerciseEntry(Exercise.Squat, sets = listOf(SetGroup(80.0, 6)))
         val recorded = fresh.copy(sessions = listOf(WorkoutSession(1, 10, "", listOf(squat))))
-        assertFalse(FitnessTest.needed(recorded))
-        assertFalse(FitnessTest.needed(AppData(Profile(manualMaxes = maxes))))
+        // В день теста план остаётся тестовым, пока его записываешь.
+        assertTrue(FitnessTest.needed(recorded, today = 10))
+        assertFalse(FitnessTest.needed(recorded, today = 11))
+        assertFalse(FitnessTest.needed(AppData(Profile(manualMaxes = maxes)), today = 10))
+    }
+
+    @Test
+    fun testWorkoutCanBeScheduledForToday() {
+        val started = AppData(Profile(manualMaxes = maxes, testEpochDay = 10))
+        assertTrue(FitnessTest.needed(started, today = 10))
+        assertEquals("Тестовая тренировка", Planner.today(started, today = 10).title)
+        assertFalse(FitnessTest.needed(started, today = 11))
     }
 
     @Test

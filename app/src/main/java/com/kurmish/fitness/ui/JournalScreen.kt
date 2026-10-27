@@ -4,16 +4,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -42,8 +39,8 @@ import com.kurmish.fitness.core.previousSets
 import kotlin.math.roundToInt
 
 /**
- * Дневник: сверху строка ввода тренировки текстом или голосом, под ней план на сегодня, ниже записи,
- * новые первыми.
+ * Дневник: сверху строка ввода тренировки текстом или голосом, под ней сегодняшняя тренировка с подходами,
+ * ниже прошлые записи, новые первыми. Прошлая запись открывается в редакторе.
  * Запись и план открываются в редакторе.
  */
 @Composable
@@ -58,6 +55,7 @@ internal fun JournalScreen(
     }
     var editing by remember { mutableStateOf<SessionDraft?>(null) }
     val customNames = remember(data) { data.customExerciseNames() }
+    val suggest = { query: String -> ExerciseNames.suggest(query, customNames) }
     val loads = remember(data, today) {
         data.sessions.associate { session ->
             session.id to LoadCalculator.session(session, data.profile.bodyweightKg) { data.loadMax(it, today) }
@@ -73,16 +71,19 @@ internal fun JournalScreen(
             TodayPlan(
                 data = data,
                 today = today,
+                suggest = suggest,
                 onSpeak = actions.onSpeak,
                 onChoose = actions.onChoose,
-                onRecordPlan = { plan ->
-                    val existing = data.sessions.filter { it.epochDay == today }.maxByOrNull { it.id }
-                    editing = SessionDraft.fromPlan(plan, today, existing)
-                },
-                dietActions = actions.diet,
+                onTest = actions.onTest,
+                onSave = actions.onSave,
+                onDelete = actions.onDelete,
             )
         }
-        item(key = "add") { AddButton(empty = sessions.isEmpty(), onClick = { editing = SessionDraft.new(today) }) }
+        if (sessions.isNotEmpty()) {
+            item(key = "history") {
+                Text(text = stringResource(R.string.journal_history), style = MaterialTheme.typography.titleMedium)
+            }
+        }
         items(sessions, key = { it.id }) { session ->
             SessionCard(
                 session = session,
@@ -92,22 +93,32 @@ internal fun JournalScreen(
             )
         }
     }
-    editing?.let { draft ->
-        SessionEditor(
-            initial = draft,
-            suggest = { query -> ExerciseNames.suggest(query, customNames) },
-            previous = { entry, epochDay -> data.previousSets(entry, epochDay, draft.id) },
-            onSave = { session ->
-                actions.onSave(session)
-                editing = null
-            },
-            onDelete = {
-                actions.onDelete(draft.id)
-                editing = null
-            }.takeIf { draft.id != 0L },
-            onDismiss = { editing = null },
-        )
-    }
+    editing?.let { draft -> PastEditor(draft, data, suggest, actions) { editing = null } }
+}
+
+/** Редактор прошлой записи [draft]; [onClose] закрывает его после сохранения, удаления или отмены. */
+@Composable
+private fun PastEditor(
+    draft: SessionDraft,
+    data: AppData,
+    suggest: (String) -> List<String>,
+    actions: JournalActions,
+    onClose: () -> Unit,
+) {
+    SessionEditor(
+        initial = draft,
+        suggest = suggest,
+        previous = { entry, epochDay -> data.previousSets(entry, epochDay, draft.id) },
+        onSave = { session ->
+            actions.onSave(session)
+            onClose()
+        },
+        onDelete = {
+            actions.onDelete(draft.id)
+            onClose()
+        }.takeIf { draft.id != 0L },
+        onDismiss = onClose,
+    )
 }
 
 /**
@@ -118,7 +129,6 @@ internal fun JournalScreen(
  * @property onDelete удалить запись по номеру.
  * @property onSpeak озвучить текст.
  * @property onChoose заменить упражнение плана на цикл; null возвращает исходное.
- * @property diet действия карточки питания.
  */
 internal class JournalActions(
     val onRecord: (String, ParsedWorkout) -> Unit,
@@ -126,24 +136,8 @@ internal class JournalActions(
     val onDelete: (Long) -> Unit,
     val onSpeak: (String) -> Unit,
     val onChoose: (slot: String, exercise: Exercise?) -> Unit,
-    val diet: DietActions,
+    val onTest: (Boolean) -> Unit,
 )
-
-@Composable
-private fun AddButton(empty: Boolean, onClick: () -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(Gap)) {
-        FilledTonalButton(onClick = onClick) {
-            Icon(painterResource(R.drawable.ic_add), contentDescription = null)
-            Spacer(Modifier.width(Gap))
-            Text(stringResource(R.string.journal_add))
-        }
-        Text(
-            text = stringResource(if (empty) R.string.journal_empty else R.string.journal_edit_hint),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
 
 @Composable
 private fun SessionCard(session: WorkoutSession, load: LoadMetrics?, onEdit: () -> Unit, onDelete: () -> Unit) {

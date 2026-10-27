@@ -8,8 +8,6 @@
   <string name="diet_refeed_done">Рефид сделан</string>
   <string name="diet_apply">Применить</string>
   <string name="diet_back_to_deficit">Вернуться к сбросу жира</string>
-  <string name="diet_weight">Вес сегодня, кг</string>
-  <string name="diet_weight_save">Записать вес</string>
   <string name="diet_settings">Питание</string>
   <string name="diet_settings_intro">Фаза питания меняет калории, советы и план тренировок. Процент жира можно не вводить: тогда он оценивается по росту и возрасту.</string>
   <string name="diet_phase">Фаза</string>

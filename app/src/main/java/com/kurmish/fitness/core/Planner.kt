@@ -18,7 +18,7 @@ object Planner {
         val position = Macrocycle.position(data.profile, before, today)
         val period = YearPlan.position(data.profile.yearPlanStartEpochDay, today)?.period.takeIf { position == null }
         val program = when {
-            FitnessTest.needed(data) -> FitnessTest.plan(data.profile)
+            FitnessTest.needed(data, today) -> FitnessTest.plan(data.profile)
             position != null -> programPlan(position, data, today)
             else -> BasicTemplate.plan(data, today, before.size)
         }
@@ -32,8 +32,7 @@ object Planner {
                 note = listOfNotNull(body.note, Pace.LEGEND).joinToString(" "),
             )
         }
-        val dietNote = FlexibleDiet.day(data, today)?.let(DietAdvice::planNote) ?: return planned
-        return planned.copy(note = listOfNotNull(planned.note, dietNote).joinToString(" "))
+        return planned
     }
 
     /** Добавляет темп и отдых, если программа их не задала. */

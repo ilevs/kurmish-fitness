@@ -20,10 +20,13 @@ data class SetDraft(val weight: String = "", val reps: String = "", val done: Bo
     val repsInvalid: Boolean
         get() = reps.trim().toIntOrNull()?.takeIf { it in 1..MAX_REPS } == null
 
-    /** Новые вес и повторы: подход с правильными повторами сразу считается сделанным. */
+    /**
+     * Новые вес и повторы. Вписал повторы в пустую строку — подход сделан и отмечается сам; поправка веса
+     * или повторов, подставленных из плана, отметку не меняет.
+     */
     fun edited(weight: String = this.weight, reps: String = this.reps): SetDraft {
         val changed = copy(weight = weight, reps = reps)
-        return changed.copy(done = !changed.repsInvalid)
+        return changed.copy(done = done || repsInvalid && !changed.repsInvalid)
     }
 
     /** Подход отмечен, но записать его нельзя. */
@@ -193,15 +196,21 @@ data class SessionDraft(
 
         /**
          * Черновик записи по плану [plan] на день [epochDay]. Если за этот день уже есть запись [existing],
-         * открывается она, а в конец добавляются ещё не записанные упражнения плана.
+         * открывается она: к записанным упражнениям плана добавляются ещё не сделанные подходы, а в конец —
+         * ещё не записанные упражнения.
          */
         fun fromPlan(plan: DayPlan, epochDay: Long, existing: WorkoutSession?): SessionDraft {
             val base = existing?.let(::of) ?: new(epochDay).copy(entries = emptyList())
-            val recorded = existing?.entries.orEmpty()
-            val planned = plan.items
-                .filter { it.part == PlanPart.Work && it.recordedIn(recorded).isEmpty() }
+            val work = plan.items.filter { it.part == PlanPart.Work }
+            val recorded = base.entries.map { entry ->
+                val item = work.firstOrNull { it.exercise != null && it.exercise == entry.exercise }
+                val rest = item?.let { EntryDraft.planned(it).sets.drop(entry.sets.size) }.orEmpty()
+                entry.copy(sets = entry.sets + rest)
+            }
+            val planned = work
+                .filter { it.recordedIn(existing?.entries.orEmpty()).isEmpty() }
                 .map(EntryDraft::planned)
-            return base.copy(entries = (base.entries + planned).ifEmpty { listOf(EntryDraft.empty()) })
+            return base.copy(entries = (recorded + planned).ifEmpty { listOf(EntryDraft.empty()) })
         }
 
         /** Черновик из записи Дневника. */
@@ -246,8 +255,61 @@ fun AppData.previousSets(entry: EntryDraft, epochDay: Long, excludeId: Long): Li
         .orEmpty()
 }
 
+/**
+ * Какое упражнение черновика относится к какому рабочему пункту плана [plan]: номер пункта → номер
+ * упражнения. Упражнения без пары — сделанные сверх плана.
+ */
+fun SessionDraft.matchPlan(plan: DayPlan): Map<Int, Int> {
+    val taken = mutableSetOf<Int>()
+    return plan.items.withIndex()
+        .filter { it.value.part == PlanPart.Work }
+        .mapNotNull { (itemIndex, item) ->
+            entries.indices.firstOrNull { it !in taken && entries[it].matches(item) }?.let { entryIndex ->
+                taken += entryIndex
+                itemIndex to entryIndex
+            }
+        }
+        .toMap()
+}
+
+private fun EntryDraft.matches(item: PlanItem): Boolean = if (item.exercise != null) {
+    exercise == item.exercise
+} else {
+    exercise == null && customName.trim().equals(item.title, ignoreCase = true)
+}
+
 /** Удаляет запись. */
 fun AppData.withoutSession(id: Long): AppData = copy(sessions = sessions.filterNot { it.id == id })
+
+/**
+ * Записывает разобранный текст [rawText] за день [today] со сдвигом «вчера» и «позавчера». Если за этот день
+ * уже есть тренировка, текст дописывается в неё: подходы того же упражнения добавляются к нему, новые
+ * упражнения — в конец. Так сказанное голосом ложится на сегодняшний план и уже отмеченные подходы.
+ */
+fun AppData.withRecorded(parsed: ParsedWorkout, rawText: String, today: Long): AppData {
+    val fresh = parsed.toSession(rawText, today)
+    val existing = sessions.filter { it.epochDay == fresh.epochDay }.maxByOrNull { it.id } ?: return withSaved(fresh)
+    val entries = fresh.entries.fold(existing.entries) { acc, entry ->
+        val index = acc.indexOfFirst { it.sameExercise(entry) }
+        if (index < 0) {
+            acc + entry
+        } else {
+            acc.mapIndexed { i, old -> if (i == index) old.copy(sets = old.sets + entry.sets) else old }
+        }
+    }
+    val merged = existing.copy(
+        rawText = listOf(existing.rawText, fresh.rawText).filter { it.isNotBlank() }.joinToString(", "),
+        entries = entries,
+        feeling = if (fresh.feeling == Feeling.Normal) existing.feeling else fresh.feeling,
+    )
+    return withSaved(merged)
+}
+
+private fun ExerciseEntry.sameExercise(other: ExerciseEntry): Boolean = if (exercise != null) {
+    exercise == other.exercise
+} else {
+    other.exercise == null && customName.orEmpty().equals(other.customName.orEmpty(), ignoreCase = true)
+}
 
 /** Новая запись из разобранного текста: дата — [today] со сдвигом «вчера» и «позавчера». */
 fun ParsedWorkout.toSession(rawText: String, today: Long): WorkoutSession = WorkoutSession(

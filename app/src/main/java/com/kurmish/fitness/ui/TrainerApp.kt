@@ -25,7 +25,6 @@ import com.kurmish.fitness.backup.DriveBackupViewModel
 import com.kurmish.fitness.backup.FileBackupViewModel
 import com.kurmish.fitness.core.AppData
 import com.kurmish.fitness.core.Profile
-import com.kurmish.fitness.core.toSession
 import com.kurmish.fitness.ui.voice.Speaker
 import com.kurmish.fitness.ui.voice.rememberSpeaker
 
@@ -71,15 +70,15 @@ fun TrainerApp(
         when (tab) {
             Tab.Journal -> JournalScreen(
                 data = data,
-                today = viewModel.today(),
+                today = viewModel.today,
                 actions = viewModel.journalActions(data, speaker),
                 modifier = content,
             )
-            Tab.Cycles -> CyclesScreen(data, viewModel.today(), viewModel::updateProfile, modifier = content)
-            Tab.Stats -> StatsScreen(data = data, today = viewModel.today(), modifier = content)
+            Tab.Cycles -> CyclesScreen(data, viewModel.today, viewModel::updateProfile, modifier = content)
+            Tab.Stats -> StatsScreen(data = data, today = viewModel.today, modifier = content)
             Tab.Profile -> ProfileScreen(
                 data = data,
-                today = viewModel.today(),
+                today = viewModel.today,
                 backup = backup,
                 onProfileChange = viewModel::updateProfile,
                 onBackupConnect = backupViewModel::connect,
@@ -88,12 +87,14 @@ fun TrainerApp(
                 onBackupDisconnect = backupViewModel::disconnect,
                 files = fileBackups(driveViewModel, fileViewModel, viewModel::restore),
                 onTest = { testing = true },
+                onWeight = viewModel::logWeight,
+                diet = viewModel.dietActions(),
                 modifier = content,
             )
         }
     }
     if (testing || needsTest(data, loaded)) {
-        FirstTest(data, viewModel.today(), viewModel::updateProfile) { testing = false }
+        FirstTest(data, viewModel.today, viewModel::updateProfile) { testing = false }
     }
 }
 
@@ -149,18 +150,17 @@ private fun FileBackupViewModel.actions(onRestored: (AppData) -> Unit) = FileAct
 
 private fun TrainerViewModel.journalActions(data: AppData, speaker: Speaker) = JournalActions(
     onRecord = { text, parsed ->
-        saveWorkout(parsed.toSession(text, today()))
+        recordWorkout(text, parsed)
         speaker.speak(parsed.summary())
     },
     onSave = ::saveWorkout,
     onDelete = ::deleteWorkout,
     onSpeak = speaker::speak,
     onChoose = { slot, exercise -> updateProfile(data.profile.choose(slot, exercise)) },
-    diet = dietActions(),
+    onTest = { on -> updateProfile(data.profile.copy(testEpochDay = today.takeIf { on })) },
 )
 
 private fun TrainerViewModel.dietActions() = DietActions(
-    onLogWeight = ::logWeight,
     onRefeedDone = ::markRefeed,
     onApplyCorrection = ::applyCalorieCorrection,
     onPhaseChange = ::changeDietPhase,
