@@ -18,12 +18,13 @@ import com.kurmish.fitness.R
 import com.kurmish.fitness.core.Exercise
 import com.kurmish.fitness.core.Movement
 import com.kurmish.fitness.core.PlanItem
+import com.kurmish.fitness.core.Planes
 
 private val RowPadding = 8.dp
 
 /**
- * Выбор упражнения на замену: сначала того же типа движения, от простых к сложным, ниже остальные
- * по типам. Если тип исходного упражнения неизвестен, показываются все.
+ * Выбор упражнения на замену: сначала той же плоскости, по ступеням от простых к сложным, ниже остальные
+ * по плоскостям. Если тип исходного упражнения неизвестен, показываются все.
  */
 @Composable
 internal fun ReplacementPicker(item: PlanItem, onPick: (Exercise) -> Unit, onDismiss: () -> Unit) {
@@ -44,13 +45,18 @@ internal fun ReplacementPicker(item: PlanItem, onPick: (Exercise) -> Unit, onDis
                 Text(text = stringResource(R.string.picker_hint), style = MaterialTheme.typography.bodySmall)
                 groups.forEach { (movement, exercises) ->
                     Text(
-                        text = movement.title,
+                        text = movement.plane,
                         style = MaterialTheme.typography.titleSmall,
                         modifier = Modifier.padding(top = Gap),
                     )
                     exercises.forEach { exercise ->
+                        val label = if (exercise in Planes.discouraged) {
+                            R.string.picker_step_discouraged
+                        } else {
+                            R.string.picker_step
+                        }
                         Text(
-                            text = exercise.title,
+                            text = stringResource(label, exercise.title, exercise.level),
                             style = MaterialTheme.typography.bodyLarge,
                             modifier = Modifier
                                 .fillMaxWidth()

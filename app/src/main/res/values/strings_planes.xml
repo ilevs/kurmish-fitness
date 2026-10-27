@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="planes_open">Упражнения по плоскостям</string>
+    <string name="planes_card_hint">Справочник базы: каждый тип движения как лестница из шести ступеней.</string>
+    <string name="planes_hint">Ступень 1 — самая простая (тренажёр, опора, изометрия), 5 — самая весовая, 6 — одностороннее и самое сложное технически. У вращения наружу самая весовая — 4. Переходить по ступеням постепенно. В тренировке по одному упражнению каждой плоскости, жимы уравновешиваются тягами, колено тазом.</string>
+    <string name="planes_step">Ступень %1$d</string>
+    <string name="planes_zone">%1$s · %2$s кор</string>
+    <string name="planes_discouraged">Не советуется: %1$s</string>
+    <string name="picker_step">%1$s · ступень %2$d</string>
+    <string name="picker_step_discouraged">%1$s · ступень %2$d · не советуется</string>
+</resources>
