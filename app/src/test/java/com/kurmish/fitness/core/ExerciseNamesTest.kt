@@ -18,6 +18,7 @@ class ExerciseNamesTest {
     fun bookExercisesResolveAndOldOnesKeepTheirPlace() {
         assertEquals(Exercise.TBarRow, ExerciseNames.resolve("Тяга Т-грифа"))
         assertEquals(Exercise.ZercherSquat, ExerciseNames.resolve("зерхер"))
+        assertEquals(Exercise.ReverseHyperextension, ExerciseNames.resolve("обратные гиперы"))
         assertEquals(Exercise.OneArmDumbbellSnatch, ExerciseNames.resolve("рывок гантели"))
         assertTrue(Exercise.PauseDeadlift.ordinal < Exercise.TPushUp.ordinal)
         val parsed = WorkoutParser.parse("тяга штанги в наклоне обратным хватом 60 на 8, жим в смите сидя 40 на 10")

@@ -744,6 +744,13 @@ enum class Exercise(
         level = 1,
         synonyms = listOf("вис на перекладине", "вис на полотенце"),
     ),
+    ReverseHyperextension(
+        "Обратная гиперэкстензия",
+        bodyweight = true,
+        movement = Movement.Hinge,
+        level = 2,
+        synonyms = listOf("обратная гиперэкстензия", "обратные гиперэкстензии", "обратные гиперы"),
+    ),
     ;
 
     /**
@@ -785,6 +792,7 @@ enum class Exercise(
             KneePushUp, LateralRaise, FacePull, ExternalRotation, ReverseFly, Plank, ReverseCrunch, SidePlank,
             Pullover, StandingCalfRaise, SeatedCalfRaise, TPushUp, DeclinePushUp, SingleLegGluteBridge,
             LRaise, StomachVacuum, SideCrunch, FitballCrunch, Woodchopper, SideBend, DeadHang,
+            ReverseHyperextension,
         )
 
         private val barbells = setOf(
