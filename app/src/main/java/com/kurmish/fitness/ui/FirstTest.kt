@@ -37,7 +37,7 @@ import com.kurmish.fitness.core.Grade
 import com.kurmish.fitness.core.Profile
 import com.kurmish.fitness.core.WorkoutSession
 
-private val TestDays = listOf(2, 3, 4, 5)
+private val TestDays = (1..7).toList()
 
 /**
  * Первичное тестирование: цель, тесты подвижности плеч и лучшие подходы в базовых упражнениях. Открывается
