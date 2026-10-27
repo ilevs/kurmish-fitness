@@ -21,6 +21,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kurmish.fitness.R
 import com.kurmish.fitness.backup.BackupViewModel
+import com.kurmish.fitness.backup.DriveBackupViewModel
+import com.kurmish.fitness.backup.FileBackupViewModel
+import com.kurmish.fitness.core.AppData
 import com.kurmish.fitness.core.toSession
 import com.kurmish.fitness.ui.voice.rememberSpeaker
 
@@ -36,10 +39,10 @@ private enum class Tab(@StringRes val label: Int, @DrawableRes val icon: Int) {
 @Composable
 fun TrainerApp(
     modifier: Modifier = Modifier,
-    viewModel: TrainerViewModel = viewModel(
-        factory = TrainerViewModel.Factory
-    ),
+    viewModel: TrainerViewModel = viewModel(factory = TrainerViewModel.Factory),
     backupViewModel: BackupViewModel = viewModel(),
+    driveViewModel: DriveBackupViewModel = viewModel(),
+    fileViewModel: FileBackupViewModel = viewModel(),
 ) {
     val data by viewModel.data.collectAsState()
     val backup by backupViewModel.ui.collectAsState()
@@ -78,12 +81,7 @@ fun TrainerApp(
                 ),
                 modifier = content,
             )
-            Tab.Cycles -> CyclesScreen(
-                data = data,
-                today = viewModel.today(),
-                onProfileChange = viewModel::updateProfile,
-                modifier = content,
-            )
+            Tab.Cycles -> CyclesScreen(data, viewModel.today(), viewModel::updateProfile, modifier = content)
             Tab.Stats -> StatsScreen(data = data, today = viewModel.today(), modifier = content)
             Tab.Profile -> ProfileScreen(
                 data = data,
@@ -94,11 +92,37 @@ fun TrainerApp(
                 onBackupNow = backupViewModel::backupNow,
                 onRestore = { backupViewModel.restore(viewModel::restore) },
                 onBackupDisconnect = backupViewModel::disconnect,
+                files = fileBackups(driveViewModel, fileViewModel, viewModel::restore),
                 modifier = content,
             )
         }
     }
 }
+
+@Composable
+private fun fileBackups(
+    drive: DriveBackupViewModel,
+    file: FileBackupViewModel,
+    onRestore: (AppData) -> Unit,
+): FileBackups {
+    val driveState by drive.ui.collectAsState()
+    val status by file.status.collectAsState()
+    return FileBackups(driveState, drive.actions(onRestore), status, file.actions(onRestore))
+}
+
+private fun DriveBackupViewModel.actions(onRestored: (AppData) -> Unit) = DriveActions(
+    onCreate = ::create,
+    onRestoreFrom = { restoreFrom(it, onRestored) },
+    onBackup = ::backupNow,
+    onRestore = { restore(onRestored) },
+    onUnlink = ::unlink,
+)
+
+private fun FileBackupViewModel.actions(onRestored: (AppData) -> Unit) = FileActions(
+    onExport = ::exportTo,
+    onImport = { importFrom(it, onRestored) },
+    onShare = ::prepareShare,
+)
 
 private fun TrainerViewModel.dietActions() = DietActions(
     onLogWeight = ::logWeight,
