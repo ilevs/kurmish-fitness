@@ -43,7 +43,8 @@ class LoadTest {
     @Test
     fun assistedPullUpCountsBodyweightMinusCounterweight() {
         val sets = listOf(SetGroup(40.0, 20))
-        val withBody = LoadCalculator.session(session(ExerciseEntry(Exercise.AssistedPullUp, sets = sets)), 80.0) { null }
+        val assisted = session(ExerciseEntry(Exercise.AssistedPullUp, sets = sets))
+        val withBody = LoadCalculator.session(assisted, 80.0) { null }
         assertEquals(800.0, withBody.tonnageKg, 0.0)
         assertEquals(40.0, withBody.averageKg, 0.0)
         val pullUps = LoadCalculator.session(
@@ -52,7 +53,6 @@ class LoadTest {
         ) { 100.0 }
         assertEquals(1250.0, pullUps.tonnageKg, 0.0)
         assertEquals(0.8333, pullUps.relativeIntensity!!, 1e-3)
-        val unknownBody = session(ExerciseEntry(Exercise.AssistedPullUp, sets = sets))
-        assertEquals(20.0, LoadCalculator.session(unknownBody) { null }.tonnageKg, 0.0)
+        assertEquals(20.0, LoadCalculator.session(assisted) { null }.tonnageKg, 0.0)
     }
 }

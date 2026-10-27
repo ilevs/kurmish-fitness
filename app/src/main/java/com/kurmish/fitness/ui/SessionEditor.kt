@@ -1,7 +1,5 @@
 package com.kurmish.fitness.ui
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,11 +12,9 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
@@ -34,13 +30,9 @@ import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -52,7 +44,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -61,15 +52,12 @@ import com.kurmish.fitness.R
 import com.kurmish.fitness.core.EntryDraft
 import com.kurmish.fitness.core.Feeling
 import com.kurmish.fitness.core.SessionDraft
-import com.kurmish.fitness.core.SetDraft
 import com.kurmish.fitness.core.SetGroup
 import com.kurmish.fitness.core.WorkoutParser
 import com.kurmish.fitness.core.WorkoutSession
 
 private const val MillisInDay = 86_400_000L
-private val NumberWidth = 28.dp
 private val SmallGap = 8.dp
-private const val PreviousWeight = 1.3f
 
 /**
  * Полноэкранный редактор записи Дневника. Как в современных трекерах: упражнение и его подходы — одна
@@ -328,159 +316,6 @@ private fun ExerciseField(
             }
         }
     }
-}
-
-@Composable
-private fun SetHeader() {
-    val style = MaterialTheme.typography.labelMedium
-    val color = MaterialTheme.colorScheme.onSurfaceVariant
-    Row(horizontalArrangement = Arrangement.spacedBy(SmallGap), verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            text = stringResource(R.string.editor_set_number),
-            modifier = Modifier.width(NumberWidth),
-            color = color,
-            textAlign = TextAlign.Center,
-            style = style,
-        )
-        Text(
-            text = stringResource(R.string.editor_previous),
-            modifier = Modifier.weight(PreviousWeight),
-            color = color,
-            style = style,
-        )
-        Text(
-            text = stringResource(R.string.editor_weight),
-            modifier = Modifier.weight(1f),
-            color = color,
-            textAlign = TextAlign.Center,
-            style = style,
-        )
-        Text(
-            text = stringResource(R.string.editor_reps),
-            modifier = Modifier.weight(1f),
-            color = color,
-            textAlign = TextAlign.Center,
-            style = style,
-        )
-        Text(
-            text = "✓",
-            modifier = Modifier.minimumInteractiveComponentSize(),
-            color = color,
-            textAlign = TextAlign.Center,
-            style = style,
-        )
-    }
-}
-
-/**
- * Подход строкой: номер, прошлый раз (нажатие переносит его в поля), вес, повторы и отметка «сделан».
- * Свайп в сторону удаляет подход.
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun SetRow(
-    number: Int,
-    set: SetDraft,
-    previous: SetGroup?,
-    onChange: (SetDraft) -> Unit,
-    onRemove: () -> Unit,
-) {
-    val swipe = rememberSwipeToDismissBoxState(
-        confirmValueChange = { value ->
-            if (value != SwipeToDismissBoxValue.Settled) onRemove()
-            value != SwipeToDismissBoxValue.Settled
-        },
-    )
-    SwipeToDismissBox(state = swipe, backgroundContent = { RemoveBackground() }) {
-        val background = if (set.done) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(background, MaterialTheme.shapes.small),
-            horizontalArrangement = Arrangement.spacedBy(SmallGap),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = number.toString(),
-                modifier = Modifier.width(NumberWidth),
-                textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.titleSmall,
-            )
-            PreviousCell(previous = previous, onUse = onChange, modifier = Modifier.weight(PreviousWeight))
-            NumberField(
-                value = set.weight,
-                placeholder = stringResource(R.string.editor_weight_own),
-                error = set.done && set.weightInvalid,
-                decimal = true,
-                onChange = { onChange(set.edited(weight = it)) },
-                modifier = Modifier.weight(1f),
-            )
-            NumberField(
-                value = set.reps,
-                placeholder = previous?.reps?.toString().orEmpty(),
-                error = set.broken && set.repsInvalid,
-                onChange = { onChange(set.edited(reps = it)) },
-                modifier = Modifier.weight(1f),
-            )
-            Checkbox(checked = set.done, onCheckedChange = { onChange(set.copy(done = it)) })
-        }
-    }
-}
-
-@Composable
-private fun PreviousCell(previous: SetGroup?, onUse: (SetDraft) -> Unit, modifier: Modifier = Modifier) {
-    val text = previous?.label() ?: "—"
-    Text(
-        text = text,
-        modifier = modifier.clickable(enabled = previous != null) {
-            previous?.let {
-                val weight = it.weightKg?.let(SetDraft::formatWeight).orEmpty()
-                onUse(SetDraft(weight = weight, reps = it.reps.toString(), done = true))
-            }
-        },
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        maxLines = 1,
-    )
-}
-
-@Composable
-private fun RemoveBackground() {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.errorContainer, MaterialTheme.shapes.small)
-            .padding(horizontal = Gap),
-        contentAlignment = Alignment.CenterEnd,
-    ) {
-        Icon(
-            painter = painterResource(R.drawable.ic_delete),
-            contentDescription = stringResource(R.string.editor_remove_set),
-            tint = MaterialTheme.colorScheme.onErrorContainer,
-        )
-    }
-}
-
-@Composable
-private fun NumberField(
-    value: String,
-    error: Boolean,
-    onChange: (String) -> Unit,
-    modifier: Modifier = Modifier,
-    placeholder: String = "",
-    decimal: Boolean = false,
-) {
-    val centered = MaterialTheme.typography.bodyLarge.copy(textAlign = TextAlign.Center)
-    OutlinedTextField(
-        value = value,
-        onValueChange = onChange,
-        modifier = modifier,
-        textStyle = centered,
-        placeholder = { Text(placeholder, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
-        isError = error,
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(keyboardType = if (decimal) KeyboardType.Decimal else KeyboardType.Number),
-    )
 }
 
 @Composable
