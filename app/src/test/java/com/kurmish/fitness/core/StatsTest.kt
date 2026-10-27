@@ -2,6 +2,7 @@ package com.kurmish.fitness.core
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -89,6 +90,42 @@ class StatsTest {
         assertEquals(16, balance[Movement.VerticalPull])
         assertEquals(0, balance[Movement.Squat])
         assertEquals(Movement.entries.size, balance.size)
+    }
+
+    @Test
+    fun balanceIssuesFollowOppositePairs() {
+        val balance = Movement.entries.associateWith { 0 } + mapOf(
+            Movement.HorizontalPush to 30,
+            Movement.HorizontalPull to 15,
+            Movement.VerticalPush to 20,
+            Movement.VerticalPull to 10,
+            Movement.Squat to 10,
+        )
+        val issues = Stats.balanceIssues(balance)
+        assertEquals(
+            listOf(
+                BalanceIssue.Excess(Movement.HorizontalPush, Movement.HorizontalPull),
+                BalanceIssue.Missing(Movement.Hinge),
+                BalanceIssue.Missing(Movement.Rotation),
+                BalanceIssue.Missing(Movement.Core),
+            ),
+            issues,
+        )
+        // Больше вертикальных жимов, чем тяг, — допустимый перекос, о нём не предупреждаем.
+        assertTrue(issues.none { it is BalanceIssue.Excess && it.more == Movement.VerticalPush })
+    }
+
+    @Test
+    fun balancedWeekHasNoIssuesAndCalvesAreIgnored() {
+        val balance = Movement.entries.associateWith { 10 }
+        assertTrue(Stats.balanceIssues(balance).isEmpty())
+        assertTrue(Stats.balanceIssues(Movement.entries.associateWith { 0 }).isEmpty())
+        val calves = AppData(
+            sessions = listOf(
+                session(1, monday, ExerciseEntry(Exercise.StandingCalfRaise, sets = listOf(SetGroup(50.0, 20, 3)))),
+            ),
+        )
+        assertEquals(0, Stats.balance(calves, today = monday)[Movement.Squat])
     }
 
     @Test

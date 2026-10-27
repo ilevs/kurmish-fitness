@@ -25,7 +25,9 @@
   <string name="stats_intensity_hint">Средний процент от ПМ по упражнениям, для которых ПМ известен.</string>
   <string name="stats_balance_title">Баланс движений за 4 недели</string>
   <string name="stats_balance_empty">Нет узнанных упражнений за этот период.</string>
-  <string name="stats_balance_more_push">Повторений в жимах заметно больше, чем в тягах. Добавьте тяги, чтобы плечи оставались здоровыми.</string>
-  <string name="stats_balance_more_pull">Повторений в тягах заметно больше, чем в жимах. Можно добавить жимы.</string>
-  <string name="stats_balance_ok">Жимы и тяги в равновесии.</string>
+  <string name="stats_balance_excess">Повторений в «%1$s» заметно больше, чем в «%2$s». Добавьте «%2$s»: противоположные движения уравнивают по числу повторов, иначе страдают суставы и осанка.</string>
+  <string name="stats_balance_missing">Нет ни одного упражнения «%1$s», хотя противоположные есть. Добавьте хотя бы одно.</string>
+  <string name="stats_balance_no_rotation">Нет упражнений на вращение плеча наружу. Добавьте лицевую тягу, обратные разводки или вращения наружу: они уравновешивают жимы и тяги и берегут плечи.</string>
+  <string name="stats_balance_no_core">Нет упражнений на пресс и кор. Добавьте планку, боковую планку или гиперэкстензию на фитболе.</string>
+  <string name="stats_balance_ok">Плоскости в равновесии: жимы и тяги, колено и таз, есть вращение плеча наружу и кор.</string>
 </resources>
