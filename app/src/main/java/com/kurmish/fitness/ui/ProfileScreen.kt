@@ -49,6 +49,7 @@ internal fun ProfileScreen(
     onBackupNow: () -> Unit,
     onRestore: () -> Unit,
     onBackupDisconnect: () -> Unit,
+    files: FileBackups,
     modifier: Modifier = Modifier
 ) {
     val profile = data.profile
@@ -103,6 +104,8 @@ internal fun ProfileScreen(
             onRestore = onRestore,
             onDisconnect = onBackupDisconnect,
         )
+        DriveBackupCard(state = files.drive, actions = files.driveActions)
+        FileBackupCard(status = files.status, actions = files.actions)
     }
 }
 

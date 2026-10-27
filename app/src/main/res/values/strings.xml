@@ -135,4 +135,21 @@
     <string name="backup_offline">Нет связи с Диском. Копия уйдёт сама, когда появится интернет.</string>
     <string name="backup_wrong_password">Яндекс Диск не принял логин или пароль приложения. Проверьте их и подключите заново.</string>
     <string name="backup_last">Последняя копия: %1$s</string>
+    <string name="drive_title">Бэкап на Google Диск</string>
+    <string name="drive_intro">Копия Дневника хранится в файле на вашем Google Диске и обновляется сама после каждой записи. Нужно приложение Google Диск: в окне выбора откройте меню ☰ и выберите Диск. Без интернета Диск отправит файл позже.</string>
+    <string name="drive_create">Создать файл на Диске</string>
+    <string name="drive_choose">Восстановить с Диска</string>
+    <string name="drive_linked">Копия Дневника обновляется в файле «%1$s» на Google Диске после каждой записи.</string>
+    <string name="files_title">Копия в файл</string>
+    <string name="files_intro">Сохраните копию Дневника в любую папку или отправьте её в Telegram: в меню «Поделиться» выберите Telegram и «Избранное».</string>
+    <string name="files_save">Сохранить в файл</string>
+    <string name="files_load">Загрузить из файла</string>
+    <string name="files_share">Поделиться копией</string>
+    <string name="files_share_title">Копия Дневника</string>
+    <string name="files_restore_text">Дневник и профиль на этом телефоне заменятся копией из выбранного файла.</string>
+    <string name="files_working">Работаю с файлом…</string>
+    <string name="files_saved">Копия сохранена.</string>
+    <string name="files_bad">Файл не похож на Дневник, восстановить не получилось.</string>
+    <string name="files_failed">Файл не открылся. Выберите его заново.</string>
+    <string name="files_empty">Дневник пока пуст, сохранять нечего.</string>
 </resources>

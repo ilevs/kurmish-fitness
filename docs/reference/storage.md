@@ -51,6 +51,10 @@
 
 `epochDay`, `programStartEpochDay`, `phaseStartEpochDay` и `refeedDays` — числа дней с 1 января 1970. `diet.phase` — `Off`, `Deficit`, `Break` или `Maintenance`; правила питания — в [справочнике](flexible-diet.md). `programId` — первый блок макроцикла: `maximum`, `hypertrophy`, идентификатор своего цикла (`my-1`, `my-2`…) или `null`; `nextProgramIds` — следующие блоки по порядку; `designs` — свои циклы: `id`, `title`, `note`, `goal`, `microcycles` и `days` с упражнениями (`name`, `maxOf`, `weeks` — на каждый микроцикл `scheme`, `percents`, `kg` или `null`). Незнакомые поля при чтении пропускаются, поэтому старые версии файла читаются новыми версиями приложения.
 
+## Копия на Google Диске и в файле
+
+Карточки «Бэкап на Google Диск» и «Копия в файл» пишут тот же `journal.json` в документ, выбранный в системном окне выбора файлов. Ссылка на документ Google Диска хранится в `SharedPreferences` «drive-backup» и в копию не попадает. Файл для «Поделиться» кладётся в `cache/shared/` и отдаётся через `FileProvider`. Подробнее — в [инструкции](../how-to/backup-files.md).
+
 ## Бэкап на Яндекс Диске
 
 | Файл | Что это |

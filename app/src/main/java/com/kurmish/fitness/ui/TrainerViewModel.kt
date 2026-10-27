@@ -9,6 +9,8 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.kurmish.fitness.backup.Backup
 import com.kurmish.fitness.backup.BackupSettings
+import com.kurmish.fitness.backup.DriveBackup
+import com.kurmish.fitness.backup.DriveSettings
 import com.kurmish.fitness.core.AppData
 import com.kurmish.fitness.core.DietPhase
 import com.kurmish.fitness.core.JournalStore
@@ -114,7 +116,10 @@ class TrainerViewModel(
                 TrainerViewModel(
                     store = JournalStore(Backup.journalFile(app)),
                     io = Dispatchers.IO,
-                    onSaved = { if (BackupSettings(app).connected) Backup.schedule(app) },
+                    onSaved = {
+                        if (BackupSettings(app).connected) Backup.schedule(app)
+                        if (DriveSettings(app).uri != null) DriveBackup.schedule(app)
+                    },
                 )
             }
         }

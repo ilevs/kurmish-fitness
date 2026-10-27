@@ -30,7 +30,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-private val BackupTimeFormat = DateTimeFormatter.ofPattern("d MMMM, HH:mm", Locale.forLanguageTag("ru-RU"))
+internal val BackupTimeFormat = DateTimeFormatter.ofPattern("d MMMM, HH:mm", Locale.forLanguageTag("ru-RU"))
 private const val AppPasswordsUrl = "https://id.yandex.ru/security/app-passwords"
 
 /**
