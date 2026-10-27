@@ -23,6 +23,8 @@
   <string name="stats_no_value">нет данных</string>
   <string name="stats_weeks_chart">Столбцы по неделям: %1$s. Нажмите на столбец, чтобы увидеть значение.</string>
   <string name="stats_intensity_hint">Средний процент от ПМ по упражнениям, для которых ПМ известен.</string>
+  <string name="stats_zones_title">КПШ по зонам · %1$s</string>
+  <string name="stats_zones_hint">Последняя тренировка: подъёмы движения в каждой зоне интенсивности против коридора, который даёт результат без отказа. Подходы легче 55 процентов ПМ не считаются.</string>
   <string name="stats_balance_title">Баланс движений за 4 недели</string>
   <string name="stats_balance_empty">Нет узнанных упражнений за этот период.</string>
   <string name="stats_balance_excess">Повторений в «%1$s» заметно больше, чем в «%2$s». Добавьте «%2$s»: противоположные движения уравнивают по числу повторов, иначе страдают суставы и осанка.</string>

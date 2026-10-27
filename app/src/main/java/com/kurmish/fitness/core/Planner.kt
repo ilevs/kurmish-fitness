@@ -47,24 +47,31 @@ object Planner {
         val program = position.program
         val next = position.progress.next
         val block = if (position.count > 1) ", блок ${position.index + 1} из ${position.count}" else ""
-        return if (next == null) {
-            DayPlan(
+        return when {
+            next == null -> DayPlan(
                 title = "Программа «${program.title}» пройдена",
                 items = emptyList(),
                 note = "Дальше разгрузочная неделя с небольшим объёмом и весами, после неё проверь максимум. " +
                     "Следующий макроцикл составь во вкладке «Циклы».",
             )
-        } else {
-            DayPlan(
-                title = "${next.day}, микроцикл ${next.microcycle} из ${program.microcycles}",
-                items = next.items.map { item -> withChoice(item, data.profile.pool[item.name], data, today) },
-                note = "Программа «${program.title}»$block.",
-            )
+            program.selfRegulating -> WavePlanner.plan(position, next, data, today)
+            else -> {
+                val own = data.profile.designs.any { it.id == program.id }
+                DayPlan(
+                    title = "${next.day}, микроцикл ${next.microcycle} из ${program.microcycles}",
+                    items = next.items.map { item ->
+                        val planned = withChoice(item, data.profile.pool[item.name], data, today)
+                        val max = planned.exercise?.takeIf { own }?.let { data.workingMax(it, today) }
+                        LiftZones.withNotes(planned, max)
+                    },
+                    note = "Программа «${program.title}»$block.",
+                )
+            }
         }
     }
 
     /** Пункт программы; если атлет выбрал на цикл другое упражнение [chosen], веса считаются от его ПМ. */
-    private fun withChoice(item: ProgramItem, chosen: Exercise?, data: AppData, today: Long): PlanItem {
+    internal fun withChoice(item: ProgramItem, chosen: Exercise?, data: AppData, today: Long): PlanItem {
         val used = chosen?.let { item.copy(name = it.title, maxOf = it.takeIf { item.maxOf != null }) } ?: item
         val exercise = chosen ?: item.maxOf ?: exerciseIn(item.name)
         val planned = fromProgram(

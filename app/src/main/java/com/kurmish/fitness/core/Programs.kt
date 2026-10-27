@@ -8,6 +8,7 @@ package com.kurmish.fitness.core
  * @property maxOf от ПМ какого движения считаются веса; null, если вес подбирается по самочувствию.
  * @property percents проценты от ПМ: один на все подходы или по одному на каждый подход.
  * @property kg вес в килограммах, если он задан не процентами; так бывает в своих циклах.
+ * @property wave правило саморегулирующейся волны; null, если вес задан схемой программы.
  */
 data class ProgramItem(
     val name: String,
@@ -15,6 +16,7 @@ data class ProgramItem(
     val maxOf: Exercise?,
     val percents: List<Int>,
     val kg: Double? = null,
+    val wave: WaveRule? = null,
 ) {
     /** Рабочие веса по ПМ, округлённые под блины; пустой список, если веса не задаются процентами. */
     fun weights(maxKg: Double, barbell: Boolean = true): List<Double> =
@@ -50,7 +52,8 @@ data class ProgramSession(val day: String, val microcycle: Int, val items: List<
  * @property note для чего программа и что важно знать.
  * @property daysPerWeek тренировок в микроцикле.
  * @property goal на что программа работает.
- * @property sessions тренировки по порядку выполнения.
+ * @property sessions тренировки по порядку выполнения; у саморегулирующейся программы — примерное расписание.
+ * @property waves фазы саморегулирующейся программы; пустой список у программ с заданными весами.
  */
 data class TrainingProgram(
     val id: String,
@@ -59,15 +62,20 @@ data class TrainingProgram(
     val daysPerWeek: Int,
     val goal: Goal,
     val sessions: List<ProgramSession>,
+    val waves: List<WavePhase> = emptyList(),
 ) {
+    /** Длина зависит от записей Дневника: волна кончается по факту, а не по календарю. */
+    val selfRegulating: Boolean
+        get() = waves.isNotEmpty()
+
     /** Сколько микроциклов в программе. */
     val microcycles: Int
         get() = sessions.maxOf { it.microcycle }
 
     /** «4 тренировки в неделю · 5 недель · цель: сила». */
     val summary: String
-        get() = "${trainings(daysPerWeek)} в неделю · ${plural(microcycles, "неделя", "недели", "недель")} · " +
-            "цель: ${goal.title.lowercase()}"
+        get() = "${trainings(daysPerWeek)} в неделю · ${if (selfRegulating) "≈ " else ""}" +
+            "${plural(microcycles, "неделя", "недели", "недель")} · цель: ${goal.title.lowercase()}"
 
     /** Чем программа расходится с профилем; пустой список, если совпадает. */
     fun mismatches(profile: Profile): List<String> = listOfNotNull(
@@ -326,7 +334,7 @@ object Programs {
     )
 
     /** Все встроенные программы. */
-    val all: List<TrainingProgram> = listOf(maximum, hypertrophy, IntegralProgram.program)
+    val all: List<TrainingProgram> = listOf(maximum, hypertrophy, IntegralProgram.program) + WavePrograms.all
 
     /** Прежние названия упражнений программ → новые: выбор на цикл в профиле переносится на новое название. */
     val renamed: Map<String, String> = mapOf(
