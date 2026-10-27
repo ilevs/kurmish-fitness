@@ -13,7 +13,6 @@
   <string name="test_weight">%1$s, кг</string>
   <string name="test_reps">повторов</string>
   <string name="test_year_plan">Начать годовой план по периодам</string>
-  <string name="test_done">Готово</string>
   <string name="test_skip">Пропустить</string>
   <string name="test_card_title">Тесты и силовой баланс</string>
   <string name="test_card_chest">Тест плеч А: %1$s</string>

@@ -86,7 +86,7 @@ internal fun FirstTestDialog(
                     Text(stringResource(R.string.test_year_plan))
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(Gap)) {
-                    Button(onClick = finish) { Text(stringResource(R.string.test_done)) }
+                    Button(onClick = finish) { Text(stringResource(R.string.editor_ok)) }
                     TextButton(onClick = onSkip) { Text(stringResource(R.string.test_skip)) }
                 }
             }
