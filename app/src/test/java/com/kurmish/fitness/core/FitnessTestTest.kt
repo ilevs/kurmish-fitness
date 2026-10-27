@@ -1,6 +1,7 @@
 package com.kurmish.fitness.core
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -21,23 +22,35 @@ class FitnessTestTest {
     }
 
     @Test
-    fun testSessionGivesMaxesAndStrengthBalance() {
-        val results = mapOf(
-            Exercise.Bench to (100.0 to 1),
-            Exercise.ChinUp to (5.0 to 1),
-            Exercise.Squat to (100.0 to 1),
-            Exercise.Deadlift to (120.0 to 1),
-            Exercise.PowerClean to (0.0 to 0),
+    fun testWorkoutComesFirstAndDisappearsOnceDiaryHasWeights() {
+        val fresh = AppData(FitnessTest.applyTo(Profile(), ShoulderTests(Grade.Poor, null)))
+        assertTrue(FitnessTest.needed(fresh))
+        val plan = Planner.today(fresh, today = 10)
+        assertEquals("Тестовая тренировка", plan.title)
+        assertEquals(PlanPart.WarmUp, plan.items.first().part)
+        val work = plan.items.filter { it.part == PlanPart.Work }
+        assertEquals(Exercise.MachineChestPress, work[1].exercise)
+        assertTrue(work.all { item -> item.notes.any { it.startsWith("Подводящие") } })
+        val squat = ExerciseEntry(Exercise.Squat, sets = listOf(SetGroup(80.0, 6)))
+        val recorded = fresh.copy(sessions = listOf(WorkoutSession(1, 10, "", listOf(squat))))
+        assertFalse(FitnessTest.needed(recorded))
+        assertFalse(FitnessTest.needed(AppData(Profile(manualMaxes = maxes))))
+    }
+
+    @Test
+    fun strengthBalanceComesFromDiary() {
+        val entries = listOf(
+            ExerciseEntry(Exercise.Bench, sets = listOf(SetGroup(100.0, 1))),
+            ExerciseEntry(Exercise.ChinUp, sets = listOf(SetGroup(5.0, 1))),
+            ExerciseEntry(Exercise.Squat, sets = listOf(SetGroup(100.0, 1))),
+            ExerciseEntry(Exercise.Deadlift, sets = listOf(SetGroup(120.0, 1))),
         )
-        val session = FitnessTest.session(results, today = 10)!!
-        assertEquals(4, session.entries.size)
-        val data = AppData(Profile(bodyweightKg = 80.0), listOf(session))
+        val data = AppData(Profile(bodyweightKg = 80.0), listOf(WorkoutSession(1, 10, "", entries)))
         assertEquals(100.0, data.currentMax(Exercise.Bench, 10))
         val advice = FitnessTest.balance(data, today = 10)
         assertEquals(2, advice.size)
         assertTrue(advice[0].startsWith("Подтягивания обратным хватом"))
         assertTrue(advice[1].startsWith("Становая слабее"))
-        assertNull(FitnessTest.session(emptyMap(), today = 10))
     }
 
     @Test
