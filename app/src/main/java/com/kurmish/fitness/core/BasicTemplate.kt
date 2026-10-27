@@ -1,14 +1,14 @@
 package com.kurmish.fitness.core
 
 /**
- * Общая тренировка на всё тело, когда программа не выбрана.
+ * Общая тренировка, когда программа не выбрана.
  *
- * В каждой тренировке по одному упражнению каждого типа: жим, тяга, колено, таз, вращение плеча наружу
- * и кор, всего шесть. Две тренировки чередуются через раз и уравновешивают друг друга по плоскостям:
- * в А присед, горизонтальный жим и горизонтальная тяга, в Б становая, вертикальный жим, вертикальная тяга
- * и сплит-присед. Подходы, повторы и процент от ПМ основных упражнений зависят от цели в профиле, а если
- * включён годовой план, — от текущего периода. Раз в две недели порядок упражнений меняется: первым идёт
- * другое движение, и привыкание к одной последовательности не тормозит прогресс.
+ * Как разложить тренировки по неделе, решает [WeekSplit] по числу тренировок в профиле: при 1–3 тренировки
+ * А и Б на всё тело по очереди, при 4–7 верх и низ, лёгкие дни и восстановительный день. В тренировке
+ * на всё тело по одному упражнению каждого типа: жим, тяга, колено, таз, вращение плеча наружу и кор.
+ * Подходы, повторы и процент от ПМ основных упражнений зависят от цели в профиле, а если включён годовой
+ * план, — от текущего периода. Раз в две недели порядок упражнений меняется: первым идёт другое движение,
+ * и привыкание к одной последовательности не тормозит прогресс.
  */
 internal object BasicTemplate {
     /**
@@ -30,26 +30,12 @@ internal object BasicTemplate {
     private const val ROTATED = 4
     private const val SECOND_SETS = 3
     private const val SECOND_REPS = "10"
-
-    private val dayA = listOf(
-        Exercise.Squat,
-        Exercise.Bench,
-        Exercise.BentOverRow,
-        Exercise.Hyperextension,
-        Exercise.FacePull,
-        Exercise.Abs,
-    )
-    private val dayB = listOf(
-        Exercise.Deadlift,
-        Exercise.OverheadPress,
-        Exercise.PullUp,
-        Exercise.SplitSquat,
-        Exercise.ExternalRotation,
-        Exercise.SidePlank,
-    )
-
-    /** Второе упражнение на ноги в тренировке: 3 × 10 с запасом, а не схема основных. */
-    private val secondLegs = setOf(Exercise.SplitSquat)
+    private const val LIGHT_SETS = 3
+    private const val LIGHT_REPS = 12
+    private const val LIGHT_PERCENT = 55
+    private const val RECOVERY_SETS = 2
+    private const val RECOVERY_REPS = "15"
+    private const val RECOVERY_NOTE = "Легко, без отказа. После каждого подхода 30 с растяжки и 30 с МФР этой зоны"
 
     /** Упражнения на одну ногу или руку: повторы на каждую сторону. */
     private val oneSide = setOf(
@@ -60,6 +46,10 @@ internal object BasicTemplate {
         Exercise.DumbbellRow,
         Exercise.SidePlank,
     )
+
+    /** Лёгкий день: не тяжелее 3 × 12 на 55 %, а если схема периода уже легче, то она. */
+    private fun Scheme.light(): Scheme =
+        if (percent <= LIGHT_PERCENT) this else Scheme(LIGHT_SETS, maxOf(reps, LIGHT_REPS), LIGHT_PERCENT)
 
     /** Как выполнять, если по названию неочевидно. */
     private val hints = mapOf(Exercise.SidePlank to "Опускай таз к полу и поднимай обратно")
@@ -89,33 +79,39 @@ internal object BasicTemplate {
     fun plan(data: AppData, today: Long, done: Int): DayPlan {
         val profile = data.profile
         val year = YearPlan.position(profile.yearPlanStartEpochDay, today)
-        val scheme = year?.let { schemeFor(it.period) } ?: schemeFor(profile.goal)
-        val second = done % 2 == 1
+        val base = year?.let { schemeFor(it.period) } ?: schemeFor(profile.goal)
+        val split = WeekSplit.day(profile.daysPerWeek, done)
+        val scheme = if (split.load == DayLoad.Light) base.light() else base
         val rotated = done / (profile.daysPerWeek * 2) % 2 == 1
-        val day = (if (second) dayB else dayA).let { if (rotated) it.rotated() else it }
+        val slots = if (rotated && split.load != DayLoad.Recovery) split.slots.rotated() else split.slots
         val stretch = profile.shoulders.chest?.weak == true
         val task = year?.label ?: "цель «${profile.goal.title}»"
         return DayPlan(
-            title = "Общая тренировка ${if (second) "Б" else "А"}, $task",
-            items = day.map { base ->
-                val chosen = profile.pool[base.title] ?: base
+            title = "${split.title}, $task",
+            items = slots.map { slot ->
+                val chosen = profile.pool[slot.exercise.title] ?: slot.exercise
                 val max = data.workingMax(chosen, today)
                 val last = data.lastSet(chosen, today)
-                val item = if (base in secondLegs) secondItem(chosen, max, last) else item(chosen, scheme, max, last)
+                val item = when {
+                    split.load == DayLoad.Recovery -> recoveryItem(chosen)
+                    slot.second -> secondItem(chosen, max, last)
+                    else -> item(chosen, scheme, max, last)
+                }
                 val pull = chosen.movement == Movement.HorizontalPull || chosen.movement == Movement.VerticalPull
                 val notes = if (stretch && pull) item.notes + FitnessTest.STRETCH else item.notes
-                item.copy(slot = base.title, notes = notes)
+                item.copy(slot = slot.exercise.title, notes = notes)
             },
             note = listOfNotNull(
                 year?.let { "${it.period.task}." },
-                "Тренировки А и Б чередуются, порядок упражнений меняется раз в две недели.",
-                "Программу по микроциклам можно выбрать во вкладке «Циклы».",
+                WeekSplit.note(profile.daysPerWeek),
+                "Порядок упражнений меняется раз в две недели.",
+                "Программу по микроциклам можно выбрать в Профиле, в разделе «Циклы».",
             ).joinToString(" "),
         )
     }
 
     /** Другой порядок: первым идёт второе движение, третье и четвёртое меняются местами. */
-    private fun List<Exercise>.rotated(): List<Exercise> =
+    private fun List<SplitSlot>.rotated(): List<SplitSlot> =
         take(ROTATED).chunked(2).flatMap { it.reversed() } + drop(ROTATED)
 
     private fun heavy(exercise: Exercise, scheme: Scheme, max: WorkingMax?): PlannedSets {
@@ -148,14 +144,23 @@ internal object BasicTemplate {
         return PlanItem(PlanPart.Work, exercise.title, exercise, listOf(sets), notes)
     }
 
+    private fun recoveryItem(exercise: Exercise): PlanItem {
+        val side = "$RECOVERY_REPS повторов на каждую сторону".takeIf { exercise in oneSide }
+        val sets = PlannedSets(RECOVERY_SETS, RECOVERY_REPS, null)
+        return PlanItem(PlanPart.Work, exercise.title, exercise, listOf(sets), listOfNotNull(side, RECOVERY_NOTE))
+    }
+
     private fun secondItem(exercise: Exercise, max: WorkingMax?, last: SetGroup?): PlanItem {
         val guess = WeightAdvice.byReps(exercise, SECOND_REPS, max, last)
         val weight = guess?.first.takeUnless { exercise.bodyweight }
+        val reps = if (exercise.bodyweight && exercise !in oneSide) MAX_REPS else SECOND_REPS
         val notes = listOfNotNull(
-            "$SECOND_REPS повторов на каждую ногу".takeIf { exercise in oneSide },
+            "$reps повторов на каждую ${if (exercise.movement == Movement.Squat) "ногу" else "сторону"}"
+                .takeIf { exercise in oneSide },
+            "Оставляй 1–2 повтора в запасе".takeIf { reps == MAX_REPS },
             guess?.second ?: CHOOSE_WEIGHT.takeUnless { exercise.bodyweight },
         )
-        val sets = PlannedSets(SECOND_SETS, SECOND_REPS, weight)
+        val sets = PlannedSets(SECOND_SETS, reps, weight)
         return PlanItem(PlanPart.Work, exercise.title, exercise, listOf(sets), notes)
     }
 }
