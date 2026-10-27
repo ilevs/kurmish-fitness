@@ -17,7 +17,11 @@ object Planner {
         val before = data.sessions.filter { it.epochDay < today }
         val position = Macrocycle.position(data.profile, before, today)
         val period = YearPlan.position(data.profile.yearPlanStartEpochDay, today)?.period.takeIf { position == null }
-        val program = position?.let { programPlan(it, data, today) } ?: BasicTemplate.plan(data, today, before.size)
+        val program = when {
+            FitnessTest.needed(data) -> FitnessTest.plan(data.profile)
+            position != null -> programPlan(position, data, today)
+            else -> BasicTemplate.plan(data, today, before.size)
+        }
         val body = program.copy(items = program.items.map { withPace(it, period) })
         val work = body.items
         val planned = if (work.isEmpty()) {

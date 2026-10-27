@@ -9,6 +9,9 @@ import org.junit.Test
 class PlannerTest {
     private val maxes = mapOf(Exercise.Squat to 100.0, Exercise.Bench to 80.0, Exercise.Deadlift to 120.0)
 
+    /** Дневник уже начат, поэтому вместо тестовой тренировки идёт программа. */
+    private val started = listOf(WorkoutSession(1, epochDay = -1, rawText = "", entries = emptyList()))
+
     @Test
     fun withoutProgramDayAHasConcreteWeights() {
         val plan = Planner.today(AppData(Profile(goal = Goal.Strength, manualMaxes = maxes)), today = 50)
@@ -112,7 +115,7 @@ class PlannerTest {
     fun poolReplacesProgramItemOnEveryDay() {
         val profile = Profile(programId = "hypertrophy", programStartEpochDay = 0)
             .choose("Приседания в гакк-тренажёре", Exercise.LegPress)
-        val plan = Planner.today(AppData(profile), today = 5)
+        val plan = Planner.today(AppData(profile, started), today = 5)
         val item = plan.items.first { it.slot == "Приседания в гакк-тренажёре" }
         assertEquals("Жим ногами", item.title)
         assertEquals(listOf(PlannedSets(4, "12", null)), item.sets)
@@ -167,7 +170,7 @@ class PlannerTest {
     @Test
     fun withoutAnyMaxWeightsStartFromBodyweight() {
         val profile = Profile(programId = "hypertrophy", programStartEpochDay = 0, bodyweightKg = 90.0)
-        val data = AppData(profile)
+        val data = AppData(profile, started)
         // Присед новичка ≈ 0,8 × 90 = 72 кг.
         assertEquals(WorkingMax(72.0, fromBodyweight = true), data.workingMax(Exercise.Squat, 0))
         val plan = Planner.today(data, today = 0)

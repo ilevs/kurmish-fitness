@@ -25,7 +25,6 @@ import com.kurmish.fitness.backup.DriveBackupViewModel
 import com.kurmish.fitness.backup.FileBackupViewModel
 import com.kurmish.fitness.core.AppData
 import com.kurmish.fitness.core.Profile
-import com.kurmish.fitness.core.WorkoutSession
 import com.kurmish.fitness.core.toSession
 import com.kurmish.fitness.ui.voice.Speaker
 import com.kurmish.fitness.ui.voice.rememberSpeaker
@@ -94,7 +93,7 @@ fun TrainerApp(
         }
     }
     if (testing || needsTest(data, loaded)) {
-        FirstTest(data, viewModel.today(), viewModel::updateProfile, viewModel::saveWorkout) { testing = false }
+        FirstTest(data, viewModel.today(), viewModel::updateProfile) { testing = false }
     }
 }
 
@@ -103,15 +102,13 @@ private fun FirstTest(
     data: AppData,
     today: Long,
     onProfile: (Profile) -> Unit,
-    onRecord: (WorkoutSession) -> Unit,
     onClose: () -> Unit,
 ) {
     FirstTestDialog(
         profile = data.profile,
         today = today,
-        onFinish = { profile, session ->
+        onFinish = { profile ->
             onProfile(profile)
-            session?.let(onRecord)
             onClose()
         },
         onSkip = {

@@ -19,7 +19,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -30,38 +29,33 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.kurmish.fitness.R
 import com.kurmish.fitness.core.AppData
-import com.kurmish.fitness.core.Exercise
 import com.kurmish.fitness.core.FitnessTest
 import com.kurmish.fitness.core.Goal
 import com.kurmish.fitness.core.Grade
 import com.kurmish.fitness.core.Profile
-import com.kurmish.fitness.core.WorkoutSession
 
 private val TestDays = (1..7).toList()
 
 /**
- * Первичное тестирование: цель, тесты подвижности плеч и лучшие подходы в базовых упражнениях. Открывается
- * само при первом запуске и по кнопке в профиле.
+ * Первичное тестирование: цель, дни и тесты подвижности плеч. Веса определяет тестовая тренировка в плане
+ * Дневника. Открывается само при первом запуске и по кнопке в профиле.
  *
- * @param onFinish профиль с результатами и запись тестирования для Дневника (null, если весов нет).
+ * @param onFinish профиль с результатами.
  * @param onSkip закрыть без изменений; анкета больше не откроется сама.
  */
 @Composable
 internal fun FirstTestDialog(
     profile: Profile,
     today: Long,
-    onFinish: (Profile, WorkoutSession?) -> Unit,
+    onFinish: (Profile) -> Unit,
     onSkip: () -> Unit,
 ) {
     var draft by remember { mutableStateOf(profile) }
     var yearPlan by remember { mutableStateOf(profile.yearPlanStartEpochDay != null) }
-    val weights = remember { mutableStateMapOf<Exercise, Double?>() }
-    val reps = remember { mutableStateMapOf<Exercise, Double?>() }
     val finish = {
         val start = if (yearPlan) profile.yearPlanStartEpochDay ?: today else null
         val tested = FitnessTest.applyTo(draft, draft.shoulders).copy(onboarded = true, yearPlanStartEpochDay = start)
-        val results = FitnessTest.lifts.associateWith { lift -> weights[lift] to (reps[lift]?.toInt() ?: 0) }
-        onFinish(tested, FitnessTest.session(results, today))
+        onFinish(tested)
     }
     Dialog(onDismissRequest = onSkip, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Surface(modifier = Modifier.fillMaxSize()) {
@@ -75,12 +69,6 @@ internal fun FirstTestDialog(
                 Text(text = stringResource(R.string.test_title), style = MaterialTheme.typography.titleLarge)
                 Text(text = stringResource(R.string.test_intro), style = MaterialTheme.typography.bodySmall)
                 ProfileFields(draft = draft, onChange = { draft = it })
-                WeightsCard(
-                    weights = weights,
-                    reps = reps,
-                    onWeight = { lift, kg -> weights[lift] = kg },
-                    onReps = { lift, count -> reps[lift] = count },
-                )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(checked = yearPlan, onCheckedChange = { yearPlan = it })
                     Text(stringResource(R.string.test_year_plan))
@@ -142,39 +130,6 @@ private fun GradeCard(title: String, how: String, grade: Grade?, onGrade: (Grade
                 selected = grade,
                 onSelect = onGrade,
             )
-        }
-    }
-}
-
-@Composable
-private fun WeightsCard(
-    weights: Map<Exercise, Double?>,
-    reps: Map<Exercise, Double?>,
-    onWeight: (Exercise, Double?) -> Unit,
-    onReps: (Exercise, Double?) -> Unit,
-) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(ScreenPadding), verticalArrangement = Arrangement.spacedBy(Gap)) {
-            Text(text = stringResource(R.string.test_weights_title), style = MaterialTheme.typography.titleMedium)
-            Text(text = stringResource(R.string.test_weights_how), style = MaterialTheme.typography.bodySmall)
-            FitnessTest.lifts.forEach { lift ->
-                Row(horizontalArrangement = Arrangement.spacedBy(Gap)) {
-                    Column(modifier = Modifier.weight(2f)) {
-                        NumberField(
-                            label = stringResource(R.string.test_weight, lift.title),
-                            value = weights[lift],
-                            onValueChange = { onWeight(lift, it) },
-                        )
-                    }
-                    Column(modifier = Modifier.weight(1f)) {
-                        NumberField(
-                            label = stringResource(R.string.test_reps),
-                            value = reps[lift],
-                            onValueChange = { onReps(lift, it) },
-                        )
-                    }
-                }
-            }
         }
     }
 }

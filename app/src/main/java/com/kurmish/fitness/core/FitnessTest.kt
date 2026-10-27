@@ -28,23 +28,60 @@ enum class Grade(val title: String) {
 data class ShoulderTests(val chest: Grade? = null, val overhead: Grade? = null)
 
 /**
- * Первичное тестирование: по подвижности плеч подбирает упражнения на первый цикл, по весам оценивает ПМ
- * и силовой баланс.
+ * Первичное тестирование: по подвижности плеч подбирает упражнения на первый цикл, а тестовая тренировка
+ * даёт Дневнику первые веса, по которым оцениваются ПМ и силовой баланс.
  */
 object FitnessTest {
-    /** Упражнения, которые просят вес и повторы в анкете. */
+    /** Упражнения тестовой тренировки, по порядку. */
     val lifts: List<Exercise> = listOf(
         Exercise.Squat,
         Exercise.Bench,
         Exercise.Deadlift,
         Exercise.OverheadPress,
         Exercise.ChinUp,
-        Exercise.PowerClean,
+    )
+
+    /** Подводящие подходы перед каждым упражнением теста: рабочий вес ещё неизвестен. */
+    private val ramp = listOf(
+        "Подводящие: 2 × 10 с пустым грифом или самым лёгким весом",
+        "Дальше подходы по 3–5 повторов, прибавляя 10–20 % веса, пока не станет заметно тяжело; отдых 1–2 мин",
+        "Рабочий подход: вес, с которым выходит 5–8 повторов с запасом 1–2 повтора, без отказа и с чистой техникой",
+        "Запиши вес и повторы рабочего подхода, отдых перед следующим упражнением 3 мин",
+    )
+
+    /**
+     * Тестовая тренировка нужна только в самом начале: в Дневнике ещё нет ни одной записи и ПМ не введены.
+     * Как только она записана, веса считаются по Дневнику.
+     */
+    fun needed(data: AppData): Boolean = data.sessions.isEmpty() && data.profile.manualMaxes.isEmpty()
+
+    /** План тестовой тренировки: упражнения с учётом замен по тестам плеч, у каждого свои подводящие. */
+    fun plan(profile: Profile): DayPlan = DayPlan(
+        title = "Тестовая тренировка",
+        items = lifts.map { lift ->
+            val slot = when (lift) {
+                Exercise.Bench -> PRESS_SLOT
+                Exercise.ChinUp -> PULL_SLOT
+                else -> lift.title
+            }
+            val chosen = profile.pool[slot] ?: lift
+            PlanItem(
+                part = PlanPart.Work,
+                title = chosen.title,
+                exercise = chosen,
+                sets = listOf(PlannedSets(1, TEST_REPS, null)),
+                notes = ramp,
+                slot = slot,
+            )
+        },
+        note = "Первая тренировка определяет рабочие веса: дальше приложение берёт их из Дневника. " +
+            "Начни с хорошей разминки и не гонись за рекордом: нужен уверенный подход, а не максимум.",
     )
 
     /** Растяжка между подходами тяг, пока плечи закрыты. */
     const val STRETCH = "Между подходами тяги растягивай грудные мышцы по 15–20 секунд"
 
+    private const val TEST_REPS = "5-8"
     private const val PRESS_SLOT = "Жим лёжа"
     private const val PULL_SLOT = "Подтягивания"
     private const val PERCENT = 100
@@ -70,23 +107,6 @@ object FitnessTest {
         .copy(shoulders = tests)
         .choose(PRESS_SLOT, pressFor(tests.chest))
         .choose(PULL_SLOT, pullFor(tests.overhead))
-
-    /**
-     * Запись тестирования в Дневник за день [today]: по ней приложение оценит ПМ. [results] — упражнение →
-     * вес и повторы лучшего подхода; у подтягиваний вес — отягощение на поясе.
-     */
-    fun session(results: Map<Exercise, Pair<Double?, Int>>, today: Long): WorkoutSession? {
-        val entries = lifts.mapNotNull { lift ->
-            results[lift]?.takeIf { (_, reps) -> reps > 0 }?.let { (kg, reps) ->
-                ExerciseEntry(lift, sets = listOf(SetGroup(kg, reps)))
-            }
-        }
-        return if (entries.isEmpty()) {
-            null
-        } else {
-            WorkoutSession(id = 0, epochDay = today, rawText = "Первичное тестирование", entries = entries)
-        }
-    }
 
     /**
      * Силовой баланс: ПМ жима лёжа ≈ ПМ подтягиваний обратным хватом с весом (вместе с собственным) ≈ ПМ
