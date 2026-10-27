@@ -56,7 +56,7 @@ internal fun SetHeader() {
             style = style,
         )
         Text(
-            text = stringResource(R.string.editor_weight),
+            text = stringResource(R.string.design_kg),
             modifier = Modifier.weight(1f),
             color = color,
             textAlign = TextAlign.Center,

@@ -80,12 +80,10 @@
     <string name="editor_feeling_hard">Было тяжело</string>
     <string name="editor_exercise">Упражнение</string>
     <string name="editor_custom_hint">Нет в базе: запишется как своё упражнение</string>
-    <string name="editor_weight">кг</string>
     <string name="editor_weight_own">свой</string>
     <string name="editor_reps">Повт.</string>
     <string name="editor_set_number">№</string>
     <string name="editor_previous">Прошлый</string>
-    <string name="editor_done">Сделан</string>
     <string name="editor_more">Ещё</string>
     <string name="editor_add_set">Добавить подход</string>
     <string name="editor_remove_set">Удалить подход</string>
