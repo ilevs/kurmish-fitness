@@ -1,15 +1,16 @@
 package com.kurmish.fitness.core
 
 /**
- * Блок макроцикла с примерными датами: по неделе на микроцикл.
+ * Блок макроцикла с примерными датами.
  *
  * @property program программа блока.
  * @property startEpochDay примерная дата начала.
+ * @property weeks сколько недель займёт блок при числе тренировок в неделю из профиля.
  */
-data class MacroBlock(val program: TrainingProgram, val startEpochDay: Long) {
+data class MacroBlock(val program: TrainingProgram, val startEpochDay: Long, val weeks: Int) {
     /** Примерная дата конца. */
     val endEpochDay: Long
-        get() = startEpochDay + program.microcycles * Macrocycle.DAYS_IN_WEEK - 1
+        get() = startEpochDay + weeks * Macrocycle.DAYS_IN_WEEK - 1
 }
 
 /**
@@ -30,13 +31,20 @@ object Macrocycle {
     /** Дней в микроцикле для примерных дат. */
     const val DAYS_IN_WEEK = 7
 
-    /** Блоки профиля [profile] с примерными датами; старт без даты считается с [today]. */
+    /**
+     * Блоки профиля [profile] с примерными датами; старт без даты считается с [today].
+     *
+     * Тренировки блока идут по порядку записей, поэтому длина блока считается по тренировкам в неделю
+     * из профиля: программа на 4 дня при двух тренировках в неделю займёт вдвое больше недель.
+     */
     fun blocks(profile: Profile, today: Long): List<MacroBlock> {
         val programs = profile.blockPrograms()
-        val starts = programs.runningFold(profile.programStartEpochDay ?: today) { start, program ->
-            start + program.microcycles * DAYS_IN_WEEK
+        val perWeek = profile.daysPerWeek.coerceIn(WeekSplit.days)
+        val weeks = programs.map { (it.sessions.size + perWeek - 1) / perWeek }
+        val starts = weeks.runningFold(profile.programStartEpochDay ?: today) { start, count ->
+            start + count * DAYS_IN_WEEK
         }
-        return programs.mapIndexed { index, program -> MacroBlock(program, starts[index]) }
+        return programs.mapIndexed { index, program -> MacroBlock(program, starts[index], weeks[index]) }
     }
 
     /** Текущий блок и следующая тренировка по записям [sessions]; null, если макроцикл не составлен. */

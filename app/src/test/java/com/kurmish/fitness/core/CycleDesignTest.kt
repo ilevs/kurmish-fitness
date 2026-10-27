@@ -49,7 +49,7 @@ class CycleDesignTest {
     @Test
     fun macrocycleRunsBlocksOneAfterAnother() {
         val design = CycleDesign.copyOf(Programs.hypertrophy, CycleDesign.nextId(emptyList()))
-        val profile = Profile().withDesign(design).withBlocks(listOf("maximum", design.id), today = 1)
+        val profile = Profile(daysPerWeek = 4).withDesign(design).withBlocks(listOf("maximum", design.id), today = 1)
         assertEquals(listOf("maximum", "my-1"), profile.blockIds)
         val blocks = Macrocycle.blocks(profile, today = 1)
         assertEquals(36L, blocks[1].startEpochDay)
