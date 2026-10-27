@@ -46,6 +46,34 @@ sealed interface BalanceIssue {
     data class Missing(val movement: Movement) : BalanceIssue
 }
 
+/**
+ * Пара противоположных типов движения для весов баланса.
+ *
+ * @property left тип, перекос в сторону которого вреден: горизонтальные жимы, вертикальные тяги, колено.
+ * @property right тип, перекос в сторону которого допустим и даже полезен: горизонтальные тяги, вертикальные
+ *   жимы, таз.
+ * @property leftReps повторов в [left].
+ * @property rightReps повторов в [right].
+ */
+data class OppositePair(val left: Movement, val right: Movement, val leftReps: Int, val rightReps: Int) {
+    /** Перекос от −1 (всё в [left]) до 1 (всё в [right]); null, если повторов нет. */
+    val shift: Double?
+        get() = (leftReps + rightReps).takeIf { it > 0 }?.let { (rightReps - leftReps).toDouble() / it }
+
+    /** Пара в норме: оба типа есть, а [left] больше [right] не дальше допуска. */
+    val balanced: Boolean
+        get() = leftReps > 0 && rightReps > 0 && (shift ?: 0.0) >= MIN_SHIFT
+
+    /** Границы нормы. */
+    companion object {
+        /** [left] больше [right] в 1,5 раза: дальше — перекос. */
+        const val MIN_SHIFT = -0.2
+
+        /** [right] больше [left] вдвое: полезный перекос, который советует книга. */
+        const val GOOD_SHIFT = 1.0 / 3
+    }
+}
+
 /** Статистика по Дневнику для графиков. Всё считается на устройстве. */
 object Stats {
     /** Сколько недель показывают графики нагрузки. */
@@ -53,6 +81,9 @@ object Stats {
 
     /** За сколько дней считаются сводка и баланс движений. */
     const val RECENT_DAYS = 28
+
+    /** Сколько тренировок за 4 недели нужно, чтобы судить о балансе: по одной-двум записям рано. */
+    const val BALANCE_MIN_SESSIONS = 3
 
     private const val DAYS_IN_WEEK = 7
     private const val EXCESS = 1.5
@@ -156,6 +187,15 @@ object Stats {
         val core = BalanceIssue.Missing(Movement.Core).takeIf { reps(Movement.Core) == 0 }
         return pairs + listOfNotNull(rotation, core)
     }
+
+    /** Пары противоположностей с повторами из [balance]. */
+    fun pairs(balance: Map<Movement, Int>): List<OppositePair> = opposites.map { (left, right) ->
+        OppositePair(left, right, balance[left] ?: 0, balance[right] ?: 0)
+    }
+
+    /** Хватает ли тренировок за последние [days] дней, чтобы советовать по балансу. */
+    fun enoughForBalance(data: AppData, today: Long, days: Int = RECENT_DAYS): Boolean =
+        data.sessions.count { today - it.epochDay in 0 until days } >= BALANCE_MIN_SESSIONS
 
     /** Сводка за последние [days] дней. */
     fun summary(data: AppData, today: Long, days: Int = RECENT_DAYS): StatsSummary {
