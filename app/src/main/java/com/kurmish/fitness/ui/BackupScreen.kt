@@ -20,21 +20,6 @@ import androidx.compose.ui.res.stringResource
 import com.kurmish.fitness.R
 import com.kurmish.fitness.backup.BackupUi
 
-/**
- * Что делает с бэкапом на Яндекс Диск экран резервной копии.
- *
- * @property onConnect подключить диск по логину и паролю приложения.
- * @property onBackup сохранить копию сейчас.
- * @property onRestore восстановить Дневник с диска.
- * @property onDisconnect отключить диск.
- */
-internal class YandexActions(
-    val onConnect: (String, String) -> Unit,
-    val onBackup: () -> Unit,
-    val onRestore: () -> Unit,
-    val onDisconnect: () -> Unit,
-)
-
 /** Резервная копия Дневника: Яндекс Диск, Google Диск и файл. Открывается из Профиля, [onBack] возвращает туда. */
 @Composable
 internal fun BackupScreen(
