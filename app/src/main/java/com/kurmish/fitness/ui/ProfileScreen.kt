@@ -46,6 +46,7 @@ internal fun ProfileScreen(
     onRestore: () -> Unit,
     onBackupDisconnect: () -> Unit,
     files: FileBackups,
+    onTest: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val profile = data.profile
@@ -73,6 +74,7 @@ internal fun ProfileScreen(
             value = profile.bodyweightKg,
             onValueChange = { onProfileChange(profile.copy(bodyweightKg = it)) },
         )
+        TestCard(data = data, today = today, onAgain = onTest)
         DietSettingsCard(profile = profile, today = today, onProfileChange = onProfileChange)
         MaxFields(data = data, today = today, onProfileChange = onProfileChange)
         BackupCard(

@@ -45,13 +45,19 @@ class TrainerViewModel(
     private val state = MutableStateFlow(AppData())
     private val saving = Mutex()
 
+    private val ready = MutableStateFlow(false)
+
     /** Текущие данные. */
     val data: StateFlow<AppData> = state.asStateFlow()
+
+    /** Дневник прочитан из файла: до этого пустые данные ещё ничего не значат. */
+    val loaded: StateFlow<Boolean> = ready.asStateFlow()
 
     init {
         viewModelScope.launch(io) {
             val loaded = store.load()
             state.update { current -> if (current.sessions.isEmpty()) loaded else current }
+            ready.value = true
         }
     }
 

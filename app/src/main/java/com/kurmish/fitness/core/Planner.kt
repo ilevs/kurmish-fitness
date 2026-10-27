@@ -16,11 +16,31 @@ object Planner {
     fun today(data: AppData, today: Long): DayPlan {
         val before = data.sessions.filter { it.epochDay < today }
         val position = Macrocycle.position(data.profile, before, today)
-        val body = position?.let { programPlan(it, data, today) } ?: BasicTemplate.plan(data, today, before.size)
+        val period = YearPlan.position(data.profile.yearPlanStartEpochDay, today)?.period.takeIf { position == null }
+        val program = position?.let { programPlan(it, data, today) } ?: BasicTemplate.plan(data, today, before.size)
+        val body = program.copy(items = program.items.map { withPace(it, period) })
         val work = body.items
-        val planned = if (work.isEmpty()) body else body.copy(items = listOf(warmUp(work.first())) + work + coolDown())
+        val planned = if (work.isEmpty()) {
+            body
+        } else {
+            body.copy(
+                items = listOf(warmUp(work.first())) + work + coolDown(),
+                note = listOfNotNull(body.note, Pace.LEGEND).joinToString(" "),
+            )
+        }
         val dietNote = FlexibleDiet.day(data, today)?.let(DietAdvice::planNote) ?: return planned
         return planned.copy(note = listOfNotNull(planned.note, dietNote).joinToString(" "))
+    }
+
+    /** Добавляет темп и отдых, если программа их не задала. */
+    private fun withPace(item: PlanItem, period: Period?): PlanItem {
+        val exercise = item.exercise
+        val given = item.notes.any { it.contains("отдых", ignoreCase = true) }
+        return if (exercise == null || given) {
+            item
+        } else {
+            item.copy(notes = item.notes + Pace.note(exercise, item.sets.firstOrNull()?.reps, period))
+        }
     }
 
     private fun programPlan(position: MacroPosition, data: AppData, today: Long): DayPlan {
