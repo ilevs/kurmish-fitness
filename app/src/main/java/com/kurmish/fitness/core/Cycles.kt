@@ -17,7 +17,6 @@ enum class CycleKind(val title: String) {
  * @property goal задача периода.
  * @property minBodyweightKg минимальный собственный вес; null, если не важен.
  * @property days тренировок в неделю; null, если цикл допускает разные схемы.
- * @property maxCorrectionPercent верхняя граница процента корректировки, если она указана.
  * @property strengthMode в основной работе и подводящих не больше 6 повторов; иначе не меньше 8.
  * @property note для кого цикл и что важно знать.
  */
@@ -29,7 +28,6 @@ data class TrainingCycle(
     val goal: Goal,
     val minBodyweightKg: Int?,
     val days: Int?,
-    val maxCorrectionPercent: Double? = null,
     val strengthMode: Boolean = true,
     val note: String,
 )
@@ -178,7 +176,6 @@ object CycleCatalog {
             KG60,
             THREE,
             "Для тех, кто ходит в зал не больше трёх раз в неделю. Между тренировками минимум день отдыха.",
-            maxCorrection = 1.5,
         ),
         self(
             "СРЦ15",
@@ -188,12 +185,16 @@ object CycleCatalog {
             KG60,
             TWO,
             "Две тренировки в неделю, лучше Пн-Чт или Вт-Пт, не подряд.",
-            maxCorrection = 2.5,
         ),
         self(
-            "СРЦ16", Discipline.Bench, Rank.Second..Rank.Kms, Goal.Endurance, KG60, TWO,
+            "СРЦ16",
+            Discipline.Bench,
+            Rank.Second..Rank.Kms,
+            Goal.Endurance,
+            KG60,
+            TWO,
             "Две тренировки в неделю, многоповторный. После него можно сразу пройти СРЦ15.",
-            maxCorrection = 2.5, strengthMode = false,
+            strengthMode = false,
         ),
         block("Троеборье, начальный", Discipline.Powerlifting, Rank.Novice..Rank.Third),
         block("Троеборье, средний", Discipline.Powerlifting, Rank.First..Rank.Ms),
@@ -241,7 +242,6 @@ object CycleCatalog {
         minWeight: Int?,
         days: Int?,
         note: String,
-        maxCorrection: Double? = null,
         strengthMode: Boolean = true,
     ) = TrainingCycle(
         id = id,
@@ -251,7 +251,6 @@ object CycleCatalog {
         goal = goal,
         minBodyweightKg = minWeight,
         days = days,
-        maxCorrectionPercent = maxCorrection,
         strengthMode = strengthMode,
         note = note,
     )

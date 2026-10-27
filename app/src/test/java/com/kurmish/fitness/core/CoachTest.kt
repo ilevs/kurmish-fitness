@@ -27,18 +27,18 @@ class CoachTest {
     }
 
     @Test
-    fun restAfterYesterdayAndHardFeelingResetsCorrection() {
+    fun restAfterYesterdayAndHardFeelingLowersWeights() {
         val session = WorkoutSession(1, epochDay = 99, rawText = "", entries = emptyList(), feeling = Feeling.Hard)
         val advice = Coach.advise(AppData(benchProfile, listOf(session)), today = 100)
         assertTrue(advice.headline.contains("отдохнуть"))
-        assertTrue(advice.points.any { it.contains("0 %") })
+        assertTrue(advice.points.any { it.contains("5–10 %") })
     }
 
     @Test
-    fun easyFeelingRaisesCorrectionUpToCycleCeiling() {
+    fun easyFeelingWithoutDeficitNeedsNoAdvice() {
         val session = WorkoutSession(1, epochDay = 90, rawText = "", entries = emptyList(), feeling = Feeling.Easy)
-        val advice = Coach.advise(AppData(benchProfile.copy(correctionPercent = 1.0), listOf(session)), today = 100)
-        assertTrue(advice.points.any { it.contains("2,5 %") })
+        val advice = Coach.advise(AppData(benchProfile, listOf(session)), today = 100)
+        assertTrue(advice.points.none { it.contains("Было легко") })
     }
 
     @Test
