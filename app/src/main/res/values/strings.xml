@@ -88,6 +88,8 @@
     <string name="editor_more">Ещё</string>
     <string name="editor_add_set">Добавить подход</string>
     <string name="editor_remove_set">Удалить подход</string>
+    <string name="editor_sets_edit">Изменить</string>
+    <string name="editor_set_removed">Подход %1$d удалён</string>
     <string name="editor_remove_exercise">Удалить упражнение</string>
     <string name="editor_add_exercise">Добавить упражнение</string>
     <string name="editor_text">Текст записи</string>
