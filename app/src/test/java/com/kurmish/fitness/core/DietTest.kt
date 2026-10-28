@@ -103,10 +103,10 @@ class DietTest {
     }
 
     @Test
-    fun deficitKeepsWeightsWhenEasy() {
+    fun coachIgnoresDietPhase() {
         val easy = WorkoutSession(1, start, "", emptyList(), Feeling.Easy)
         val advice = Coach.advise(data(sessions = listOf(easy)), start + 2)
-        assertTrue(advice.points.any { "сброс жира" in it && "не поднимай" in it })
+        assertTrue(advice.points.none { "сброс жира" in it || "рефид" in it.lowercase() })
     }
 
     @Test
