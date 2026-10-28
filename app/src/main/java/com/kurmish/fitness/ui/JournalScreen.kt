@@ -79,11 +79,7 @@ internal fun JournalScreen(
                 onDelete = actions.onDelete,
             )
         }
-        if (sessions.isNotEmpty()) {
-            item(key = "history") {
-                Text(text = stringResource(R.string.journal_history), style = MaterialTheme.typography.titleMedium)
-            }
-        }
+        item(key = "history") { HistoryHeader(onAdd = { editing = SessionDraft.new(today - 1) }) }
         items(sessions, key = { it.id }) { session ->
             SessionCard(
                 session = session,
@@ -94,6 +90,19 @@ internal fun JournalScreen(
         }
     }
     editing?.let { draft -> PastEditor(draft, data, suggest, actions) { editing = null } }
+}
+
+/** Заголовок прошлых записей и запись за прошлый день: по умолчанию вчера, дату можно сменить в редакторе. */
+@Composable
+private fun HistoryHeader(onAdd: () -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text = stringResource(R.string.journal_history),
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.titleMedium,
+        )
+        TextButton(onClick = onAdd) { Text(stringResource(R.string.journal_add_past)) }
+    }
 }
 
 /** Редактор прошлой записи [draft]; [onClose] закрывает его после сохранения, удаления или отмены. */
