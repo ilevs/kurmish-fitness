@@ -12,15 +12,11 @@ import com.kurmish.fitness.backup.BackupSettings
 import com.kurmish.fitness.backup.DriveBackup
 import com.kurmish.fitness.backup.DriveSettings
 import com.kurmish.fitness.core.AppData
-import com.kurmish.fitness.core.DietPhase
 import com.kurmish.fitness.core.JournalStore
 import com.kurmish.fitness.core.ParsedWorkout
 import com.kurmish.fitness.core.Profile
 import com.kurmish.fitness.core.WorkoutSession
-import com.kurmish.fitness.core.withCalorieCorrection
-import com.kurmish.fitness.core.withPhase
 import com.kurmish.fitness.core.withRecorded
-import com.kurmish.fitness.core.withRefeed
 import com.kurmish.fitness.core.withSaved
 import com.kurmish.fitness.core.withWeight
 import com.kurmish.fitness.core.withoutSession
@@ -94,21 +90,6 @@ class TrainerViewModel(
     /** Записывает вес за сегодня. */
     fun logWeight(kg: Double) {
         change { data -> data.withWeight(today, kg) }
-    }
-
-    /** Отмечает рефид сегодня. */
-    fun markRefeed() {
-        change { data -> data.withRefeed(today) }
-    }
-
-    /** Принимает поправку калорий в процентах. */
-    fun applyCalorieCorrection(percent: Int) {
-        change { data -> data.withCalorieCorrection(percent, today) }
-    }
-
-    /** Меняет фазу питания с сегодняшнего дня. */
-    fun changeDietPhase(phase: DietPhase) {
-        change { data -> data.copy(profile = data.profile.copy(diet = data.profile.diet.withPhase(phase, today))) }
     }
 
     private fun change(transform: (AppData) -> AppData) {

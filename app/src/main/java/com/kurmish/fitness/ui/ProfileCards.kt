@@ -15,10 +15,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.kurmish.fitness.R
 import com.kurmish.fitness.core.AppData
-import com.kurmish.fitness.core.DietPhase
 import com.kurmish.fitness.core.DietSettings
 import com.kurmish.fitness.core.Exercise
-import com.kurmish.fitness.core.FlexibleDiet
 import com.kurmish.fitness.core.Goal
 import com.kurmish.fitness.core.Macrocycle
 import com.kurmish.fitness.core.Profile
@@ -153,19 +151,6 @@ internal fun StrengthCard(data: AppData, today: Long, onProfileChange: (Profile)
             )
         }
     }
-}
-
-/** Питание на сегодня, если оно включено; настройки питания ниже, среди редких. */
-@Composable
-internal fun TodayDiet(data: AppData, today: Long, diet: DietActions) {
-    val phase = data.profile.diet.phase
-    if (phase == DietPhase.Off) return
-    DietCard(
-        phase = phase,
-        day = remember(data, today) { FlexibleDiet.day(data, today) },
-        missing = FlexibleDiet.missing(data),
-        actions = diet,
-    )
 }
 
 /** Вход в резервную копию Дневника. */

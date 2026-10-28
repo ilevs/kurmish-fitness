@@ -27,7 +27,6 @@ object Coach {
     private const val MAX_DAYS_WITH_REST = 3
     private const val HARD_FEELING =
         "Прошлая тренировка далась тяжело: сегодня сними с рабочих весов 5–10 %, а если самочувствие плохое, отдохни."
-    private const val EASY_ON_DEFICIT = "Было легко, но идёт сброс жира: веса не поднимай, задача — сохранить силу."
 
     /** Совет на день [today] (дни с 1970-01-01). */
     fun advise(data: AppData, today: Long): Advice {
@@ -35,13 +34,11 @@ object Coach {
         val cycle = CycleCatalog.best(profile)
         val last = data.sessions.maxByOrNull { it.epochDay }
         val program = profile.program(profile.programId)
-        val diet = FlexibleDiet.day(data, today)
         val points = buildList {
-            diet?.trainingNotes?.let(::addAll)
             if (program == null) cycle?.let { add("Цикл методики под твой профиль: ${it.id}. ${it.note}") }
             addAll(maxLines(data, today))
             addAll(Plateau.lines(data, today))
-            feelingLine(last, diet?.phase == DietPhase.Deficit)?.let(::add)
+            feelingLine(last)?.let(::add)
             addAll(if (program == null) techniqueLines(cycle?.strengthMode != false) else programTechniqueLines())
         }
         return Advice(headline(last, profile, today), points)
@@ -74,11 +71,7 @@ object Coach {
         }
     }
 
-    private fun feelingLine(last: WorkoutSession?, deficit: Boolean): String? = when (last?.feeling) {
-        Feeling.Hard -> HARD_FEELING
-        Feeling.Easy -> EASY_ON_DEFICIT.takeIf { deficit }
-        else -> null
-    }
+    private fun feelingLine(last: WorkoutSession?): String? = HARD_FEELING.takeIf { last?.feeling == Feeling.Hard }
 
     private fun programTechniqueLines(): List<String> = listOf(
         "Перед базовым движением сделай подводящие подходы по таблице разминки.",
