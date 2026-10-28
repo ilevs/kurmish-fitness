@@ -50,10 +50,15 @@ private fun SectionCard(
     }
 }
 
-/** Вес — его вводят чаще всего: это и взвешивание за сегодня. */
+/**
+ * Вес и тело: вес (его вводят чаще всего, это и взвешивание за сегодня), пол и процент жира или рост и возраст
+ * для его оценки.
+ */
 @Composable
-internal fun WeightCard(profile: Profile, onWeight: (Double) -> Unit, onProfileChange: (Profile) -> Unit) {
-    SectionCard(title = stringResource(R.string.profile_weight), hint = stringResource(R.string.profile_weight_hint)) {
+internal fun BodyCard(profile: Profile, onWeight: (Double) -> Unit, onProfileChange: (Profile) -> Unit) {
+    val diet = profile.diet
+    val change = { settings: DietSettings -> onProfileChange(profile.copy(diet = settings)) }
+    SectionCard(title = stringResource(R.string.profile_body), hint = stringResource(R.string.profile_body_hint)) {
         NumberField(
             label = stringResource(R.string.profile_bodyweight),
             value = profile.bodyweightKg,
@@ -61,15 +66,6 @@ internal fun WeightCard(profile: Profile, onWeight: (Double) -> Unit, onProfileC
                 if (kg != null && kg > 0) onWeight(kg) else onProfileChange(profile.copy(bodyweightKg = null))
             },
         )
-    }
-}
-
-/** Тело: пол и процент жира или рост и возраст для его оценки. */
-@Composable
-internal fun BodyCard(profile: Profile, onProfileChange: (Profile) -> Unit) {
-    val diet = profile.diet
-    val change = { settings: DietSettings -> onProfileChange(profile.copy(diet = settings)) }
-    SectionCard(title = stringResource(R.string.profile_body), hint = stringResource(R.string.profile_body_hint)) {
         ChoiceRow(
             title = stringResource(R.string.diet_sex),
             options = Sex.entries.map { it to it.title },

@@ -111,10 +111,8 @@
     <string name="profile_days">Тренировок в неделю</string>
     <string name="profile_goal">Задача</string>
     <string name="profile_goal_section">Цель и график</string>
-    <string name="profile_body">Тело</string>
-    <string name="profile_body_hint">Процент жира уточняет стартовые веса и питание; рост и возраст нужны, только чтобы его оценить.</string>
-    <string name="profile_weight">Вес</string>
-    <string name="profile_weight_hint">Введённый вес записывается как взвешивание за сегодня: по нему считаются питание и нагрузка в упражнениях со своим весом.</string>
+    <string name="profile_body">Вес и тело</string>
+    <string name="profile_body_hint">Введённый вес записывается как взвешивание за сегодня. По весу и проценту жира считаются питание и нагрузка в упражнениях со своим весом; рост и возраст нужны, только чтобы оценить процент жира.</string>
     <string name="profile_strength">Сила</string>
     <string name="profile_strength_hint">ПМ можно не вводить: в пустом поле подсказкой видна оценка по Дневнику.</string>
     <string name="profile_max">ПМ: %1$s, кг</string>
