@@ -46,6 +46,7 @@
 
     <string name="speak">Озвучить</string>
     <string name="journal_history">Прошлые записи</string>
+    <string name="journal_add_past">Записать за прошлый день</string>
     <string name="today_replace">Заменить</string>
     <string name="today_restore">Вернуть</string>
     <string name="today_test_start">Пройти тестовую тренировку сегодня</string>

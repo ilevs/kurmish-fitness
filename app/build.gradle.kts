@@ -15,8 +15,8 @@ android {
         applicationId = "com.kurmish.fitness"
         minSdk = 26
         targetSdk = 35
-        versionCode = 31
-        versionName = "0.30.0"
+        versionCode = 33
+        versionName = "0.32.0"
         // Распознавание речи GigaAM тянут только 64-битные телефоны, поэтому нативные библиотеки только arm64.
         ndk { abiFilters += listOf("arm64-v8a") }
     }
