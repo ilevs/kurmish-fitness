@@ -35,7 +35,7 @@ class CoachTest {
     }
 
     @Test
-    fun easyFeelingWithoutDeficitNeedsNoAdvice() {
+    fun easyFeelingNeedsNoAdvice() {
         val session = WorkoutSession(1, epochDay = 90, rawText = "", entries = emptyList(), feeling = Feeling.Easy)
         val advice = Coach.advise(AppData(benchProfile, listOf(session)), today = 100)
         assertTrue(advice.points.none { it.contains("Было легко") })

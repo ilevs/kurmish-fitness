@@ -83,7 +83,6 @@ fun TrainerApp(
                 files = fileBackups(driveViewModel, fileViewModel, viewModel::restore),
                 onTest = { testing = true },
                 onWeight = viewModel::logWeight,
-                diet = viewModel.dietActions(),
                 modifier = content,
             )
         }
@@ -160,10 +159,4 @@ private fun TrainerViewModel.journalActions(data: AppData, speaker: Speaker) = J
     onSpeak = speaker::speak,
     onChoose = { slot, exercise -> updateProfile(data.profile.choose(slot, exercise)) },
     onTest = { on -> updateProfile(data.profile.copy(testEpochDay = today.takeIf { on })) },
-)
-
-private fun TrainerViewModel.dietActions() = DietActions(
-    onRefeedDone = ::markRefeed,
-    onApplyCorrection = ::applyCalorieCorrection,
-    onPhaseChange = ::changeDietPhase,
 )

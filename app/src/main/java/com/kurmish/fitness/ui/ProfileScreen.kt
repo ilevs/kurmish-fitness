@@ -39,7 +39,6 @@ internal fun ProfileScreen(
     files: FileBackups,
     onTest: () -> Unit,
     onWeight: (Double) -> Unit,
-    diet: DietActions,
     modifier: Modifier = Modifier
 ) {
     var page by rememberSaveable { mutableStateOf(ProfilePage.Main) }
@@ -53,7 +52,6 @@ internal fun ProfileScreen(
             onProfileChange = onProfileChange,
             onTest = onTest,
             onWeight = onWeight,
-            diet = diet,
             onOpen = { page = it },
             modifier = modifier,
         )
@@ -61,8 +59,8 @@ internal fun ProfileScreen(
 }
 
 /**
- * Профиль сверху вниз по частоте: вес и питание на сегодня трогают почти каждый день, циклы и ПМ — раз в неделю
- * или месяц, а цель, тело, настройки питания, тесты и резервную копию — редко.
+ * Профиль сверху вниз по частоте: вес с данными тела трогают почти каждый день, циклы и ПМ — раз в неделю
+ * или месяц, а цель, тесты и резервную копию — редко.
  */
 @Composable
 private fun ProfileContent(
@@ -71,7 +69,6 @@ private fun ProfileContent(
     onProfileChange: (Profile) -> Unit,
     onTest: () -> Unit,
     onWeight: (Double) -> Unit,
-    diet: DietActions,
     onOpen: (ProfilePage) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -82,13 +79,10 @@ private fun ProfileContent(
             .padding(ScreenPadding),
         verticalArrangement = Arrangement.spacedBy(Gap),
     ) {
-        WeightCard(profile = data.profile, onWeight = onWeight, onProfileChange = onProfileChange)
-        TodayDiet(data = data, today = today, diet = diet)
+        BodyCard(profile = data.profile, onWeight = onWeight, onProfileChange = onProfileChange)
         CyclesCard(data = data, today = today, onOpen = { onOpen(ProfilePage.Cycles) })
         StrengthCard(data = data, today = today, onProfileChange = onProfileChange)
         GoalCard(profile = data.profile, onProfileChange = onProfileChange)
-        BodyCard(profile = data.profile, onProfileChange = onProfileChange)
-        DietSettingsCard(profile = data.profile, today = today, onProfileChange = onProfileChange)
         TestCard(data = data, today = today, onAgain = onTest)
         BackupEntryCard(onOpen = { onOpen(ProfilePage.Backup) })
     }
