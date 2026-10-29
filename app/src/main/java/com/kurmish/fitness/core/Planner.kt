@@ -98,10 +98,8 @@ object Planner {
         val match = item.scheme?.let { schemePattern.find(it) }
         val sets = match?.groupValues?.get(1)?.toInt()
         val reps = match?.groupValues?.get(2)
-        val guess = exercise?.takeIf { item.percents.isEmpty() && item.kg == null && sets != null }?.let {
-            DoubleProgression.next(it, reps.orEmpty(), sets ?: 0, previous)
-                ?: WeightAdvice.byReps(it, reps.orEmpty(), max, last)
-        }
+        val guess = exercise?.takeIf { item.percents.isEmpty() && item.kg == null && sets != null }
+            ?.let { freeWeight(it, sets ?: 0, reps.orEmpty(), max, last, previous) }
         val planned = when {
             sets == null || reps == null -> emptyList()
             item.kg != null -> listOf(PlannedSets(sets, reps, item.kg))
@@ -113,6 +111,17 @@ object Planner {
         val rest = if (match == null) item.scheme else match.groupValues[SCHEME_REST].ifBlank { null }
         return PlanItem(PlanPart.Work, item.name, exercise, planned, notes(item, rest, exercise, max, guess?.second))
     }
+
+    /** Вес без процентов: по двойной прогрессии от прошлой тренировки, иначе по [WeightAdvice.byReps]. */
+    private fun freeWeight(
+        exercise: Exercise,
+        sets: Int,
+        reps: String,
+        max: WorkingMax?,
+        last: SetGroup?,
+        previous: List<SetGroup>,
+    ): Pair<Double?, String>? =
+        DoubleProgression.next(exercise, reps, sets, previous) ?: WeightAdvice.byReps(exercise, reps, max, last)
 
     private fun notes(item: ProgramItem, rest: String?, exercise: Exercise?, max: WorkingMax?, guess: String?) =
         listOfNotNull(rest, guess) + item.percents.takeIf { it.isNotEmpty() }?.let { percents ->
