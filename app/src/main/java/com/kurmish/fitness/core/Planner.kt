@@ -75,6 +75,7 @@ object Planner {
             exercise = exercise,
             max = exercise?.let { data.workingMax(it, today) },
             last = exercise?.let { data.lastSet(it, today) },
+            previous = exercise?.let { data.previousSets(it, today) }.orEmpty(),
         )
         return if (chosen == null) planned else planned.copy(slot = item.name)
     }
@@ -84,19 +85,23 @@ object Planner {
      *
      * Если программа задаёт вес процентами, а ПМ неизвестен, проценты остаются в пояснении. Если процентов нет,
      * вес подбирается по числу повторов от своего ПМ, по последней записи в Дневнике [last] или по ПМ
-     * близкого упражнения.
+     * близкого упражнения. Если повторы заданы диапазоном («6-8») и есть прошлая тренировка [previous],
+     * вес идёт по [DoubleProgression].
      */
     internal fun fromProgram(
         item: ProgramItem,
         exercise: Exercise?,
         max: WorkingMax?,
         last: SetGroup? = null,
+        previous: List<SetGroup> = emptyList(),
     ): PlanItem {
         val match = item.scheme?.let { schemePattern.find(it) }
         val sets = match?.groupValues?.get(1)?.toInt()
         val reps = match?.groupValues?.get(2)
-        val guess = exercise?.takeIf { item.percents.isEmpty() && item.kg == null && sets != null }
-            ?.let { WeightAdvice.byReps(it, reps.orEmpty(), max, last) }
+        val guess = exercise?.takeIf { item.percents.isEmpty() && item.kg == null && sets != null }?.let {
+            DoubleProgression.next(it, reps.orEmpty(), sets ?: 0, previous)
+                ?: WeightAdvice.byReps(it, reps.orEmpty(), max, last)
+        }
         val planned = when {
             sets == null || reps == null -> emptyList()
             item.kg != null -> listOf(PlannedSets(sets, reps, item.kg))
