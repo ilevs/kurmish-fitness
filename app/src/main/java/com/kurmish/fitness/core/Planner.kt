@@ -100,7 +100,8 @@ object Planner {
         val reps = match?.groupValues?.get(2)
         val guess = exercise?.takeIf { item.percents.isEmpty() && item.kg == null && sets != null }
             ?.let {
-                DoubleProgression.orByReps(it, PlannedSets(checkNotNull(sets), reps.orEmpty(), null), max, last, previous)
+                val scheme = PlannedSets(checkNotNull(sets), reps.orEmpty(), null)
+                DoubleProgression.orByReps(it, scheme, max, last, previous)
             }
         val planned = when {
             sets == null || reps == null -> emptyList()
