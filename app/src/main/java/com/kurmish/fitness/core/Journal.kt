@@ -104,6 +104,20 @@ data class AppData(
                 .maxByOrNull { it.weightKg ?: 0.0 }
         }
 
+    /** Подходы [exercise] с весом из последней тренировки строго до [today]: сегодняшние записи план не сдвигают. */
+    fun previousSets(exercise: Exercise, today: Long): List<SetGroup> = sessions
+        .filter { it.epochDay < today }
+        .sortedWith(compareBy({ it.epochDay }, { it.id }))
+        .asReversed()
+        .firstNotNullOfOrNull { session ->
+            session.entries
+                .filter { it.exercise == exercise }
+                .flatMap { it.sets }
+                .filter { it.weightKg != null }
+                .takeIf { it.isNotEmpty() }
+        }
+        .orEmpty()
+
     /** Значения по умолчанию. */
     companion object {
         /** За сколько дней дневник учитывается при оценке ПМ. */

@@ -165,7 +165,7 @@ private fun ProgramsCard(profile: Profile, onAdd: (String) -> Unit, onEdit: (Cyc
         Column(modifier = Modifier.padding(ScreenPadding), verticalArrangement = Arrangement.spacedBy(Gap)) {
             Text(text = stringResource(R.string.cycles_programs), style = MaterialTheme.typography.titleMedium)
             Text(text = stringResource(R.string.cycles_programs_hint), style = MaterialTheme.typography.bodySmall)
-            profile.programs.forEach { program ->
+            profile.programs.sortedBy { it.daysPerWeek != profile.daysPerWeek }.forEach { program ->
                 HorizontalDivider()
                 ProgramRow(program = program, profile = profile, onAdd = onAdd, onEdit = onEdit)
             }
