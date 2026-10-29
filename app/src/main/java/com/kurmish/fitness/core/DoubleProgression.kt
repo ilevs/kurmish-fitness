@@ -35,4 +35,14 @@ internal object DoubleProgression {
         }
         return kg to if (exercise.dumbbell) "$note. Вес одной гантели" else note
     }
+
+    /** Вес схемы [scheme] без процентов: по двойной прогрессии, а без прошлой тренировки — по [WeightAdvice.byReps]. */
+    fun orByReps(
+        exercise: Exercise,
+        scheme: PlannedSets,
+        max: WorkingMax?,
+        last: SetGroup?,
+        previous: List<SetGroup>,
+    ): Pair<Double?, String>? = next(exercise, scheme.reps, scheme.sets, previous)
+        ?: WeightAdvice.byReps(exercise, scheme.reps, max, last)
 }
