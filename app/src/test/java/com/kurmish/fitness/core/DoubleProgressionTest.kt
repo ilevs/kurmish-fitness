@@ -31,6 +31,25 @@ class DoubleProgressionTest {
     }
 
     @Test
+    fun assistedCounterweightShrinksWhenEverySetHitsTop() {
+        val sets = listOf(SetGroup(40.0, 10), SetGroup(30.0, 8, 3))
+        val next = DoubleProgression.next(Exercise.AssistedPullUp, "6-8", 3, sets)
+        assertEquals(27.5, next?.first)
+        assertTrue(next?.second.orEmpty().contains("противовес −2,5 кг"))
+        val dips = DoubleProgression.next(Exercise.AssistedDips, "8-12", 3, listOf(SetGroup(20.0, 12, 3)))
+        assertEquals(17.5, dips?.first)
+    }
+
+    @Test
+    fun assistedCounterweightHoldsUntilTopAndStopsAtZero() {
+        val short = listOf(SetGroup(30.0, 8, 2), SetGroup(30.0, 6))
+        assertEquals(30.0, DoubleProgression.next(Exercise.AssistedPullUp, "6-8", 3, short)?.first)
+        val last = DoubleProgression.next(Exercise.AssistedPullUp, "6-8", 3, listOf(SetGroup(2.5, 8, 3)))
+        assertEquals(0.0, last?.first)
+        assertTrue(last?.second.orEmpty().contains("без противовеса"))
+    }
+
+    @Test
     fun noRangeOrNoHistoryMeansNoAdvice() {
         assertNull(DoubleProgression.next(Exercise.Squat, "5", 3, listOf(SetGroup(100.0, 5, 3))))
         assertNull(DoubleProgression.next(Exercise.Squat, "6-8", 3, emptyList()))
