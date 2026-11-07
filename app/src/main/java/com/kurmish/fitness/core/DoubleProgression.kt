@@ -32,12 +32,14 @@ internal object DoubleProgression {
         val reached = done >= sets && working.all { it.reps >= top }
         val step = if (exercise.dumbbell) DUMBBELL_STEP else Strength.PLATE_STEP
         val held = "Вес прошлой тренировки: когда во всех $sets подходах будет $top повторов, вес вырастет"
+        val heldAssisted = "Противовес прошлой тренировки: когда во всех $sets подходах будет $top повторов, " +
+            "противовес уменьшится"
+        val grown = "В прошлый раз во всех подходах $top повторов с ${weight.kg()}: " +
+            "вес +${step.kg()}, повторы снова с нижней границы"
         val (kg, note) = when {
             assisted && reached -> assistedStep(weight, top, step)
-            assisted -> weight to "Противовес прошлой тренировки: когда во всех $sets подходах будет $top " +
-                "повторов, противовес уменьшится"
-            reached -> weight + step to "В прошлый раз во всех подходах $top повторов с ${weight.kg()}: " +
-                "вес +${step.kg()}, повторы снова с нижней границы"
+            assisted -> weight to heldAssisted
+            reached -> weight + step to grown
             else -> weight to held
         }
         return kg to if (exercise.dumbbell) "$note. Вес одной гантели" else note
