@@ -1,6 +1,7 @@
 package com.kurmish.fitness.core
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -68,5 +69,16 @@ class ExerciseNamesTest {
         val sessions = listOf(session(1, 10, "Шраги"), session(2, 20, "Прогулка фермера"), session(3, 5, "шраги"))
         val data = AppData(sessions = sessions)
         assertEquals(listOf("Прогулка фермера", "Шраги"), data.customExerciseNames())
+    }
+
+    @Test
+    fun matchesFindsByAnyWordOfTitleOrSynonym() {
+        assertTrue(ExerciseNames.matches(Exercise.Bench, ""))
+        assertTrue(ExerciseNames.matches(Exercise.Bench, "ЛЁЖ"))
+        assertTrue(ExerciseNames.matches(Exercise.Bench, "лежа жим"))
+        assertTrue(ExerciseNames.matches(Exercise.PullUp, "подтяг"))
+        assertTrue(ExerciseNames.matches(Exercise.ZercherSquat, "зерх"))
+        assertFalse(ExerciseNames.matches(Exercise.Bench, "присед"))
+        assertFalse(ExerciseNames.matches(Exercise.Bench, "жим стоя"))
     }
 }

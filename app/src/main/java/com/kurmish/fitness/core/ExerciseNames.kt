@@ -26,6 +26,16 @@ object ExerciseNames {
         return (starts + words).distinct().filterNot { normalize(it) == key }.take(limit)
     }
 
+    /**
+     * Подходит ли упражнение под поисковый запрос [query]: каждое слово запроса встречается в названии
+     * или в одном из синонимов, без учёта регистра и «ё». Пустой запрос подходит всем.
+     */
+    fun matches(exercise: Exercise, query: String): Boolean {
+        val words = normalize(query).split(' ').filter { it.isNotEmpty() }
+        val keys = listOf(normalize(exercise.title)) + exercise.synonyms
+        return words.all { word -> keys.any { word in it } }
+    }
+
     private fun synonymsOf(title: String): List<String> =
         Exercise.entries.firstOrNull { it.title == title }?.synonyms.orEmpty()
 

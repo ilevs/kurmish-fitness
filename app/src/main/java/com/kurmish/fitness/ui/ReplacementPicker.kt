@@ -8,14 +8,20 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.kurmish.fitness.R
 import com.kurmish.fitness.core.Exercise
+import com.kurmish.fitness.core.ExerciseNames
 import com.kurmish.fitness.core.Movement
 import com.kurmish.fitness.core.PlanItem
 
@@ -23,15 +29,19 @@ private val RowPadding = 8.dp
 
 /**
  * Выбор упражнения на замену: сначала того же типа движения, от простых к сложным, ниже остальные
- * по типам. Если тип исходного упражнения неизвестен, показываются все.
+ * по типам. Если тип исходного упражнения неизвестен, показываются все. Поле поиска сверху оставляет
+ * только упражнения, в названии или синонимах которых есть все введённые слова.
  */
 @Composable
 internal fun ReplacementPicker(item: PlanItem, onPick: (Exercise) -> Unit, onDismiss: () -> Unit) {
     val current = item.exercise
+    var query by rememberSaveable { mutableStateOf("") }
     val groups = Movement.entries
         .sortedBy { if (it == current?.movement) 0 else 1 }
         .map { movement ->
-            movement to Exercise.entries.filter { it.movement == movement && it != current }.sortedBy { it.level }
+            movement to Exercise.entries
+                .filter { it.movement == movement && it != current && ExerciseNames.matches(it, query) }
+                .sortedBy { it.level }
         }
         .filter { (_, exercises) -> exercises.isNotEmpty() }
     AlertDialog(
@@ -42,6 +52,22 @@ internal fun ReplacementPicker(item: PlanItem, onPick: (Exercise) -> Unit, onDis
         text = {
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 Text(text = stringResource(R.string.picker_hint), style = MaterialTheme.typography.bodySmall)
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = Gap),
+                    label = { Text(stringResource(R.string.picker_search)) },
+                    singleLine = true,
+                )
+                if (groups.isEmpty()) {
+                    Text(
+                        text = stringResource(R.string.picker_nothing),
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(top = Gap),
+                    )
+                }
                 groups.forEach { (movement, exercises) ->
                     Text(
                         text = movement.title,
