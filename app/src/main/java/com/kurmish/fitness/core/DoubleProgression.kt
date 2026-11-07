@@ -5,6 +5,8 @@ package com.kurmish.fitness.core
  *
  * Вес держится, пока во всех подходах не взят верх диапазона. Как только в прошлой тренировке все рабочие
  * подходы набрали верх, вес растёт на шаг, а повторы начинаются снова с нижней границы.
+ * В гравитроне вес — противовес, он помогает: рабочий подход — с самым малым противовесом, а прогресс —
+ * противовес меньше на шаг, пока гравитрон не станет не нужен.
  */
 internal object DoubleProgression {
     private val range = Regex("""^(\d+)-(\d+)$""")
@@ -21,19 +23,37 @@ internal object DoubleProgression {
      */
     fun next(exercise: Exercise, reps: String, sets: Int, previous: List<SetGroup>): Pair<Double, String>? {
         val top = range.find(reps)?.groupValues?.get(2)?.toIntOrNull()
-        val weight = previous.mapNotNull { it.weightKg }.maxOrNull()
+        val assisted = BodyweightLoad.assisted(exercise)
+        val weights = previous.mapNotNull { it.weightKg }
+        val weight = if (assisted) weights.minOrNull() else weights.maxOrNull()
         if (top == null || weight == null || exercise.bodyweight) return null
         val working = previous.filter { it.weightKg == weight }
         val done = working.sumOf { it.sets }
         val reached = done >= sets && working.all { it.reps >= top }
         val step = if (exercise.dumbbell) DUMBBELL_STEP else Strength.PLATE_STEP
-        val (kg, note) = if (reached) {
-            weight + step to "В прошлый раз во всех подходах $top повторов с ${weight.kg()}: " +
-                "вес +${step.kg()}, повторы снова с нижней границы"
-        } else {
-            weight to "Вес прошлой тренировки: когда во всех $sets подходах будет $top повторов, вес вырастет"
+        val held = "Вес прошлой тренировки: когда во всех $sets подходах будет $top повторов, вес вырастет"
+        val heldAssisted = "Противовес прошлой тренировки: когда во всех $sets подходах будет $top повторов, " +
+            "противовес уменьшится"
+        val grown = "В прошлый раз во всех подходах $top повторов с ${weight.kg()}: " +
+            "вес +${step.kg()}, повторы снова с нижней границы"
+        val (kg, note) = when {
+            assisted && reached -> assistedStep(weight, top, step)
+            assisted -> weight to heldAssisted
+            reached -> weight + step to grown
+            else -> weight to held
         }
         return kg to if (exercise.dumbbell) "$note. Вес одной гантели" else note
+    }
+
+    /** Противовес гравитрона меньше на [step]: так подход тяжелее. */
+    private fun assistedStep(weight: Double, top: Int, step: Double): Pair<Double, String> {
+        val lighter = (weight - step).coerceAtLeast(0.0)
+        val done = "В прошлый раз во всех подходах $top повторов с противовесом ${weight.kg()}: "
+        return lighter to if (lighter > 0.0) {
+            done + "противовес −${step.kg()}, повторы снова с нижней границы. Чем меньше противовес, тем тяжелее"
+        } else {
+            done + "пробуй без противовеса, повторы снова с нижней границы"
+        }
     }
 
     /** Вес схемы [scheme] без процентов: по двойной прогрессии, а без прошлой тренировки — по [WeightAdvice.byReps]. */
